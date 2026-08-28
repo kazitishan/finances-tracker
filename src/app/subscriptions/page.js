@@ -1,6 +1,4 @@
-import Image from "next/image";
-
-export default function Home() {
+export default function Subscriptions() {
   return (
     <div>
       {/* Add Button */}
@@ -12,7 +10,6 @@ export default function Home() {
       <div className="flex flex-col gap-4 mt-4">
         
       </div>
-
     </div>
   );
 }
