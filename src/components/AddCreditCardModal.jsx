@@ -4,6 +4,18 @@ import { useState } from "react";
 import BankDropdown from "@/components/BankDropdown";
 import { months, years, inputClasses, onlyDigits } from "@/lib/formUtils";
 
+function ordinal(day) {
+    if (day % 10 === 1 && day % 100 !== 11) return `${day}st`;
+    if (day % 10 === 2 && day % 100 !== 12) return `${day}nd`;
+    if (day % 10 === 3 && day % 100 !== 13) return `${day}rd`;
+    return `${day}th`;
+}
+
+const dueDates = [];
+for (let day = 1; day <= 28; day++) {
+    dueDates.push({ value: day, label: `${ordinal(day)} of every month` });
+}
+
 const initialFormState = {
     name: "",
     bank: "",
@@ -13,6 +25,7 @@ const initialFormState = {
     expYear: "",
     cvc: "",
     creditLine: "",
+    dueDate: "",
 };
 
 function AddCreditCardModal({ isOpen, onClose }) {
@@ -167,6 +180,22 @@ function AddCreditCardModal({ isOpen, onClose }) {
                                 value={form.creditLine}
                                 onChange={(e) => updateField("creditLine", onlyDigits(e.target.value))}
                             />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="font-semibold">Payments are due on</span>
+                            <select
+                                className={inputClasses}
+                                value={form.dueDate}
+                                onChange={(e) => updateField("dueDate", e.target.value)}
+                            >
+                                <option value="">--</option>
+                                {dueDates.map((dueDate) => (
+                                    <option key={dueDate.value} value={dueDate.value}>
+                                        {dueDate.label}
+                                    </option>
+                                ))}
+                            </select>
                         </label>
                     </div>
 
