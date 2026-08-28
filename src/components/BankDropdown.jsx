@@ -13,6 +13,10 @@ export const banks = [
         image: '/banks/bank-of-america.png',
     },
     {
+        name: 'Barclays',
+        image: '/banks/barclays.png',
+    },
+    {
         name: 'Capital One',
         image: '/banks/capital-one.png',
     },
@@ -29,12 +33,24 @@ export const banks = [
         image: '/banks/discover.png',
     },
     {
+        name: 'PNC',
+        image: '/banks/pnc.png',
+    },
+    {
+        name: 'Santander',
+        image: '/banks/santander.png',
+    },
+    {
         name: 'SoFi',
         image: '/banks/sofi.png',
     },
     {
         name: 'TD Bank',
         image: '/banks/td-bank.png',
+    },
+    {
+        name: 'US Bank',
+        image: '/banks/us-bank.png',
     },
     {
         name: 'Wells Fargo',
