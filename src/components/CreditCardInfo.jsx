@@ -23,6 +23,10 @@ function CreditCardInfo({ card, onEdit }) {
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
+    const usageList = (card.usage || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
 
     return (
         <div className="bg-white rounded-xl shadow border border-gray-200 p-4">
@@ -48,8 +52,18 @@ function CreditCardInfo({ card, onEdit }) {
                             ✎
                         </button>
                     </div>
-                    <div className="text-sm text-gray-500 truncate">
-                        {[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ") || "—"}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm text-gray-500 truncate">
+                            {[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ") || "—"}
+                        </span>
+                        {usageList.map((usage, index) => (
+                            <span
+                                key={index}
+                                className="text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5"
+                            >
+                                {usage}
+                            </span>
+                        ))}
                     </div>
                 </div>
                 {card.link && (

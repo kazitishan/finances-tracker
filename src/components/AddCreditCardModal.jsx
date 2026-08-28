@@ -16,6 +16,7 @@ const initialFormState = {
     creditLine: "",
     dueDate: "",
     rewards: "",
+    usage: "",
     notes: "",
 };
 
@@ -227,6 +228,20 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 onChange={(e) => updateField("rewards", e.target.value)}
                             />
                             <span className="text-gray-500 text-sm">Each line is a bullet point</span>
+                        </label>
+                    </div>
+
+                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
+                        <span className="font-semibold">How will you use this card?</span>
+
+                        <label className="flex flex-col gap-1">
+                            <textarea
+                                rows={4}
+                                className={inputClasses}
+                                value={form.usage}
+                                onChange={(e) => updateField("usage", e.target.value)}
+                            />
+                            <span className="text-gray-500 text-sm">Each line becomes a chip</span>
                         </label>
                     </div>
 
