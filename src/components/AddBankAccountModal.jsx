@@ -20,9 +20,10 @@ const initialFormState = {
     notes: "",
 };
 
-function AddBankAccountModal({ isOpen, onClose }) {
-    const [form, setForm] = useState(initialFormState);
+function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) {
+    const [form, setForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
     const [touched, setTouched] = useState({});
+    const [submitting, setSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
@@ -35,9 +36,24 @@ function AddBankAccountModal({ isOpen, onClose }) {
     }
 
     function handleClose() {
-        setForm(initialFormState);
-        setTouched({});
         onClose();
+    }
+
+    async function handleSubmit() {
+        setSubmitting(true);
+        try {
+            const url = itemId ? `/api/bank-accounts/${itemId}` : "/api/bank-accounts";
+            const res = await fetch(url, {
+                method: itemId ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+            const saved = await res.json();
+            onSaved?.(saved);
+            handleClose();
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     const cardNumberError =
@@ -54,7 +70,7 @@ function AddBankAccountModal({ isOpen, onClose }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Add Bank Account</h2>
+                    <h2 className="text-xl font-bold">{itemId ? "Edit Bank Account" : "Add Bank Account"}</h2>
                     <button
                         type="button"
                         onClick={handleClose}
@@ -246,10 +262,11 @@ function AddBankAccountModal({ isOpen, onClose }) {
 
                     <button
                         type="button"
-                        onClick={handleClose}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Add
+                        {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
             </div>

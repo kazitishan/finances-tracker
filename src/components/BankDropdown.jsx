@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
-const banks = [
+export const banks = [
     {
         name: 'American Express',
         image: '/banks/amex.png',

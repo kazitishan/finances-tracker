@@ -2,19 +2,7 @@
 
 import { useState } from "react";
 import BankDropdown from "@/components/BankDropdown";
-import { months, years, inputClasses, onlyDigits } from "@/lib/formUtils";
-
-function ordinal(day) {
-    if (day % 10 === 1 && day % 100 !== 11) return `${day}st`;
-    if (day % 10 === 2 && day % 100 !== 12) return `${day}nd`;
-    if (day % 10 === 3 && day % 100 !== 13) return `${day}rd`;
-    return `${day}th`;
-}
-
-const dueDates = [];
-for (let day = 1; day <= 28; day++) {
-    dueDates.push({ value: day, label: `${ordinal(day)} of every month` });
-}
+import { months, years, dueDates, inputClasses, onlyDigits } from "@/lib/formUtils";
 
 const initialFormState = {
     name: "",
@@ -31,9 +19,10 @@ const initialFormState = {
     notes: "",
 };
 
-function AddCreditCardModal({ isOpen, onClose }) {
-    const [form, setForm] = useState(initialFormState);
+function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
+    const [form, setForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
     const [touched, setTouched] = useState({});
+    const [submitting, setSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
@@ -46,9 +35,24 @@ function AddCreditCardModal({ isOpen, onClose }) {
     }
 
     function handleClose() {
-        setForm(initialFormState);
-        setTouched({});
         onClose();
+    }
+
+    async function handleSubmit() {
+        setSubmitting(true);
+        try {
+            const url = itemId ? `/api/credit-cards/${itemId}` : "/api/credit-cards";
+            const res = await fetch(url, {
+                method: itemId ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+            const saved = await res.json();
+            onSaved?.(saved);
+            handleClose();
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     const cardNumberError =
@@ -65,7 +69,7 @@ function AddCreditCardModal({ isOpen, onClose }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Add Credit Card</h2>
+                    <h2 className="text-xl font-bold">{itemId ? "Edit Credit Card" : "Add Credit Card"}</h2>
                     <button
                         type="button"
                         onClick={handleClose}
@@ -239,10 +243,11 @@ function AddCreditCardModal({ isOpen, onClose }) {
 
                     <button
                         type="button"
-                        onClick={handleClose}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        Add
+                        {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
             </div>
