@@ -17,6 +17,7 @@ const initialFormState = {
     expMonth: "",
     expYear: "",
     cvc: "",
+    notes: "",
 };
 
 function AddBankAccountModal({ isOpen, onClose }) {
@@ -231,6 +232,17 @@ function AddBankAccountModal({ isOpen, onClose }) {
                             </label>
                         </div>
                     )}
+
+                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
+                        <span className="font-semibold">Notes</span>
+
+                        <textarea
+                            rows={4}
+                            className={inputClasses}
+                            value={form.notes}
+                            onChange={(e) => updateField("notes", e.target.value)}
+                        />
+                    </div>
 
                     <button
                         type="button"

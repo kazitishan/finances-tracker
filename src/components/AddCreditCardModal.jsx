@@ -27,6 +27,8 @@ const initialFormState = {
     cvc: "",
     creditLine: "",
     dueDate: "",
+    rewards: "",
+    notes: "",
 };
 
 function AddCreditCardModal({ isOpen, onClose }) {
@@ -208,6 +210,31 @@ function AddCreditCardModal({ isOpen, onClose }) {
                                 ))}
                             </select>
                         </label>
+                    </div>
+
+                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
+                        <span className="font-semibold">Rewards & Benefits</span>
+
+                        <label className="flex flex-col gap-1">
+                            <textarea
+                                rows={4}
+                                className={inputClasses}
+                                value={form.rewards}
+                                onChange={(e) => updateField("rewards", e.target.value)}
+                            />
+                            <span className="text-gray-500 text-sm">Each line is a bullet point</span>
+                        </label>
+                    </div>
+
+                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
+                        <span className="font-semibold">Notes</span>
+
+                        <textarea
+                            rows={4}
+                            className={inputClasses}
+                            value={form.notes}
+                            onChange={(e) => updateField("notes", e.target.value)}
+                        />
                     </div>
 
                     <button
