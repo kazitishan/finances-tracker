@@ -60,7 +60,9 @@ export const banks = [
 
 function BankDropdown({ value, onChange }) {
     const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
     const containerRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -72,7 +74,18 @@ function BankDropdown({ value, onChange }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (open) {
+            searchInputRef.current?.focus();
+        } else {
+            setSearch("");
+        }
+    }, [open]);
+
     const selectedBank = banks.find((bank) => bank.name === value);
+    const filteredBanks = banks.filter((bank) =>
+        bank.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
         <div className="relative" ref={containerRef}>
@@ -99,29 +112,45 @@ function BankDropdown({ value, onChange }) {
             </button>
 
             {open && (
-                <ul className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
-                    {banks.map((bank) => (
-                        <li key={bank.name}>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onChange(bank.name);
-                                    setOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer text-left"
-                            >
-                                <Image
-                                    src={bank.image}
-                                    alt={bank.name}
-                                    width={20}
-                                    height={20}
-                                    className="object-contain"
-                                />
-                                {bank.name}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="p-2 border-b border-gray-200">
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search banks..."
+                            className="w-full border border-gray-300 rounded-md p-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                    </div>
+                    <ul className="max-h-56 overflow-y-auto">
+                        {filteredBanks.length > 0 ? (
+                            filteredBanks.map((bank) => (
+                                <li key={bank.name}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onChange(bank.name);
+                                            setOpen(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer text-left"
+                                    >
+                                        <Image
+                                            src={bank.image}
+                                            alt={bank.name}
+                                            width={20}
+                                            height={20}
+                                            className="object-contain"
+                                        />
+                                        {bank.name}
+                                    </button>
+                                </li>
+                            ))
+                        ) : (
+                            <li className="p-2 text-sm text-gray-400">No banks found</li>
+                        )}
+                    </ul>
+                </div>
             )}
         </div>
     );
