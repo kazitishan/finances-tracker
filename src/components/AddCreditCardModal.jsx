@@ -19,6 +19,7 @@ for (let day = 1; day <= 28; day++) {
 const initialFormState = {
     name: "",
     bank: "",
+    link: "",
     cardName: "",
     cardNumber: "",
     expMonth: "",
@@ -89,6 +90,16 @@ function AddCreditCardModal({ isOpen, onClose }) {
                         <BankDropdown
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="font-semibold">Link</span>
+                        <input
+                            type="url"
+                            className={inputClasses}
+                            value={form.link}
+                            onChange={(e) => updateField("link", e.target.value)}
                         />
                     </label>
 
