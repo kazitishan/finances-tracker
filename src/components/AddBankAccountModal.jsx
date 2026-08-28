@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import BankDropdown from "@/components/BankDropdown";
-import { months, years, inputClasses, onlyDigits, onlyDecimal } from "@/lib/formUtils";
+import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
     name: "",
@@ -12,7 +12,7 @@ const initialFormState = {
     routingNumber: "",
     accountNumber: "",
     apy: "",
-    debitName: "",
+    cardholder: "",
     cardNumber: "",
     expMonth: "",
     expYear: "",
@@ -151,8 +151,9 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                             type="text"
                             inputMode="numeric"
                             className={inputClasses}
-                            value={form.accountNumber}
+                            value={groupFromRight(form.accountNumber)}
                             onChange={(e) => updateField("accountNumber", onlyDigits(e.target.value))}
+                            onCopy={stripSpacesOnCopy}
                         />
                     </label>
 
@@ -172,12 +173,12 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                             <span className="font-semibold">Debit Card Info</span>
 
                             <label className="flex flex-col gap-1">
-                                <span className="font-semibold">Name</span>
+                                <span className="font-semibold">Cardholder</span>
                                 <input
                                     type="text"
                                     className={inputClasses}
-                                    value={form.debitName}
-                                    onChange={(e) => updateField("debitName", e.target.value)}
+                                    value={form.cardholder}
+                                    onChange={(e) => updateField("cardholder", e.target.value)}
                                 />
                             </label>
 
@@ -186,14 +187,30 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                 <input
                                     type="text"
                                     inputMode="numeric"
-                                    maxLength={16}
                                     className={inputClasses}
-                                    value={form.cardNumber}
+                                    value={groupFromRight(form.cardNumber)}
                                     onChange={(e) => updateField("cardNumber", onlyDigits(e.target.value).slice(0, 16))}
                                     onBlur={() => markTouched("cardNumber")}
+                                    onCopy={stripSpacesOnCopy}
                                 />
                                 {cardNumberError && (
                                     <span className="text-red-600 text-sm">Card number must be 16 digits</span>
+                                )}
+                            </label>
+
+                            <label className="flex flex-col gap-1">
+                                <span className="font-semibold">CVC</span>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={3}
+                                    className={inputClasses}
+                                    value={form.cvc}
+                                    onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
+                                    onBlur={() => markTouched("cvc")}
+                                />
+                                {cvcError && (
+                                    <span className="text-red-600 text-sm">CVC must be 3 digits</span>
                                 )}
                             </label>
 
@@ -230,22 +247,6 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                     </select>
                                 </label>
                             </div>
-
-                            <label className="flex flex-col gap-1">
-                                <span className="font-semibold">CVC</span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={3}
-                                    className={inputClasses}
-                                    value={form.cvc}
-                                    onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
-                                    onBlur={() => markTouched("cvc")}
-                                />
-                                {cvcError && (
-                                    <span className="text-red-600 text-sm">CVC must be 3 digits</span>
-                                )}
-                            </label>
                         </div>
                     )}
 

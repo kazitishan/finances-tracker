@@ -49,3 +49,25 @@ export function maskLast4(value) {
     if (value.length <= 4) return value;
     return `•••• ${value.slice(-4)}`;
 }
+
+export function maskAll(value) {
+    if (!value) return "";
+    return "•".repeat(value.length);
+}
+
+export function groupFromRight(value) {
+    if (!value) return "";
+    const firstGroupLen = value.length % 4 || 4;
+    const groups = [value.slice(0, firstGroupLen)];
+    for (let i = firstGroupLen; i < value.length; i += 4) {
+        groups.push(value.slice(i, i + 4));
+    }
+    return groups.join(" ");
+}
+
+export function stripSpacesOnCopy(e) {
+    const { selectionStart, selectionEnd, value } = e.target;
+    const selected = value.slice(selectionStart, selectionEnd);
+    e.clipboardData.setData("text/plain", selected.replace(/\s/g, ""));
+    e.preventDefault();
+}

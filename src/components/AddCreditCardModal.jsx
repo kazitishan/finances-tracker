@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import BankDropdown from "@/components/BankDropdown";
-import { months, years, dueDates, inputClasses, onlyDigits } from "@/lib/formUtils";
+import { months, years, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
     name: "",
     bank: "",
     link: "",
-    cardName: "",
+    cardholder: "",
     cardNumber: "",
     expMonth: "",
     expYear: "",
@@ -113,12 +113,12 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         <span className="font-semibold">Credit Card Info</span>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Name</span>
+                            <span className="font-semibold">Cardholder</span>
                             <input
                                 type="text"
                                 className={inputClasses}
-                                value={form.cardName}
-                                onChange={(e) => updateField("cardName", e.target.value)}
+                                value={form.cardholder}
+                                onChange={(e) => updateField("cardholder", e.target.value)}
                             />
                         </label>
 
@@ -127,14 +127,30 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             <input
                                 type="text"
                                 inputMode="numeric"
-                                maxLength={16}
                                 className={inputClasses}
-                                value={form.cardNumber}
+                                value={groupFromRight(form.cardNumber)}
                                 onChange={(e) => updateField("cardNumber", onlyDigits(e.target.value).slice(0, 16))}
                                 onBlur={() => markTouched("cardNumber")}
+                                onCopy={stripSpacesOnCopy}
                             />
                             {cardNumberError && (
                                 <span className="text-red-600 text-sm">Card number must be 16 digits</span>
+                            )}
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="font-semibold">CVC</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={3}
+                                className={inputClasses}
+                                value={form.cvc}
+                                onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
+                                onBlur={() => markTouched("cvc")}
+                            />
+                            {cvcError && (
+                                <span className="text-red-600 text-sm">CVC must be 3 digits</span>
                             )}
                         </label>
 
@@ -171,22 +187,6 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 </select>
                             </label>
                         </div>
-
-                        <label className="flex flex-col gap-1">
-                            <span className="font-semibold">CVC</span>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={3}
-                                className={inputClasses}
-                                value={form.cvc}
-                                onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
-                                onBlur={() => markTouched("cvc")}
-                            />
-                            {cvcError && (
-                                <span className="text-red-600 text-sm">CVC must be 3 digits</span>
-                            )}
-                        </label>
 
                         <label className="flex flex-col gap-1">
                             <span className="font-semibold">Credit Line</span>

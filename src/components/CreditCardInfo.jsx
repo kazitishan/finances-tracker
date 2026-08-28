@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { banks } from "@/components/BankDropdown";
-import { maskLast4, ordinal } from "@/lib/formUtils";
+import { maskAll, maskLast4, ordinal } from "@/lib/formUtils";
+import RevealableDetailRow from "@/components/RevealableDetailRow";
 
 function DetailRow({ label, value }) {
     if (!value) return null;
@@ -36,19 +37,31 @@ function CreditCardInfo({ card, onEdit }) {
                     />
                 )}
                 <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{card.name || "Unnamed Card"}</div>
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold truncate">{card.name || "Unnamed Card"}</span>
+                        <button
+                            type="button"
+                            onClick={onEdit}
+                            className="text-gray-400 hover:text-gray-700 cursor-pointer shrink-0"
+                            aria-label="Edit"
+                        >
+                            ✎
+                        </button>
+                    </div>
                     <div className="text-sm text-gray-500 truncate">
                         {[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ") || "—"}
                     </div>
                 </div>
-                <button
-                    type="button"
-                    onClick={onEdit}
-                    className="text-gray-400 hover:text-gray-700 cursor-pointer shrink-0"
-                    aria-label="Edit"
-                >
-                    ✎
-                </button>
+                {card.link && (
+                    <a
+                        href={card.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg px-2 py-1 hover:bg-gray-50 cursor-pointer shrink-0"
+                    >
+                        Open
+                    </a>
+                )}
                 <button
                     type="button"
                     onClick={() => setExpanded((prev) => !prev)}
@@ -61,7 +74,9 @@ function CreditCardInfo({ card, onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
-                    <DetailRow label="Cardholder" value={card.cardName} />
+                    <DetailRow label="Cardholder" value={card.cardholder} />
+                    <RevealableDetailRow label="Card Number" value={card.cardNumber} mask={maskLast4} />
+                    <RevealableDetailRow label="CVC" value={card.cvc} mask={maskAll} />
                     <DetailRow
                         label="Expiration"
                         value={card.expMonth && card.expYear ? `${card.expMonth}/${card.expYear}` : ""}
@@ -84,22 +99,6 @@ function CreditCardInfo({ card, onEdit }) {
                                 ))}
                             </ul>
                         </div>
-                    )}
-
-                    {card.link && (
-                        <DetailRow
-                            label="Link"
-                            value={
-                                <a
-                                    href={card.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 underline"
-                                >
-                                    {card.link}
-                                </a>
-                            }
-                        />
                     )}
 
                     {card.notes && (
