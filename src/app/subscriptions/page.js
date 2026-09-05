@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddSubscriptionModal from "@/components/AddSubscriptionModal";
-import SubscriptionInfo from "@/components/SubscriptionInfo";
-import RearrangeModal from "@/components/RearrangeModal";
+import AddSubscriptionModal from "@/components/modals/AddSubscriptionModal";
+import SubscriptionInfo from "@/components/info/SubscriptionInfo";
+import RearrangeModal from "@/components/modals/RearrangeModal";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);

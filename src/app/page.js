@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddBankAccountModal from "@/components/AddBankAccountModal";
-import BankAccountInfo from "@/components/BankAccountInfo";
-import RearrangeModal from "@/components/RearrangeModal";
+import AddBankAccountModal from "@/components/modals/AddBankAccountModal";
+import BankAccountInfo from "@/components/info/BankAccountInfo";
+import RearrangeModal from "@/components/modals/RearrangeModal";
 
 export default function Home() {
   const [accounts, setAccounts] = useState([]);

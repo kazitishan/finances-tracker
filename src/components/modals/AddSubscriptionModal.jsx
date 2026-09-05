@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SubscriptionDropdown from "@/components/SubscriptionDropdown";
+import SubscriptionDropdown from "@/components/dropdowns/SubscriptionDropdown";
 import { months, dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 
 const initialFormState = {

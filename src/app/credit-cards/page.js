@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddCreditCardModal from "@/components/AddCreditCardModal";
-import CreditCardInfo from "@/components/CreditCardInfo";
-import RearrangeModal from "@/components/RearrangeModal";
+import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
+import CreditCardInfo from "@/components/info/CreditCardInfo";
+import RearrangeModal from "@/components/modals/RearrangeModal";
 import { accountAgeInMonths, formatMonthsAge } from "@/lib/formUtils";
 
 export default function CreditCards() {

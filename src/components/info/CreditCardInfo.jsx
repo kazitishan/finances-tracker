@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { banks } from "@/components/BankDropdown";
+import { banks } from "@/components/dropdowns/BankDropdown";
 import { maskAll, maskLast4, ordinal, formatAccountAge } from "@/lib/formUtils";
-import RevealableDetailRow from "@/components/RevealableDetailRow";
+import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 
 function DetailRow({ label, value }) {
     if (!value) return null;

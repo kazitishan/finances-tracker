@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { subscriptions } from "@/components/SubscriptionDropdown";
+import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
 import { months, ordinal } from "@/lib/formUtils";
 
 function DetailRow({ label, value }) {

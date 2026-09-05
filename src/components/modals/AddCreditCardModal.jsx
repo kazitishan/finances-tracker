@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import BankDropdown from "@/components/BankDropdown";
+import BankDropdown from "@/components/dropdowns/BankDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
