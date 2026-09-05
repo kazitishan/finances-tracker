@@ -19,6 +19,36 @@ for (let year = currentYear; year <= 2099; year++) {
     years.push(year);
 }
 
+export const pastYears = [];
+for (let year = currentYear; year >= currentYear - 50; year--) {
+    pastYears.push(year);
+}
+
+export function accountAgeInMonths(month, year) {
+    if (!month || !year) return null;
+    const now = new Date();
+    const openDate = new Date(Number(year), Number(month) - 1, 1);
+    return Math.max(
+        0,
+        (now.getFullYear() - openDate.getFullYear()) * 12 + (now.getMonth() - openDate.getMonth())
+    );
+}
+
+export function formatMonthsAge(totalMonths) {
+    const ageYears = Math.floor(totalMonths / 12);
+    const ageMonths = Math.round(totalMonths % 12);
+    const parts = [];
+    if (ageYears > 0) parts.push(`${ageYears} year${ageYears !== 1 ? "s" : ""}`);
+    if (ageMonths > 0 || ageYears === 0) parts.push(`${ageMonths} month${ageMonths !== 1 ? "s" : ""}`);
+    return `${parts.join(", ")} old`;
+}
+
+export function formatAccountAge(month, year) {
+    const totalMonths = accountAgeInMonths(month, year);
+    if (totalMonths === null) return "";
+    return formatMonthsAge(totalMonths);
+}
+
 export function ordinal(day) {
     if (day % 10 === 1 && day % 100 !== 11) return `${day}st`;
     if (day % 10 === 2 && day % 100 !== 12) return `${day}nd`;

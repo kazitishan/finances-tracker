@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import BankDropdown from "@/components/BankDropdown";
-import { months, years, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
+import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
     name: "",
     bank: "",
     link: "",
+    openMonth: "",
+    openYear: "",
     cardholder: "",
     cardNumber: "",
     expMonth: "",
@@ -109,6 +111,43 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             onChange={(e) => updateField("link", e.target.value)}
                         />
                     </label>
+
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold">Open Date</span>
+                        <div className="flex gap-4">
+                            <label className="flex flex-col gap-1 flex-1">
+                                <span className="text-sm text-gray-500">Month</span>
+                                <select
+                                    className={inputClasses}
+                                    value={form.openMonth}
+                                    onChange={(e) => updateField("openMonth", e.target.value)}
+                                >
+                                    <option value="">--</option>
+                                    {months.map((month) => (
+                                        <option key={month.value} value={month.value}>
+                                            {month.value} - {month.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1 flex-1">
+                                <span className="text-sm text-gray-500">Year</span>
+                                <select
+                                    className={inputClasses}
+                                    value={form.openYear}
+                                    onChange={(e) => updateField("openYear", e.target.value)}
+                                >
+                                    <option value="">--</option>
+                                    {pastYears.map((year) => (
+                                        <option key={year} value={year}>
+                                            {year}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    </div>
 
                     <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
                         <span className="font-semibold">Credit Card Info</span>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { banks } from "@/components/BankDropdown";
-import { maskAll, maskLast4, ordinal } from "@/lib/formUtils";
+import { maskAll, maskLast4, ordinal, formatAccountAge } from "@/lib/formUtils";
 import RevealableDetailRow from "@/components/RevealableDetailRow";
 
 function DetailRow({ label, value }) {
@@ -88,6 +88,14 @@ function CreditCardInfo({ card, onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
+                    <DetailRow
+                        label="Open Date"
+                        value={
+                            card.openMonth && card.openYear
+                                ? `${card.openMonth}/${card.openYear} · ${formatAccountAge(card.openMonth, card.openYear)}`
+                                : ""
+                        }
+                    />
                     <DetailRow label="Cardholder" value={card.cardholder} />
                     <RevealableDetailRow label="Card Number" value={card.cardNumber} mask={maskLast4} />
                     <RevealableDetailRow label="CVC" value={card.cvc} mask={maskAll} />

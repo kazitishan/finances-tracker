@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AddCreditCardModal from "@/components/AddCreditCardModal";
 import CreditCardInfo from "@/components/CreditCardInfo";
 import RearrangeModal from "@/components/RearrangeModal";
+import { accountAgeInMonths, formatMonthsAge } from "@/lib/formUtils";
 
 export default function CreditCards() {
   const [cards, setCards] = useState([]);
@@ -52,25 +53,44 @@ export default function CreditCards() {
     setCards(await res.json());
   }
 
+  const ages = cards
+    .map((card) => accountAgeInMonths(card.openMonth, card.openYear))
+    .filter((months) => months !== null);
+  const averageAgeLabel = ages.length > 0
+    ? formatMonthsAge(ages.reduce((sum, months) => sum + months, 0) / ages.length)
+    : null;
+
+  const totalCreditLine = cards
+    .filter((card) => card.creditLine)
+    .reduce((sum, card) => sum + Number(card.creditLine), 0);
+
   return (
     <div>
-      {/* Rearrange + Add buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => {
-            setRearrangeModalKey((key) => key + 1);
-            setIsRearrangeOpen(true);
-          }}
-          className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
-        >
-          Rearrange
-        </button>
-        <button
-          onClick={handleAddClick}
-          className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-        >
-          Add
-        </button>
+      {/* Stats + Rearrange + Add buttons */}
+      <div className="flex justify-between items-center gap-2 flex-wrap">
+        <div className="flex gap-4 text-sm text-gray-600">
+          {averageAgeLabel && <span>Average Age: <span className="font-semibold text-gray-800">{averageAgeLabel}</span></span>}
+          {totalCreditLine > 0 && (
+            <span>Total Credit Line: <span className="font-semibold text-gray-800">${totalCreditLine.toLocaleString()}</span></span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setRearrangeModalKey((key) => key + 1);
+              setIsRearrangeOpen(true);
+            }}
+            className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
+          >
+            Rearrange
+          </button>
+          <button
+            onClick={handleAddClick}
+            className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
+          >
+            Add
+          </button>
+        </div>
       </div>
 
       {/* All credit cards */}
