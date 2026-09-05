@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import BankDropdown from "@/components/dropdowns/BankDropdown";
+import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
@@ -96,7 +96,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
 
                     <label className="flex flex-col gap-1">
                         <span className="font-semibold">Bank</span>
-                        <BankDropdown
+                        <BankCompaniesDropdown
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
                         />

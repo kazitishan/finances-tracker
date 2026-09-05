@@ -58,7 +58,7 @@ export const banks = [
     },
 ];
 
-function BankDropdown({ value, onChange }) {
+function BankCompaniesDropdown({ value, onChange }) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const containerRef = useRef(null);
@@ -159,4 +159,4 @@ function BankDropdown({ value, onChange }) {
     );
 }
 
-export default BankDropdown;
+export default BankCompaniesDropdown;

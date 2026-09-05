@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { banks } from "@/components/dropdowns/BankDropdown";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4 } from "@/lib/formUtils";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 
