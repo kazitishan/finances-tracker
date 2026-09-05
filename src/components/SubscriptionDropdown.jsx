@@ -3,62 +3,90 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
-export const banks = [
+export const subscriptions = [
     {
-        name: 'American Express',
-        image: '/banks/amex.png',
+        name: 'Amazon Prime',
+        image: '/subscriptions/amazon.png',
     },
     {
-        name: 'Bank of America',
-        image: '/banks/bank-of-america.png',
+        name: 'Apple Music',
+        image: '/subscriptions/apple-music.png',
     },
     {
-        name: 'Barclays',
-        image: '/banks/barclays.png',
+        name: 'Apple TV',
+        image: '/subscriptions/apple-tv.png',
     },
     {
-        name: 'Capital One',
-        image: '/banks/capital-one.png',
+        name: 'Apple',
+        image: '/subscriptions/apple.png',
     },
     {
-        name: 'Chase',
-        image: '/banks/chase.png',
+        name: 'Amazon Web Services (AWS)',
+        image: '/subscriptions/aws.png',
     },
     {
-        name: 'Citi',
-        image: '/banks/citi.png',
+        name: 'Claude',
+        image: '/subscriptions/claude.png',
     },
     {
-        name: 'Discover',
-        image: '/banks/discover.png',
+        name: 'Crunchyroll',
+        image: '/subscriptions/crunchyroll.png',
     },
     {
-        name: 'PNC',
-        image: '/banks/pnc.png',
+        name: 'Cursor',
+        image: '/subscriptions/cursor.png',
     },
     {
-        name: 'Santander',
-        image: '/banks/santander.png',
+        name: 'Disney+',
+        image: '/subscriptions/disney.png',
     },
     {
-        name: 'SoFi',
-        image: '/banks/sofi.png',
+        name: 'Google',
+        image: '/subscriptions/google.png',
     },
     {
-        name: 'TD Bank',
-        image: '/banks/td-bank.png',
+        name: 'HBO Max',
+        image: '/subscriptions/hbo.png',
     },
     {
-        name: 'US Bank',
-        image: '/banks/us-bank.png',
+        name: 'Hulu',
+        image: '/subscriptions/hulu.png',
     },
     {
-        name: 'Wells Fargo',
-        image: '/banks/wells-fargo.png',
+        name: 'iCloud',
+        image: '/subscriptions/icloud.png',
+    },
+    {
+        name: 'Netflix',
+        image: '/subscriptions/netflix.png',
+    },
+    {
+        name: 'OpenAI',
+        image: '/subscriptions/openai.png',
+    },
+    {
+        name: 'Paramount+',
+        image: '/subscriptions/paramount.png',
+    },
+    {
+        name: 'Peacock',
+        image: '/subscriptions/peacock.png',
+    },
+    {
+        name: 'Spotify',
+        image: '/subscriptions/spotify.png',
+    },
+    {
+        name: 'Vercel',
+        image: '/subscriptions/vercel.png',
+    },
+    {
+        name: 'YouTube',
+        image: '/subscriptions/youtube.png',
     },
 ];
 
-function BankDropdown({ value, onChange }) {
+function SubscriptionDropdown({ value, onChange }) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const containerRef = useRef(null);
@@ -85,9 +113,9 @@ function BankDropdown({ value, onChange }) {
         }
     }, [open]);
 
-    const selectedBank = banks.find((bank) => bank.name === value);
-    const filteredBanks = banks.filter((bank) =>
-        bank.name.toLowerCase().includes(search.toLowerCase())
+    const selectedSubscription = subscriptions.find((subscription) => subscription.name === value);
+    const filteredSubscriptions = subscriptions.filter((subscription) =>
+        subscription.name.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -98,17 +126,17 @@ function BankDropdown({ value, onChange }) {
                 className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer"
             >
                 <span className="flex items-center gap-2">
-                    {selectedBank && (
+                    {selectedSubscription && (
                         <Image
-                            src={selectedBank.image}
-                            alt={selectedBank.name}
+                            src={selectedSubscription.image}
+                            alt={selectedSubscription.name}
                             width={20}
                             height={20}
                             className="object-contain"
                         />
                     )}
-                    <span className={selectedBank ? "" : "text-gray-400"}>
-                        {selectedBank ? selectedBank.name : "Select a bank"}
+                    <span className={selectedSubscription ? "" : "text-gray-400"}>
+                        {selectedSubscription ? selectedSubscription.name : "Select a subscription"}
                     </span>
                 </span>
                 <span className="text-gray-400">▾</span>
@@ -122,35 +150,35 @@ function BankDropdown({ value, onChange }) {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search banks..."
+                            placeholder="Search subscriptions..."
                             className="w-full border border-gray-300 rounded-md p-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                         />
                     </div>
                     <ul className="max-h-56 overflow-y-auto">
-                        {filteredBanks.length > 0 ? (
-                            filteredBanks.map((bank) => (
-                                <li key={bank.name}>
+                        {filteredSubscriptions.length > 0 ? (
+                            filteredSubscriptions.map((subscription) => (
+                                <li key={subscription.name}>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            onChange(bank.name);
+                                            onChange(subscription.name);
                                             closeDropdown();
                                         }}
                                         className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer text-left"
                                     >
                                         <Image
-                                            src={bank.image}
-                                            alt={bank.name}
+                                            src={subscription.image}
+                                            alt={subscription.name}
                                             width={20}
                                             height={20}
                                             className="object-contain"
                                         />
-                                        {bank.name}
+                                        {subscription.name}
                                     </button>
                                 </li>
                             ))
                         ) : (
-                            <li className="p-2 text-sm text-gray-400">No banks found</li>
+                            <li className="p-2 text-sm text-gray-400">No subscriptions found</li>
                         )}
                     </ul>
                 </div>
@@ -159,4 +187,4 @@ function BankDropdown({ value, onChange }) {
     );
 }
 
-export default BankDropdown;
+export default SubscriptionDropdown;
