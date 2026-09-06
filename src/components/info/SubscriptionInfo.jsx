@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
-import { months, ordinal } from "@/lib/formUtils";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { months, ordinal, maskLast4 } from "@/lib/formUtils";
 
 function DetailRow({ label, value }) {
     if (!value) return null;
@@ -15,9 +16,17 @@ function DetailRow({ label, value }) {
     );
 }
 
-function SubscriptionInfo({ subscription, onEdit }) {
+function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
     const [expanded, setExpanded] = useState(false);
     const subscriptionInfo = subscriptions.find((s) => s.name === subscription.subscription);
+
+    const [methodType, methodId] = (subscription.paymentMethod || "").split(":");
+    const paymentAccount = methodType === "credit"
+        ? creditCards.find((card) => card.id === methodId)
+        : methodType === "debit"
+            ? bankAccounts.find((account) => account.id === methodId)
+            : null;
+    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
 
     const costLabel = subscription.cost
         ? `$${Number(subscription.cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${subscription.billingCycle === "year" ? "yr" : "mo"}`
@@ -80,6 +89,29 @@ function SubscriptionInfo({ subscription, onEdit }) {
                 <div className="mt-3 border-t border-gray-100 pt-3">
                     <DetailRow label="Cost" value={costLabel} />
                     <DetailRow label="Renews" value={renewsLabel} />
+
+                    {paymentAccount && (
+                        <div className="mt-2">
+                            <div className="text-sm text-gray-500 mb-1">Payment Method</div>
+                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                                {paymentAccountBankInfo && (
+                                    <Image
+                                        src={paymentAccountBankInfo.image}
+                                        alt={paymentAccountBankInfo.name}
+                                        width={28}
+                                        height={28}
+                                        className="object-contain shrink-0"
+                                    />
+                                )}
+                                <div className="min-w-0">
+                                    <div className="font-medium text-sm truncate">{paymentAccount.name}</div>
+                                    {paymentAccount.cardNumber && (
+                                        <div className="text-xs text-gray-500">{maskLast4(paymentAccount.cardNumber)}</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

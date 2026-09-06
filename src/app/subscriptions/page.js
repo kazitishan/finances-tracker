@@ -7,6 +7,8 @@ import RearrangeModal from "@/components/modals/RearrangeModal";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
+  const [creditCards, setCreditCards] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState(null);
   const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
@@ -17,6 +19,12 @@ export default function Subscriptions() {
     fetch("/api/subscriptions")
       .then((res) => res.json())
       .then(setSubscriptions);
+    fetch("/api/credit-cards")
+      .then((res) => res.json())
+      .then(setCreditCards);
+    fetch("/api/bank-accounts")
+      .then((res) => res.json())
+      .then(setBankAccounts);
   }, []);
 
   function handleSaved(item) {
@@ -81,6 +89,8 @@ export default function Subscriptions() {
           <SubscriptionInfo
             key={subscription.id}
             subscription={subscription}
+            creditCards={creditCards}
+            bankAccounts={bankAccounts}
             onEdit={() => handleEdit(subscription)}
           />
         ))}

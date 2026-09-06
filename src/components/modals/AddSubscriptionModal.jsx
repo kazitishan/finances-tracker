@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import SubscriptionDropdown from "@/components/dropdowns/SubscriptionDropdown";
+import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 
 const initialFormState = {
     name: "",
     subscription: "",
     link: "",
+    paymentMethod: "",
     cost: "",
     billingCycle: "month",
     billingMonth: "",
@@ -92,6 +94,14 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                             className={inputClasses}
                             value={form.link}
                             onChange={(e) => updateField("link", e.target.value)}
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="font-semibold">Payment Method</span>
+                        <PaymentMethodDropdown
+                            value={form.paymentMethod}
+                            onChange={(paymentMethod) => updateField("paymentMethod", paymentMethod)}
                         />
                     </label>
 

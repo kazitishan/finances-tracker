@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
+import BankAccountsDropdown from "@/components/dropdowns/BankAccountsDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 
 const initialFormState = {
@@ -16,6 +17,7 @@ const initialFormState = {
     expYear: "",
     cvc: "",
     creditLine: "",
+    paymentMethod: "",
     dueDate: "",
     rewards: "",
     usage: "",
@@ -236,6 +238,14 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 className={inputClasses}
                                 value={form.creditLine}
                                 onChange={(e) => updateField("creditLine", onlyDigits(e.target.value))}
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="font-semibold">Payment Method</span>
+                            <BankAccountsDropdown
+                                value={form.paymentMethod}
+                                onChange={(accountId) => updateField("paymentMethod", accountId)}
                             />
                         </label>
 

@@ -8,6 +8,7 @@ import { accountAgeInMonths, formatMonthsAge } from "@/lib/formUtils";
 
 export default function CreditCards() {
   const [cards, setCards] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
@@ -18,6 +19,9 @@ export default function CreditCards() {
     fetch("/api/credit-cards")
       .then((res) => res.json())
       .then(setCards);
+    fetch("/api/bank-accounts")
+      .then((res) => res.json())
+      .then(setBankAccounts);
   }, []);
 
   function handleSaved(item) {
@@ -96,7 +100,7 @@ export default function CreditCards() {
       {/* All credit cards */}
       <div className="flex flex-col gap-4 mt-4">
         {cards.map((card) => (
-          <CreditCardInfo key={card.id} card={card} onEdit={() => handleEdit(card)} />
+          <CreditCardInfo key={card.id} card={card} bankAccounts={bankAccounts} onEdit={() => handleEdit(card)} />
         ))}
       </div>
 

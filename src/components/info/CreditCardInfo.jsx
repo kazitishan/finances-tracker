@@ -16,9 +16,11 @@ function DetailRow({ label, value }) {
     );
 }
 
-function CreditCardInfo({ card, onEdit }) {
+function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
     const [expanded, setExpanded] = useState(false);
     const bankInfo = banks.find((b) => b.name === card.bank);
+    const paymentAccount = bankAccounts.find((account) => account.id === card.paymentMethod);
+    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
     const rewardsList = (card.rewards || "")
         .split("\n")
         .map((line) => line.trim())
@@ -111,6 +113,29 @@ function CreditCardInfo({ card, onEdit }) {
                         label="Payments Due"
                         value={card.dueDate ? `${ordinal(Number(card.dueDate))} of every month` : ""}
                     />
+
+                    {paymentAccount && (
+                        <div className="mt-2">
+                            <div className="text-sm text-gray-500 mb-1">Payment Method</div>
+                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                                {paymentAccountBankInfo && (
+                                    <Image
+                                        src={paymentAccountBankInfo.image}
+                                        alt={paymentAccountBankInfo.name}
+                                        width={28}
+                                        height={28}
+                                        className="object-contain shrink-0"
+                                    />
+                                )}
+                                <div className="min-w-0">
+                                    <div className="font-medium text-sm truncate">{paymentAccount.name}</div>
+                                    {paymentAccount.accountNumber && (
+                                        <div className="text-xs text-gray-500">{maskLast4(paymentAccount.accountNumber)}</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {rewardsList.length > 0 && (
                         <div className="mt-2">
