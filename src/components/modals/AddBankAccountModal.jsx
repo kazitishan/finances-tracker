@@ -22,6 +22,7 @@ const initialFormState = {
     expMonth: "",
     expYear: "",
     cvc: "",
+    pin: "",
     notes: "",
 };
 
@@ -64,6 +65,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
     const cardNumberError =
         touched.cardNumber && form.cardNumber.length > 0 && form.cardNumber.length !== 16;
     const cvcError = touched.cvc && form.cvc.length > 0 && form.cvc.length !== 3;
+    const pinError = touched.pin && form.pin.length > 0 && form.pin.length !== 4;
 
     return (
         <Modal title={itemId ? "Edit Bank Account" : "Add Bank Account"} onClose={handleClose}>
@@ -220,6 +222,22 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                 />
                                 {cvcError && (
                                     <span className="field-error">CVC must be 3 digits</span>
+                                )}
+                            </label>
+
+                            <label className="flex flex-col gap-1">
+                                <span className="field-label">PIN</span>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={4}
+                                    className={inputClasses}
+                                    value={form.pin}
+                                    onChange={(e) => updateField("pin", onlyDigits(e.target.value).slice(0, 4))}
+                                    onBlur={() => markTouched("pin")}
+                                />
+                                {pinError && (
+                                    <span className="field-error">PIN must be 4 digits</span>
                                 )}
                             </label>
 

@@ -30,12 +30,13 @@ function BankAccountInfo({ account, onEdit }) {
                 value={interestPaymentOptions.find((option) => option.value === account.interestPaymentDate)?.label}
             />
 
-            {account.type === "Checking" && (account.cardholder || account.cardNumber || account.expMonth || account.cvc) && (
+            {account.type === "Checking" && (account.cardholder || account.cardNumber || account.expMonth || account.cvc || account.pin) && (
                 <>
                     <div className="field-label mt-4 mb-1">Debit Card</div>
                     <DetailRow label="Cardholder" value={account.cardholder} />
                     <RevealableDetailRow label="Card Number" value={account.cardNumber} mask={maskLast4} />
                     <RevealableDetailRow label="CVC" value={account.cvc} mask={maskAll} />
+                    <RevealableDetailRow label="PIN" value={account.pin} mask={maskAll} />
                     <DetailRow
                         label="Expiration"
                         value={account.expMonth && account.expYear ? `${account.expMonth}/${account.expYear}` : ""}
