@@ -5,6 +5,7 @@ import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4, ordinal, formatAccountAge } from "@/lib/formUtils";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
+import LoginDetailRow from "@/components/info/LoginDetailRow";
 
 function DetailRow({ label, value }) {
     if (!value) return null;
@@ -90,6 +91,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
+                    <LoginDetailRow username={card.loginUsername} password={card.loginPassword} />
                     <DetailRow
                         label="Open Date"
                         value={

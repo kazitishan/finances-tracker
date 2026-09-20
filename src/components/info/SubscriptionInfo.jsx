@@ -5,6 +5,7 @@ import Image from "next/image";
 import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { months, ordinal, maskLast4 } from "@/lib/formUtils";
+import LoginDetailRow from "@/components/info/LoginDetailRow";
 
 function DetailRow({ label, value }) {
     if (!value) return null;
@@ -87,6 +88,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
+                    <LoginDetailRow username={subscription.loginUsername} password={subscription.loginPassword} />
                     <DetailRow label="Cost" value={costLabel} />
                     <DetailRow label="Renews" value={renewsLabel} />
 

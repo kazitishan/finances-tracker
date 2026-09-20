@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
+import LoginDetailRow from "@/components/info/LoginDetailRow";
 
 function DetailRow({ label, value }) {
     if (!value) return null;
@@ -75,6 +76,7 @@ function LoanInfo({ loan, onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
+                    <LoginDetailRow username={loan.loginUsername} password={loan.loginPassword} />
                     <DetailRow label="Type" value={typeLabel} />
                     <DetailRow label="Provider" value={loan.provider} />
                     <DetailRow label="Amount Loaned" value={amountLabel} />

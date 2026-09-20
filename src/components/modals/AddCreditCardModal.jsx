@@ -4,11 +4,14 @@ import { useState } from "react";
 import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
 import BankAccountsDropdown from "@/components/dropdowns/BankAccountsDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
+import LoginFields from "@/components/LoginFields";
 
 const initialFormState = {
     name: "",
     bank: "",
     link: "",
+    loginUsername: "",
+    loginPassword: "",
     openMonth: "",
     openYear: "",
     cardholder: "",
@@ -113,6 +116,13 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             onChange={(e) => updateField("link", e.target.value)}
                         />
                     </label>
+
+                    <LoginFields
+                        username={form.loginUsername}
+                        password={form.loginPassword}
+                        onUsernameChange={(value) => updateField("loginUsername", value)}
+                        onPasswordChange={(value) => updateField("loginPassword", value)}
+                    />
 
                     <div className="flex flex-col gap-1">
                         <span className="font-semibold">Open Date</span>

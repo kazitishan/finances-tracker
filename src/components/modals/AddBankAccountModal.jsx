@@ -3,11 +3,14 @@
 import { useState } from "react";
 import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
 import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
+import LoginFields from "@/components/LoginFields";
 
 const initialFormState = {
     name: "",
     bank: "",
     link: "",
+    loginUsername: "",
+    loginPassword: "",
     type: "",
     routingNumber: "",
     accountNumber: "",
@@ -109,6 +112,13 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                             onChange={(e) => updateField("link", e.target.value)}
                         />
                     </label>
+
+                    <LoginFields
+                        username={form.loginUsername}
+                        password={form.loginPassword}
+                        onUsernameChange={(value) => updateField("loginUsername", value)}
+                        onPasswordChange={(value) => updateField("loginPassword", value)}
+                    />
 
                     <div className="flex flex-col gap-1">
                         <span className="font-semibold">Type</span>

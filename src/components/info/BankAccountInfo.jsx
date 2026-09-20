@@ -6,6 +6,7 @@ import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4 } from "@/lib/formUtils";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import { useCopyToClipboard } from "@/components/ToastProvider";
+import LoginDetailRow from "@/components/info/LoginDetailRow";
 
 function DetailRow({ label, value, copyable = false }) {
     const copyToClipboard = useCopyToClipboard();
@@ -80,6 +81,7 @@ function BankAccountInfo({ account, onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
+                    <LoginDetailRow username={account.loginUsername} password={account.loginPassword} />
                     <DetailRow label="Routing Number" value={account.routingNumber} copyable />
                     <RevealableDetailRow label="Account Number" value={account.accountNumber} mask={maskLast4} />
                     <DetailRow label="APY" value={account.apy ? `${account.apy}%` : ""} />

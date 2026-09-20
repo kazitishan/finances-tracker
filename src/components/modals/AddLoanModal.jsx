@@ -4,6 +4,7 @@ import { useState } from "react";
 import LoanProviderDropdown from "@/components/dropdowns/LoanProviderDropdown";
 import LoanTypeDropdown from "@/components/dropdowns/LoanTypeDropdown";
 import { inputClasses, onlyDecimal } from "@/lib/formUtils";
+import LoginFields from "@/components/LoginFields";
 
 const initialFormState = {
     name: "",
@@ -11,6 +12,8 @@ const initialFormState = {
     otherType: "",
     provider: "",
     link: "",
+    loginUsername: "",
+    loginPassword: "",
     amountLoaned: "",
     interestRate: "",
     notes: "",
@@ -106,6 +109,13 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             onChange={(e) => updateField("link", e.target.value)}
                         />
                     </label>
+
+                    <LoginFields
+                        username={form.loginUsername}
+                        password={form.loginPassword}
+                        onUsernameChange={(value) => updateField("loginUsername", value)}
+                        onPasswordChange={(value) => updateField("loginPassword", value)}
+                    />
 
                     <label className="flex flex-col gap-1">
                         <span className="font-semibold">Amount Loaned</span>

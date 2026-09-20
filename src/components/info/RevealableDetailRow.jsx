@@ -4,7 +4,7 @@ import { useState } from "react";
 import { groupFromRight } from "@/lib/formUtils";
 import { useCopyToClipboard } from "@/components/ToastProvider";
 
-function EyeIcon() {
+export function EyeIcon() {
     return (
         <svg
             width="16"
@@ -22,7 +22,7 @@ function EyeIcon() {
     );
 }
 
-function EyeOffIcon() {
+export function EyeOffIcon() {
     return (
         <svg
             width="16"
