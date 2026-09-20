@@ -132,3 +132,22 @@ export function formatDaysUntil(days) {
     if (days === 1) return "tomorrow";
     return `in ${days} days`;
 }
+
+export const interestPaymentOptions = [
+    { value: "first", label: "First day of the month" },
+    { value: "last", label: "Last day of the month" },
+];
+
+// Next first/last day of a month (today included).
+export function nextInterestDate(kind) {
+    const today = startOfToday();
+    if (kind === "first") {
+        const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        return thisMonth >= today ? thisMonth : new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    }
+    if (kind === "last") {
+        const thisMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        return thisMonth >= today ? thisMonth : new Date(today.getFullYear(), today.getMonth() + 2, 0);
+    }
+    return null;
+}

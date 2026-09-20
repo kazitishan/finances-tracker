@@ -1,7 +1,7 @@
 "use client";
 
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { maskAll, maskLast4 } from "@/lib/formUtils";
+import { interestPaymentOptions, maskAll, maskLast4 } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
@@ -25,6 +25,10 @@ function BankAccountInfo({ account, onEdit }) {
             <DetailRow label="Routing Number" value={account.routingNumber} copyable />
             <RevealableDetailRow label="Account Number" value={account.accountNumber} mask={maskLast4} />
             <DetailRow label="APY" value={account.apy ? `${account.apy}%` : ""} />
+            <DetailRow
+                label="Interest Payment Date"
+                value={interestPaymentOptions.find((option) => option.value === account.interestPaymentDate)?.label}
+            />
 
             {account.type === "Checking" && (account.cardholder || account.cardNumber || account.expMonth || account.cvc) && (
                 <>

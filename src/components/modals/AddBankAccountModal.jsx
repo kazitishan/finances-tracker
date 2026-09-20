@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
-import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
+import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy, interestPaymentOptions } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 
@@ -16,6 +16,7 @@ const initialFormState = {
     routingNumber: "",
     accountNumber: "",
     apy: "",
+    interestPaymentDate: "",
     cardholder: "",
     cardNumber: "",
     expMonth: "",
@@ -158,6 +159,22 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                             value={form.apy}
                             onChange={(e) => updateField("apy", onlyDecimal(e.target.value))}
                         />
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Interest Payment Date</span>
+                        <select
+                            className={inputClasses}
+                            value={form.interestPaymentDate}
+                            onChange={(e) => updateField("interestPaymentDate", e.target.value)}
+                        >
+                            <option value="">--</option>
+                            {interestPaymentOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </label>
 
                     {form.type === "Checking" && (

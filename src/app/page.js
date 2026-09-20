@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
-import { daysUntil, formatDaysUntil, nextOccurrence } from "@/lib/formUtils";
+import { daysUntil, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 
-function buildPayments(cards, subscriptions) {
+function buildPayments(cards, subscriptions, bankAccounts) {
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -31,7 +31,16 @@ function buildPayments(cards, subscriptions) {
         : nextOccurrence(subscription.billingDay),
     }));
 
-  return [...cardPayments, ...subscriptionPayments]
+  const interestPayments = bankAccounts.map((account) => ({
+    id: `interest-${account.id}`,
+    kind: "Interest payment",
+    href: "/bank-accounts",
+    name: account.name || account.bank || "Unnamed Account",
+    image: banks.find((bank) => bank.name === account.bank)?.image,
+    date: nextInterestDate(account.interestPaymentDate),
+  }));
+
+  return [...cardPayments, ...subscriptionPayments, ...interestPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -45,8 +54,9 @@ export default function Home() {
     Promise.all([
       fetch("/api/credit-cards").then((res) => res.json()),
       fetch("/api/subscriptions").then((res) => res.json()),
-    ]).then(([cards, subscriptions]) => {
-      setPayments(buildPayments(cards, subscriptions));
+      fetch("/api/bank-accounts").then((res) => res.json()),
+    ]).then(([cards, subscriptions, bankAccounts]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts));
       setLoaded(true);
     });
   }, []);
@@ -55,14 +65,15 @@ export default function Home() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
-        <p className="mt-1 text-sm text-muted">Upcoming payments, soonest first.</p>
+        <p className="mt-1 text-sm text-muted">Bills and interest coming up, soonest first.</p>
       </div>
 
       {loaded && payments.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-16 text-center text-sm text-muted">
-          No upcoming payments. Add a due date to a{" "}
-          <Link href="/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link> or a{" "}
-          <Link href="/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>.
+          Nothing coming up. Add a due date to a{" "}
+          <Link href="/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link>,{" "}
+          <Link href="/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>, or an interest
+          date to a <Link href="/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
         </div>
       )}
 
