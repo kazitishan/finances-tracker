@@ -171,6 +171,21 @@ body {
     border: 1px solid var(--border);
   }
 
+  .chip-accent {
+    @apply gap-1.5 px-2.5 py-1 transition-transform duration-150 hover:-translate-y-px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: transparent;
+  }
+  .chip-accent::before {
+    content: "";
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+
   .link-btn {
     @apply inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium shrink-0 transition-colors duration-150;
     color: var(--accent);

@@ -23,10 +23,10 @@ function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, link, o
                     {highlight && (
                         <div className="text-sm font-medium text-[var(--accent)] tabular-nums truncate">{highlight}</div>
                     )}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm text-muted truncate">{subtitle || "—"}</span>
-                        {badges}
-                    </div>
+                    <div className="text-sm text-muted truncate">{subtitle || "—"}</div>
+                    {badges && badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">{badges}</div>
+                    )}
                 </div>
                 {link && (
                     <a

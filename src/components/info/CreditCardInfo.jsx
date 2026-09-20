@@ -29,7 +29,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             title={card.name || "Unnamed Card"}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
             badges={usageList.map((usage, index) => (
-                <span key={index} className="chip">{usage}</span>
+                <span key={index} className="chip chip-accent">{usage}</span>
             ))}
             link={card.link}
             onEdit={onEdit}

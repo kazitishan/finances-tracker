@@ -81,7 +81,7 @@ export default function CreditCards() {
         count={loaded ? cards.length : null}
         stats={[
           { label: "Average Age", value: averageAgeLabel },
-          { label: "Total Credit Line", value: totalCreditLine > 0 ? `$${totalCreditLine.toLocaleString()}` : null },
+          { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? `$${totalCreditLine.toLocaleString()}` : null },
         ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
