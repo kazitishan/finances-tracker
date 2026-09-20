@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { groupFromRight } from "@/lib/formUtils";
+import { useCopyToClipboard } from "@/components/ToastProvider";
 
 function EyeIcon() {
     return (
@@ -49,6 +50,7 @@ function handleCopy(e) {
 
 function RevealableDetailRow({ label, value, mask }) {
     const [revealed, setRevealed] = useState(false);
+    const copyToClipboard = useCopyToClipboard();
 
     if (!value) return null;
 
@@ -56,7 +58,12 @@ function RevealableDetailRow({ label, value, mask }) {
         <div className="flex justify-between items-center gap-4 text-sm py-1">
             <span className="text-gray-500">{label}</span>
             <span className="flex items-center gap-2">
-                <span className="font-medium text-right break-all" onCopy={handleCopy}>
+                <span
+                    className="font-medium text-right break-all cursor-pointer"
+                    onCopy={handleCopy}
+                    onClick={() => copyToClipboard(value, label)}
+                    title="Click to copy"
+                >
                     {revealed ? groupFromRight(value) : mask(value)}
                 </span>
                 <button

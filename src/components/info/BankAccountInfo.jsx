@@ -5,13 +5,21 @@ import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4 } from "@/lib/formUtils";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
+import { useCopyToClipboard } from "@/components/ToastProvider";
 
-function DetailRow({ label, value }) {
+function DetailRow({ label, value, copyable = false }) {
+    const copyToClipboard = useCopyToClipboard();
     if (!value) return null;
     return (
         <div className="flex justify-between gap-4 text-sm py-1">
             <span className="text-gray-500">{label}</span>
-            <span className="font-medium text-right break-all">{value}</span>
+            <span
+                className={`font-medium text-right break-all${copyable ? " cursor-pointer" : ""}`}
+                onClick={copyable ? () => copyToClipboard(value, label) : undefined}
+                title={copyable ? "Click to copy" : undefined}
+            >
+                {value}
+            </span>
         </div>
     );
 }
@@ -72,7 +80,7 @@ function BankAccountInfo({ account, onEdit }) {
 
             {expanded && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
-                    <DetailRow label="Routing Number" value={account.routingNumber} />
+                    <DetailRow label="Routing Number" value={account.routingNumber} copyable />
                     <RevealableDetailRow label="Account Number" value={account.accountNumber} mask={maskLast4} />
                     <DetailRow label="APY" value={account.apy ? `${account.apy}%` : ""} />
 
