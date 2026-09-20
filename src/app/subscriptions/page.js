@@ -68,12 +68,34 @@ export default function Subscriptions() {
     setSubscriptions(await res.json());
   }
 
+  const monthlyTotal = subscriptions
+    .filter((subscription) => subscription.billingCycle !== "year" && subscription.cost)
+    .reduce((sum, subscription) => sum + Number(subscription.cost), 0);
+
+  const yearlyPayments = subscriptions
+    .filter((subscription) => subscription.billingCycle === "year" && subscription.cost)
+    .reduce((sum, subscription) => sum + Number(subscription.cost), 0);
+  const yearlyTotal = monthlyTotal * 12 + yearlyPayments;
+
   return (
     <div>
       <PageHeader
         title="Subscriptions"
         count={loaded ? subscriptions.length : null}
-        stats={[]}
+        stats={[
+          {
+            label: "Monthly Total",
+            value: monthlyTotal > 0
+              ? `$${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : null,
+          },
+          {
+            label: "Yearly Total",
+            value: yearlyTotal > 0
+              ? `$${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : null,
+          },
+        ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
           setIsRearrangeOpen(true);
