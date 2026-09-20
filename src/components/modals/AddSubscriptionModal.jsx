@@ -18,6 +18,7 @@ const initialFormState = {
     billingCycle: "month",
     billingMonth: "",
     billingDay: "",
+    notes: "",
 };
 
 function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved }) {
@@ -155,6 +156,17 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                             ))}
                         </select>
                     </label>
+
+                    <div className="form-section">
+                        <span className="field-label">Notes</span>
+
+                        <textarea
+                            rows={4}
+                            className={inputClasses}
+                            value={form.notes}
+                            onChange={(e) => updateField("notes", e.target.value)}
+                        />
+                    </div>
 
                     <button
                         type="button"

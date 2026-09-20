@@ -49,6 +49,13 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}
                 />
             )}
+
+            {subscription.notes && (
+                <div className="mt-3">
+                    <div className="detail-label text-sm mb-1">Notes</div>
+                    <div className="text-sm whitespace-pre-wrap">{subscription.notes}</div>
+                </div>
+            )}
         </InfoCard>
     );
 }
