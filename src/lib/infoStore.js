@@ -8,6 +8,7 @@ const DEFAULT_INFO = {
     "credit cards": [],
     subscriptions: [],
     loans: [],
+    "investment accounts": [],
 };
 
 const CATEGORY_KEYS = {
@@ -15,6 +16,7 @@ const CATEGORY_KEYS = {
     "credit-cards": "credit cards",
     subscriptions: "subscriptions",
     loans: "loans",
+    "investment-accounts": "investment accounts",
 };
 
 export function getCategoryKey(category) {
