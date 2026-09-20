@@ -60,12 +60,24 @@ export default function Loans() {
     setLoans(await res.json());
   }
 
+  const monthlyTotal = loans
+    .filter((loan) => loan.monthlyPayment)
+    .reduce((sum, loan) => sum + Number(loan.monthlyPayment), 0);
+  const yearlyTotal = monthlyTotal * 12;
+  const formatMoney = (amount) =>
+    amount > 0
+      ? `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : null;
+
   return (
     <div>
       <PageHeader
         title="Loans"
         count={loaded ? loans.length : null}
-        stats={[]}
+        stats={[
+          { label: "Monthly Total", value: formatMoney(monthlyTotal) },
+          { label: "Yearly Total", value: formatMoney(yearlyTotal) },
+        ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
           setIsRearrangeOpen(true);

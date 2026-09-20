@@ -3,7 +3,7 @@
 import { useState } from "react";
 import LoanProviderDropdown from "@/components/dropdowns/LoanProviderDropdown";
 import LoanTypeDropdown from "@/components/dropdowns/LoanTypeDropdown";
-import { inputClasses, onlyDecimal } from "@/lib/formUtils";
+import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 
@@ -17,6 +17,8 @@ const initialFormState = {
     loginPassword: "",
     amountLoaned: "",
     interestRate: "",
+    monthlyPayment: "",
+    paymentDay: "",
     notes: "",
 };
 
@@ -125,6 +127,36 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             />
                             <span>%</span>
                         </div>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Monthly Loan Payment</span>
+                        <div className="flex items-center gap-2">
+                            <span>$</span>
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                className={inputClasses}
+                                value={form.monthlyPayment}
+                                onChange={(e) => updateField("monthlyPayment", onlyDecimal(e.target.value))}
+                            />
+                        </div>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Monthly Loan Payment Date</span>
+                        <select
+                            className={inputClasses}
+                            value={form.paymentDay}
+                            onChange={(e) => updateField("paymentDay", e.target.value)}
+                        >
+                            <option value="">--</option>
+                            {dueDates.map((dueDate) => (
+                                <option key={dueDate.value} value={dueDate.value}>
+                                    {dueDate.label.replace(" of every month", "")}
+                                </option>
+                            ))}
+                        </select>
                     </label>
 
                     <div className="form-section">

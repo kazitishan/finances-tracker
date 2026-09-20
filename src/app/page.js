@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
 import { daysUntil, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 
-function buildPayments(cards, subscriptions, bankAccounts) {
+function buildPayments(cards, subscriptions, bankAccounts, loans) {
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -40,7 +41,17 @@ function buildPayments(cards, subscriptions, bankAccounts) {
     date: nextInterestDate(account.interestPaymentDate),
   }));
 
-  return [...cardPayments, ...subscriptionPayments, ...interestPayments]
+  const loanPayments = loans.map((loan) => ({
+    id: `loan-${loan.id}`,
+    kind: "Loan payment",
+    href: "/loans",
+    name: loan.name || loan.provider || "Unnamed Loan",
+    image: loanProviders.find((provider) => provider.name === loan.provider)?.image,
+    amount: loan.monthlyPayment ? `$${Number(loan.monthlyPayment).toFixed(2)}` : null,
+    date: nextOccurrence(loan.paymentDay),
+  }));
+
+  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -55,8 +66,9 @@ export default function Home() {
       fetch("/api/credit-cards").then((res) => res.json()),
       fetch("/api/subscriptions").then((res) => res.json()),
       fetch("/api/bank-accounts").then((res) => res.json()),
-    ]).then(([cards, subscriptions, bankAccounts]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts));
+      fetch("/api/loans").then((res) => res.json()),
+    ]).then(([cards, subscriptions, bankAccounts, loans]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans));
       setLoaded(true);
     });
   }, []);

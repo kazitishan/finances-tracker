@@ -33,7 +33,8 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
             image={subscriptionInfo?.image}
             imageAlt={subscriptionInfo?.name}
             title={subscription.name || "Unnamed Subscription"}
-            subtitle={[subscription.subscription, costLabel].filter(Boolean).join(" · ")}
+            subtitle={subscription.subscription}
+            highlight={costLabel}
             link={subscription.link}
             onEdit={onEdit}
         >

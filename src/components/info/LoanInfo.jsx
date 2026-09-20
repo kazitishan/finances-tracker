@@ -2,6 +2,7 @@
 
 import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
+import { ordinal } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
@@ -13,6 +14,10 @@ function LoanInfo({ loan, onEdit }) {
     const amountLabel = loan.amountLoaned
         ? `$${Number(loan.amountLoaned).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : null;
+    const paymentLabel = loan.monthlyPayment
+        ? `$${Number(loan.monthlyPayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`
+        : null;
+    const paymentDateLabel = loan.paymentDay ? `${ordinal(Number(loan.paymentDay))} of every month` : null;
     const rateLabel = loan.interestRate ? `${loan.interestRate}%` : null;
 
     return (
@@ -21,6 +26,7 @@ function LoanInfo({ loan, onEdit }) {
             imageAlt={providerInfo?.name}
             title={loan.name || "Unnamed Loan"}
             subtitle={[typeLabel, loan.provider, amountLabel].filter(Boolean).join(" · ")}
+            highlight={paymentLabel}
             link={loan.link}
             onEdit={onEdit}
         >
@@ -29,6 +35,8 @@ function LoanInfo({ loan, onEdit }) {
             <DetailRow label="Provider" value={loan.provider} />
             <DetailRow label="Amount Loaned" value={amountLabel} />
             <DetailRow label="Interest Rate" value={rateLabel} />
+            <DetailRow label="Monthly Loan Payment" value={paymentLabel} />
+            <DetailRow label="Monthly Loan Payment Date" value={paymentDateLabel} />
 
             {loan.notes && (
                 <div className="mt-2">

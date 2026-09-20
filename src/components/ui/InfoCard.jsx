@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowUpRightIcon, ChevronDownIcon, PencilIcon } from "@/components/ui/icons";
 
-function InfoCard({ image, imageAlt, title, subtitle, badges, link, onEdit, children }) {
+function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, link, onEdit, children }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -20,6 +20,9 @@ function InfoCard({ image, imageAlt, title, subtitle, badges, link, onEdit, chil
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{title}</div>
+                    {highlight && (
+                        <div className="text-sm font-medium text-[var(--accent)] tabular-nums truncate">{highlight}</div>
+                    )}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm text-muted truncate">{subtitle || "—"}</span>
                         {badges}
