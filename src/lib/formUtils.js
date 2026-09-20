@@ -101,3 +101,34 @@ export function stripSpacesOnCopy(e) {
     e.clipboardData.setData("text/plain", selected.replace(/\s/g, ""));
     e.preventDefault();
 }
+
+function startOfToday() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+// Next date (today included) that falls on `day`, optionally in a specific month ("01"-"12").
+export function nextOccurrence(day, month) {
+    const today = startOfToday();
+    const dayNumber = Number(day);
+    if (!dayNumber) return null;
+
+    if (month) {
+        const monthIndex = Number(month) - 1;
+        const thisYear = new Date(today.getFullYear(), monthIndex, dayNumber);
+        return thisYear >= today ? thisYear : new Date(today.getFullYear() + 1, monthIndex, dayNumber);
+    }
+
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayNumber);
+    return thisMonth >= today ? thisMonth : new Date(today.getFullYear(), today.getMonth() + 1, dayNumber);
+}
+
+export function daysUntil(date) {
+    return Math.round((date - startOfToday()) / 86400000);
+}
+
+export function formatDaysUntil(days) {
+    if (days === 0) return "today";
+    if (days === 1) return "tomorrow";
+    return `in ${days} days`;
+}

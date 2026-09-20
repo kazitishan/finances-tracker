@@ -1,103 +1,99 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AddBankAccountModal from "@/components/modals/AddBankAccountModal";
-import BankAccountInfo from "@/components/info/BankAccountInfo";
-import RearrangeModal from "@/components/modals/RearrangeModal";
-import PageHeader from "@/components/ui/PageHeader";
-import EmptyState from "@/components/ui/EmptyState";
+import Link from "next/link";
+import Image from "next/image";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
+import { daysUntil, formatDaysUntil, nextOccurrence } from "@/lib/formUtils";
+
+function buildPayments(cards, subscriptions) {
+  const cardPayments = cards
+    .map((card) => ({
+      id: `card-${card.id}`,
+      kind: "Credit card payment",
+      href: "/credit-cards",
+      name: card.name || card.bank || "Unnamed Card",
+      image: banks.find((bank) => bank.name === card.bank)?.image,
+      date: nextOccurrence(card.dueDate),
+    }));
+
+  const subscriptionPayments = subscriptions
+    .map((subscription) => ({
+      id: `subscription-${subscription.id}`,
+      kind: "Subscription payment",
+      href: "/subscriptions",
+      name: subscription.name || subscription.subscription || "Unnamed Subscription",
+      image: subscriptionCompanies.find((company) => company.name === subscription.subscription)?.image,
+      amount: subscription.cost ? `$${Number(subscription.cost).toFixed(2)}` : null,
+      date: subscription.billingCycle === "year"
+        ? nextOccurrence(subscription.billingDay, subscription.billingMonth)
+        : nextOccurrence(subscription.billingDay),
+    }));
+
+  return [...cardPayments, ...subscriptionPayments]
+    .filter((payment) => payment.date)
+    .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
+    .sort((a, b) => a.days - b.days);
+}
 
 export default function Home() {
-  const [accounts, setAccounts] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loaded, setLoaded] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState(null);
-  const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
-  const [addModalKey, setAddModalKey] = useState(0);
-  const [rearrangeModalKey, setRearrangeModalKey] = useState(0);
 
   useEffect(() => {
-    fetch("/api/bank-accounts")
-      .then((res) => res.json())
-      .then((data) => {
-        setAccounts(data);
-        setLoaded(true);
-      });
+    Promise.all([
+      fetch("/api/credit-cards").then((res) => res.json()),
+      fetch("/api/subscriptions").then((res) => res.json()),
+    ]).then(([cards, subscriptions]) => {
+      setPayments(buildPayments(cards, subscriptions));
+      setLoaded(true);
+    });
   }, []);
-
-  function handleSaved(item) {
-    setAccounts((prev) => {
-      const exists = prev.some((account) => account.id === item.id);
-      return exists ? prev.map((account) => (account.id === item.id ? item : account)) : [...prev, item];
-    });
-  }
-
-  function handleAddClick() {
-    setEditingAccount(null);
-    setAddModalKey((key) => key + 1);
-    setIsAddOpen(true);
-  }
-
-  function handleEdit(account) {
-    setEditingAccount(account);
-    setAddModalKey((key) => key + 1);
-    setIsAddOpen(true);
-  }
-
-  async function handleDelete(id) {
-    await fetch(`/api/bank-accounts/${id}`, { method: "DELETE" });
-    setAccounts((prev) => prev.filter((account) => account.id !== id));
-  }
-
-  async function handleReorder(orderedIds) {
-    const res = await fetch("/api/bank-accounts", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order: orderedIds }),
-    });
-    setAccounts(await res.json());
-  }
 
   return (
     <div>
-      <PageHeader
-        title="Bank Accounts"
-        count={loaded ? accounts.length : null}
-        stats={[]}
-        onRearrange={() => {
-          setRearrangeModalKey((key) => key + 1);
-          setIsRearrangeOpen(true);
-        }}
-        onAdd={handleAddClick}
-      />
-
-      {/* All bank accounts */}
-      {loaded && accounts.length === 0 && <EmptyState noun="bank accounts" onAdd={handleAddClick} />}
-
-      <div className="flex flex-col gap-3">
-        {accounts.map((account) => (
-          <BankAccountInfo key={account.id} account={account} onEdit={() => handleEdit(account)} />
-        ))}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
+        <p className="mt-1 text-sm text-muted">Upcoming payments, soonest first.</p>
       </div>
 
-      <AddBankAccountModal
-        key={`add-${addModalKey}`}
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        itemId={editingAccount?.id}
-        initialData={editingAccount}
-        onSaved={handleSaved}
-      />
+      {loaded && payments.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-16 text-center text-sm text-muted">
+          No upcoming payments. Add a due date to a{" "}
+          <Link href="/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link> or a{" "}
+          <Link href="/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>.
+        </div>
+      )}
 
-      <RearrangeModal
-        key={`rearrange-${rearrangeModalKey}`}
-        isOpen={isRearrangeOpen}
-        onClose={() => setIsRearrangeOpen(false)}
-        items={accounts}
-        getLabel={(account) => account.name || account.bank || "Unnamed Account"}
-        onReorder={handleReorder}
-        onDelete={handleDelete}
-      />
+      <div className="flex flex-col gap-3">
+        {payments.map((payment) => (
+          <Link key={payment.id} href={payment.href} className="card flex items-center gap-3 p-4">
+            <div className="logo-tile">
+              {payment.image && (
+                <Image src={payment.image} alt="" width={40} height={40} className="h-full w-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium">{payment.name}</div>
+              <div className="truncate text-sm text-muted">
+                {payment.kind}
+                {payment.amount ? ` · ${payment.amount}` : ""} ·{" "}
+                {payment.date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+              </div>
+            </div>
+            <span
+              className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${
+                payment.days <= 3
+                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "bg-[var(--surface-hover)] text-muted"
+              }`}
+            >
+              {formatDaysUntil(payment.days)}
+            </span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
