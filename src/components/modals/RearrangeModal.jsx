@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
+import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from "@/components/ui/icons";
 
 function RearrangeModal({ isOpen, onClose, items, getLabel, onReorder, onDelete }) {
     const [order, setOrder] = useState(items);
@@ -37,75 +39,52 @@ function RearrangeModal({ isOpen, onClose, items, getLabel, onReorder, onDelete 
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-            <div
-                className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Rearrange</h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none"
-                        aria-label="Close"
+        <Modal title="Rearrange" onClose={onClose}>
+            {order.length === 0 && (
+                <p className="text-muted text-sm">Nothing to rearrange yet.</p>
+            )}
+
+            <ul className="flex flex-col gap-2">
+                {order.map((item, index) => (
+                    <li
+                        key={item.id}
+                        className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-3 pr-1.5 transition-colors hover:border-[var(--border-strong)]"
                     >
-                        ×
-                    </button>
-                </div>
-
-                {order.length === 0 && (
-                    <p className="text-gray-500 text-sm">Nothing to rearrange yet.</p>
-                )}
-
-                <ul className="flex flex-col gap-2">
-                    {order.map((item, index) => (
-                        <li
-                            key={item.id}
-                            className="flex items-center gap-3 border border-gray-200 rounded-lg p-2"
+                        <span className="flex-1 truncate text-sm font-medium">{getLabel(item)}</span>
+                        <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => moveUp(index)}
+                            className="icon-btn"
+                            aria-label="Move up"
                         >
-                            <div className="flex flex-col">
-                                <button
-                                    type="button"
-                                    disabled={index === 0}
-                                    onClick={() => moveUp(index)}
-                                    className="text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer leading-none"
-                                    aria-label="Move up"
-                                >
-                                    ▲
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={index === order.length - 1}
-                                    onClick={() => moveDown(index)}
-                                    className="text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer leading-none"
-                                    aria-label="Move down"
-                                >
-                                    ▼
-                                </button>
-                            </div>
-                            <span className="flex-1 truncate">{getLabel(item)}</span>
-                            <button
-                                type="button"
-                                onClick={() => handleDelete(item.id)}
-                                className="text-red-600 hover:text-red-800 cursor-pointer"
-                                aria-label="Delete"
-                            >
-                                Delete
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                            <ArrowUpIcon size={15} />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={index === order.length - 1}
+                            onClick={() => moveDown(index)}
+                            className="icon-btn"
+                            aria-label="Move down"
+                        >
+                            <ArrowDownIcon size={15} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleDelete(item.id)}
+                            className="icon-btn hover:!text-[var(--danger)] hover:!bg-[var(--danger-soft)]"
+                            aria-label="Delete"
+                        >
+                            <TrashIcon size={15} />
+                        </button>
+                    </li>
+                ))}
+            </ul>
 
-                <button
-                    type="button"
-                    onClick={handleDone}
-                    className="mt-4 w-full bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-                >
-                    Done
-                </button>
-            </div>
-        </div>
+            <button type="button" onClick={handleDone} className="btn btn-primary mt-5 w-full py-2.5">
+                Done
+            </button>
+        </Modal>
     );
 }
 

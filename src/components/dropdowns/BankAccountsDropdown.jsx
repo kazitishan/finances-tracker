@@ -53,7 +53,7 @@ function BankAccountsDropdown({ value, onChange }) {
             <button
                 type="button"
                 onClick={() => (open ? closeDropdown() : setOpen(true))}
-                className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer"
+                className="field flex items-center justify-between gap-2 cursor-pointer text-left"
             >
                 <span className="flex items-center gap-2 min-w-0">
                     {selectedAccount && bankLogo(selectedAccount.bank) && (
@@ -65,25 +65,25 @@ function BankAccountsDropdown({ value, onChange }) {
                             className="object-contain shrink-0"
                         />
                     )}
-                    <span className={`truncate ${selectedAccount ? "" : "text-gray-400"}`}>
+                    <span className={`truncate ${selectedAccount ? "" : "text-muted"}`}>
                         {selectedAccount
                             ? `${selectedAccount.name}${selectedAccount.accountNumber ? ` · ${maskLast4(selectedAccount.accountNumber)}` : ""}`
                             : "Select a payment method"}
                     </span>
                 </span>
-                <span className="text-gray-400 shrink-0">▾</span>
+                <span className="text-muted text-xs shrink-0">▾</span>
             </button>
 
             {open && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
-                    <div className="p-2 border-b border-gray-200">
+                <div className="dropdown-panel">
+                    <div className="p-2 border-b border-[var(--border)]">
                         <input
                             ref={searchInputRef}
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search bank accounts..."
-                            className="w-full border border-gray-300 rounded-md p-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            className="field py-1.5"
                         />
                     </div>
                     <ul className="max-h-56 overflow-y-auto">
@@ -96,7 +96,7 @@ function BankAccountsDropdown({ value, onChange }) {
                                             onChange(account.id);
                                             closeDropdown();
                                         }}
-                                        className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer text-left"
+                                        className="dropdown-item"
                                     >
                                         {bankLogo(account.bank) && (
                                             <Image
@@ -110,14 +110,14 @@ function BankAccountsDropdown({ value, onChange }) {
                                         <span className="min-w-0 flex-1 truncate">
                                             {account.name}
                                             {account.accountNumber && (
-                                                <span className="text-gray-400"> · {maskLast4(account.accountNumber)}</span>
+                                                <span className="text-muted"> · {maskLast4(account.accountNumber)}</span>
                                             )}
                                         </span>
                                     </button>
                                 </li>
                             ))
                         ) : (
-                            <li className="p-2 text-sm text-gray-400">No bank accounts found</li>
+                            <li className="px-3 py-2 text-sm text-muted">No bank accounts found</li>
                         )}
                     </ul>
                 </div>

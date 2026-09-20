@@ -55,11 +55,11 @@ function RevealableDetailRow({ label, value, mask }) {
     if (!value) return null;
 
     return (
-        <div className="flex justify-between items-center gap-4 text-sm py-1">
-            <span className="text-gray-500">{label}</span>
+        <div className="detail-row">
+            <span className="detail-label">{label}</span>
             <span className="flex items-center gap-2">
                 <span
-                    className="font-medium text-right break-all cursor-pointer"
+                    className="font-medium text-right break-all copyable"
                     onCopy={handleCopy}
                     onClick={() => copyToClipboard(value, label)}
                     title="Click to copy"
@@ -69,7 +69,7 @@ function RevealableDetailRow({ label, value, mask }) {
                 <button
                     type="button"
                     onClick={() => setRevealed((prev) => !prev)}
-                    className="text-gray-400 hover:text-gray-700 cursor-pointer"
+                    className="icon-btn"
                     aria-label={revealed ? `Hide ${label}` : `Show ${label}`}
                 >
                     {revealed ? <EyeIcon /> : <EyeOffIcon />}

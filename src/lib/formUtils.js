@@ -61,7 +61,7 @@ for (let day = 1; day <= 28; day++) {
     dueDates.push({ value: day, label: `${ordinal(day)} of every month` });
 }
 
-export const inputClasses = "w-full border border-gray-300 rounded-lg p-2 bg-white";
+export const inputClasses = "field";
 
 export function onlyDigits(value) {
     return value.replace(/\D/g, "");

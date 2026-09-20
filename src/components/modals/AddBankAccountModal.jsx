@@ -4,6 +4,7 @@ import { useState } from "react";
 import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
 import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
+import Modal from "@/components/ui/Modal";
 
 const initialFormState = {
     name: "",
@@ -64,29 +65,10 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
     const cvcError = touched.cvc && form.cvc.length > 0 && form.cvc.length !== 3;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={handleClose}
-        >
-            <div
-                className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">{itemId ? "Edit Bank Account" : "Add Bank Account"}</h2>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none"
-                        aria-label="Close"
-                    >
-                        ×
-                    </button>
-                </div>
-
+        <Modal title={itemId ? "Edit Bank Account" : "Add Bank Account"} onClose={handleClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Name</span>
+                        <span className="field-label">Name</span>
                         <input
                             type="text"
                             className={inputClasses}
@@ -96,7 +78,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Bank</span>
+                        <span className="field-label">Bank</span>
                         <BankCompaniesDropdown
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
@@ -104,7 +86,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Link</span>
+                        <span className="field-label">Link</span>
                         <input
                             type="url"
                             className={inputClasses}
@@ -121,7 +103,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     />
 
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Type</span>
+                        <span className="field-label">Type</span>
                         <div className="flex gap-4">
                             <label className="flex items-center gap-2">
                                 <input
@@ -145,7 +127,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </div>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Routing Number</span>
+                        <span className="field-label">Routing Number</span>
                         <input
                             type="text"
                             inputMode="numeric"
@@ -156,7 +138,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Account Number</span>
+                        <span className="field-label">Account Number</span>
                         <input
                             type="text"
                             inputMode="numeric"
@@ -168,7 +150,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">APY</span>
+                        <span className="field-label">APY</span>
                         <input
                             type="text"
                             inputMode="decimal"
@@ -179,11 +161,11 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </label>
 
                     {form.type === "Checking" && (
-                        <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                            <span className="font-semibold">Debit Card Info</span>
+                        <div className="form-section">
+                            <span className="field-label">Debit Card Info</span>
 
                             <label className="flex flex-col gap-1">
-                                <span className="font-semibold">Cardholder</span>
+                                <span className="field-label">Cardholder</span>
                                 <input
                                     type="text"
                                     className={inputClasses}
@@ -193,7 +175,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                             </label>
 
                             <label className="flex flex-col gap-1">
-                                <span className="font-semibold">Card Number</span>
+                                <span className="field-label">Card Number</span>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -204,12 +186,12 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                     onCopy={stripSpacesOnCopy}
                                 />
                                 {cardNumberError && (
-                                    <span className="text-red-600 text-sm">Card number must be 16 digits</span>
+                                    <span className="field-error">Card number must be 16 digits</span>
                                 )}
                             </label>
 
                             <label className="flex flex-col gap-1">
-                                <span className="font-semibold">CVC</span>
+                                <span className="field-label">CVC</span>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -220,13 +202,13 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                     onBlur={() => markTouched("cvc")}
                                 />
                                 {cvcError && (
-                                    <span className="text-red-600 text-sm">CVC must be 3 digits</span>
+                                    <span className="field-error">CVC must be 3 digits</span>
                                 )}
                             </label>
 
                             <div className="flex gap-4">
                                 <label className="flex flex-col gap-1 flex-1">
-                                    <span className="font-semibold">Expiration Month</span>
+                                    <span className="field-label">Expiration Month</span>
                                     <select
                                         className={inputClasses}
                                         value={form.expMonth}
@@ -242,7 +224,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                                 </label>
 
                                 <label className="flex flex-col gap-1 flex-1">
-                                    <span className="font-semibold">Expiration Year</span>
+                                    <span className="field-label">Expiration Year</span>
                                     <select
                                         className={inputClasses}
                                         value={form.expYear}
@@ -260,8 +242,8 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">Notes</span>
+                    <div className="form-section">
+                        <span className="field-label">Notes</span>
 
                         <textarea
                             rows={4}
@@ -275,13 +257,12 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="btn btn-primary mt-2 py-2.5"
                     >
                         {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
 

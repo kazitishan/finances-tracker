@@ -5,6 +5,7 @@ import SubscriptionDropdown from "@/components/dropdowns/SubscriptionDropdown";
 import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
+import Modal from "@/components/ui/Modal";
 
 const initialFormState = {
     name: "",
@@ -51,29 +52,10 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
     }
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={handleClose}
-        >
-            <div
-                className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">{itemId ? "Edit Subscription" : "Add Subscription"}</h2>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none"
-                        aria-label="Close"
-                    >
-                        ×
-                    </button>
-                </div>
-
+        <Modal title={itemId ? "Edit Subscription" : "Add Subscription"} onClose={handleClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Name</span>
+                        <span className="field-label">Name</span>
                         <input
                             type="text"
                             className={inputClasses}
@@ -83,7 +65,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Subscription</span>
+                        <span className="field-label">Subscription</span>
                         <SubscriptionDropdown
                             value={form.subscription}
                             onChange={(subscription) => updateField("subscription", subscription)}
@@ -91,7 +73,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Link</span>
+                        <span className="field-label">Link</span>
                         <input
                             type="url"
                             className={inputClasses}
@@ -108,7 +90,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     />
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Payment Method</span>
+                        <span className="field-label">Payment Method</span>
                         <PaymentMethodDropdown
                             value={form.paymentMethod}
                             onChange={(paymentMethod) => updateField("paymentMethod", paymentMethod)}
@@ -116,7 +98,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     </label>
 
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Billing</span>
+                        <span className="field-label">Billing</span>
                         <div className="flex items-center gap-2">
                             <span>$</span>
                             <input
@@ -140,7 +122,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
 
                     {form.billingCycle === "year" && (
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Renewal Month</span>
+                            <span className="field-label">Renewal Month</span>
                             <select
                                 className={inputClasses}
                                 value={form.billingMonth}
@@ -157,7 +139,7 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     )}
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">
+                        <span className="field-label">
                             {form.billingCycle === "year" ? "Renewal Day" : "Day of the Month"}
                         </span>
                         <select
@@ -178,13 +160,12 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="btn btn-primary mt-2 py-2.5"
                     >
                         {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
 

@@ -37,14 +37,14 @@ function LoanTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
                 <button
                     type="button"
                     onClick={() => setOpen((prev) => !prev)}
-                    className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer"
+                    className="field flex items-center justify-between gap-2 cursor-pointer text-left"
                 >
-                    <span className={value ? "" : "text-gray-400"}>{value || "Select a loan type"}</span>
-                    <span className="text-gray-400">▾</span>
+                    <span className={value ? "" : "text-muted"}>{value || "Select a loan type"}</span>
+                    <span className="text-muted text-xs">▾</span>
                 </button>
 
                 {open && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <div className="dropdown-panel">
                         <ul className="max-h-56 overflow-y-auto">
                             {loanTypes.map((type) => (
                                 <li key={type}>
@@ -54,7 +54,7 @@ function LoanTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
                                             onChange(type);
                                             setOpen(false);
                                         }}
-                                        className="w-full p-2 hover:bg-gray-100 cursor-pointer text-left"
+                                        className="dropdown-item"
                                     >
                                         {type}
                                     </button>

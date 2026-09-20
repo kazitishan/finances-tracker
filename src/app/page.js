@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import AddBankAccountModal from "@/components/modals/AddBankAccountModal";
 import BankAccountInfo from "@/components/info/BankAccountInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function Home() {
   const [accounts, setAccounts] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
@@ -16,7 +19,10 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/bank-accounts")
       .then((res) => res.json())
-      .then(setAccounts);
+      .then((data) => {
+        setAccounts(data);
+        setLoaded(true);
+      });
   }, []);
 
   function handleSaved(item) {
@@ -54,27 +60,21 @@ export default function Home() {
 
   return (
     <div>
-      {/* Rearrange + Add buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => {
-            setRearrangeModalKey((key) => key + 1);
-            setIsRearrangeOpen(true);
-          }}
-          className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
-        >
-          Rearrange
-        </button>
-        <button
-          onClick={handleAddClick}
-          className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-        >
-          Add
-        </button>
-      </div>
+      <PageHeader
+        title="Bank Accounts"
+        count={loaded ? accounts.length : null}
+        stats={[]}
+        onRearrange={() => {
+          setRearrangeModalKey((key) => key + 1);
+          setIsRearrangeOpen(true);
+        }}
+        onAdd={handleAddClick}
+      />
 
       {/* All bank accounts */}
-      <div className="flex flex-col gap-4 mt-4">
+      {loaded && accounts.length === 0 && <EmptyState noun="bank accounts" onAdd={handleAddClick} />}
+
+      <div className="flex flex-col gap-3">
         {accounts.map((account) => (
           <BankAccountInfo key={account.id} account={account} onEdit={() => handleEdit(account)} />
         ))}

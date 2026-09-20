@@ -5,6 +5,7 @@ import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown"
 import BankAccountsDropdown from "@/components/dropdowns/BankAccountsDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
+import Modal from "@/components/ui/Modal";
 
 const initialFormState = {
     name: "",
@@ -68,29 +69,10 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
     const cvcError = touched.cvc && form.cvc.length > 0 && form.cvc.length !== 3;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={handleClose}
-        >
-            <div
-                className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">{itemId ? "Edit Credit Card" : "Add Credit Card"}</h2>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none"
-                        aria-label="Close"
-                    >
-                        ×
-                    </button>
-                </div>
-
+        <Modal title={itemId ? "Edit Credit Card" : "Add Credit Card"} onClose={handleClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Name</span>
+                        <span className="field-label">Name</span>
                         <input
                             type="text"
                             className={inputClasses}
@@ -100,7 +82,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Bank</span>
+                        <span className="field-label">Bank</span>
                         <BankCompaniesDropdown
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
@@ -108,7 +90,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Link</span>
+                        <span className="field-label">Link</span>
                         <input
                             type="url"
                             className={inputClasses}
@@ -125,10 +107,10 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     />
 
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Open Date</span>
+                        <span className="field-label">Open Date</span>
                         <div className="flex gap-4">
                             <label className="flex flex-col gap-1 flex-1">
-                                <span className="text-sm text-gray-500">Month</span>
+                                <span className="field-hint">Month</span>
                                 <select
                                     className={inputClasses}
                                     value={form.openMonth}
@@ -144,7 +126,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             </label>
 
                             <label className="flex flex-col gap-1 flex-1">
-                                <span className="text-sm text-gray-500">Year</span>
+                                <span className="field-hint">Year</span>
                                 <select
                                     className={inputClasses}
                                     value={form.openYear}
@@ -161,11 +143,11 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">Credit Card Info</span>
+                    <div className="form-section">
+                        <span className="field-label">Credit Card Info</span>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Cardholder</span>
+                            <span className="field-label">Cardholder</span>
                             <input
                                 type="text"
                                 className={inputClasses}
@@ -175,7 +157,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </label>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Card Number</span>
+                            <span className="field-label">Card Number</span>
                             <input
                                 type="text"
                                 inputMode="numeric"
@@ -186,12 +168,12 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 onCopy={stripSpacesOnCopy}
                             />
                             {cardNumberError && (
-                                <span className="text-red-600 text-sm">Card number must be 16 digits</span>
+                                <span className="field-error">Card number must be 16 digits</span>
                             )}
                         </label>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">CVC</span>
+                            <span className="field-label">CVC</span>
                             <input
                                 type="text"
                                 inputMode="numeric"
@@ -202,13 +184,13 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 onBlur={() => markTouched("cvc")}
                             />
                             {cvcError && (
-                                <span className="text-red-600 text-sm">CVC must be 3 digits</span>
+                                <span className="field-error">CVC must be 3 digits</span>
                             )}
                         </label>
 
                         <div className="flex gap-4">
                             <label className="flex flex-col gap-1 flex-1">
-                                <span className="font-semibold">Expiration Month</span>
+                                <span className="field-label">Expiration Month</span>
                                 <select
                                     className={inputClasses}
                                     value={form.expMonth}
@@ -224,7 +206,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                             </label>
 
                             <label className="flex flex-col gap-1 flex-1">
-                                <span className="font-semibold">Expiration Year</span>
+                                <span className="field-label">Expiration Year</span>
                                 <select
                                     className={inputClasses}
                                     value={form.expYear}
@@ -241,7 +223,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </div>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Credit Line</span>
+                            <span className="field-label">Credit Line</span>
                             <input
                                 type="text"
                                 inputMode="numeric"
@@ -252,7 +234,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </label>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Payment Method</span>
+                            <span className="field-label">Payment Method</span>
                             <BankAccountsDropdown
                                 value={form.paymentMethod}
                                 onChange={(accountId) => updateField("paymentMethod", accountId)}
@@ -260,7 +242,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </label>
 
                         <label className="flex flex-col gap-1">
-                            <span className="font-semibold">Payments are due on</span>
+                            <span className="field-label">Payments are due on</span>
                             <select
                                 className={inputClasses}
                                 value={form.dueDate}
@@ -276,8 +258,8 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </label>
                     </div>
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">Rewards & Benefits</span>
+                    <div className="form-section">
+                        <span className="field-label">Rewards & Benefits</span>
 
                         <label className="flex flex-col gap-1">
                             <textarea
@@ -286,12 +268,12 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 value={form.rewards}
                                 onChange={(e) => updateField("rewards", e.target.value)}
                             />
-                            <span className="text-gray-500 text-sm">Each line is a bullet point</span>
+                            <span className="field-hint">Each line is a bullet point</span>
                         </label>
                     </div>
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">How will you use this card?</span>
+                    <div className="form-section">
+                        <span className="field-label">How will you use this card?</span>
 
                         <label className="flex flex-col gap-1">
                             <textarea
@@ -300,12 +282,12 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 value={form.usage}
                                 onChange={(e) => updateField("usage", e.target.value)}
                             />
-                            <span className="text-gray-500 text-sm">Each line becomes a chip</span>
+                            <span className="field-hint">Each line becomes a chip</span>
                         </label>
                     </div>
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">Notes</span>
+                    <div className="form-section">
+                        <span className="field-label">Notes</span>
 
                         <textarea
                             rows={4}
@@ -319,13 +301,12 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="btn btn-primary mt-2 py-2.5"
                     >
                         {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
 

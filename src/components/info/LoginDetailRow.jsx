@@ -10,11 +10,11 @@ function LoginValue({ label, value }) {
     const copyToClipboard = useCopyToClipboard();
 
     return (
-        <div className="flex-1 min-w-0 text-sm py-1">
-            <div className="text-gray-500">{label}</div>
+        <div className="flex-1 min-w-0 text-sm py-1.5">
+            <div className="detail-label">{label}</div>
             <div className="flex items-center gap-2">
                 <span
-                    className="font-medium break-all cursor-pointer"
+                    className="font-medium break-all copyable"
                     onClick={() => copyToClipboard(value, label)}
                     title="Click to copy"
                 >
@@ -23,7 +23,7 @@ function LoginValue({ label, value }) {
                 <button
                     type="button"
                     onClick={() => setRevealed((prev) => !prev)}
-                    className="text-gray-400 hover:text-gray-700 cursor-pointer shrink-0"
+                    className="icon-btn shrink-0"
                     aria-label={revealed ? `Hide ${label}` : `Show ${label}`}
                 >
                     {revealed ? <EyeIcon /> : <EyeOffIcon />}

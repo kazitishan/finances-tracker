@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import AddSubscriptionModal from "@/components/modals/AddSubscriptionModal";
 import SubscriptionInfo from "@/components/info/SubscriptionInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [creditCards, setCreditCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -18,7 +21,10 @@ export default function Subscriptions() {
   useEffect(() => {
     fetch("/api/subscriptions")
       .then((res) => res.json())
-      .then(setSubscriptions);
+      .then((data) => {
+        setSubscriptions(data);
+        setLoaded(true);
+      });
     fetch("/api/credit-cards")
       .then((res) => res.json())
       .then(setCreditCards);
@@ -64,27 +70,21 @@ export default function Subscriptions() {
 
   return (
     <div>
-      {/* Rearrange + Add buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => {
-            setRearrangeModalKey((key) => key + 1);
-            setIsRearrangeOpen(true);
-          }}
-          className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
-        >
-          Rearrange
-        </button>
-        <button
-          onClick={handleAddClick}
-          className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-        >
-          Add
-        </button>
-      </div>
+      <PageHeader
+        title="Subscriptions"
+        count={loaded ? subscriptions.length : null}
+        stats={[]}
+        onRearrange={() => {
+          setRearrangeModalKey((key) => key + 1);
+          setIsRearrangeOpen(true);
+        }}
+        onAdd={handleAddClick}
+      />
 
       {/* All subscriptions */}
-      <div className="flex flex-col gap-4 mt-4">
+      {loaded && subscriptions.length === 0 && <EmptyState noun="subscriptions" onAdd={handleAddClick} />}
+
+      <div className="flex flex-col gap-3">
         {subscriptions.map((subscription) => (
           <SubscriptionInfo
             key={subscription.id}

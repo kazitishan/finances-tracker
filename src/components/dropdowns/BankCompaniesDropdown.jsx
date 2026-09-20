@@ -95,7 +95,7 @@ function BankCompaniesDropdown({ value, onChange }) {
             <button
                 type="button"
                 onClick={() => (open ? closeDropdown() : setOpen(true))}
-                className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer"
+                className="field flex items-center justify-between gap-2 cursor-pointer text-left"
             >
                 <span className="flex items-center gap-2">
                     {selectedBank && (
@@ -107,23 +107,23 @@ function BankCompaniesDropdown({ value, onChange }) {
                             className="object-contain"
                         />
                     )}
-                    <span className={selectedBank ? "" : "text-gray-400"}>
+                    <span className={selectedBank ? "" : "text-muted"}>
                         {selectedBank ? selectedBank.name : "Select a bank"}
                     </span>
                 </span>
-                <span className="text-gray-400">▾</span>
+                <span className="text-muted text-xs">▾</span>
             </button>
 
             {open && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg">
-                    <div className="p-2 border-b border-gray-200">
+                <div className="dropdown-panel">
+                    <div className="p-2 border-b border-[var(--border)]">
                         <input
                             ref={searchInputRef}
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search banks..."
-                            className="w-full border border-gray-300 rounded-md p-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            className="field py-1.5"
                         />
                     </div>
                     <ul className="max-h-56 overflow-y-auto">
@@ -136,7 +136,7 @@ function BankCompaniesDropdown({ value, onChange }) {
                                             onChange(bank.name);
                                             closeDropdown();
                                         }}
-                                        className="w-full flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer text-left"
+                                        className="dropdown-item"
                                     >
                                         <Image
                                             src={bank.image}
@@ -150,7 +150,7 @@ function BankCompaniesDropdown({ value, onChange }) {
                                 </li>
                             ))
                         ) : (
-                            <li className="p-2 text-sm text-gray-400">No banks found</li>
+                            <li className="px-3 py-2 text-sm text-muted">No banks found</li>
                         )}
                     </ul>
                 </div>

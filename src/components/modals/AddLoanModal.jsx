@@ -5,6 +5,7 @@ import LoanProviderDropdown from "@/components/dropdowns/LoanProviderDropdown";
 import LoanTypeDropdown from "@/components/dropdowns/LoanTypeDropdown";
 import { inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
+import Modal from "@/components/ui/Modal";
 
 const initialFormState = {
     name: "",
@@ -51,29 +52,10 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
     }
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={handleClose}
-        >
-            <div
-                className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl p-6 shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">{itemId ? "Edit Loan" : "Add Loan"}</h2>
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer text-xl leading-none"
-                        aria-label="Close"
-                    >
-                        ×
-                    </button>
-                </div>
-
+        <Modal title={itemId ? "Edit Loan" : "Add Loan"} onClose={handleClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Name</span>
+                        <span className="field-label">Name</span>
                         <input
                             type="text"
                             className={inputClasses}
@@ -83,7 +65,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Type</span>
+                        <span className="field-label">Type</span>
                         <LoanTypeDropdown
                             value={form.type}
                             otherValue={form.otherType}
@@ -93,7 +75,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </div>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Loan Provider</span>
+                        <span className="field-label">Loan Provider</span>
                         <LoanProviderDropdown
                             value={form.provider}
                             onChange={(provider) => updateField("provider", provider)}
@@ -101,7 +83,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Link</span>
+                        <span className="field-label">Link</span>
                         <input
                             type="url"
                             className={inputClasses}
@@ -118,7 +100,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     />
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Amount Loaned</span>
+                        <span className="field-label">Amount Loaned</span>
                         <div className="flex items-center gap-2">
                             <span>$</span>
                             <input
@@ -132,7 +114,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <label className="flex flex-col gap-1">
-                        <span className="font-semibold">Interest Rate</span>
+                        <span className="field-label">Interest Rate</span>
                         <div className="flex items-center gap-2">
                             <input
                                 type="text"
@@ -145,8 +127,8 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         </div>
                     </label>
 
-                    <div className="flex flex-col gap-4 border-t border-gray-200 pt-4">
-                        <span className="font-semibold">Notes</span>
+                    <div className="form-section">
+                        <span className="field-label">Notes</span>
 
                         <textarea
                             rows={4}
@@ -160,13 +142,12 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="mt-2 bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="btn btn-primary mt-2 py-2.5"
                     >
                         {itemId ? "Save Changes" : "Add"}
                     </button>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }
 

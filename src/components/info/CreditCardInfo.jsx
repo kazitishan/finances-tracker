@@ -1,164 +1,90 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4, ordinal, formatAccountAge } from "@/lib/formUtils";
+import InfoCard from "@/components/ui/InfoCard";
+import DetailRow from "@/components/ui/DetailRow";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
+import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 
-function DetailRow({ label, value }) {
-    if (!value) return null;
-    return (
-        <div className="flex justify-between gap-4 text-sm py-1">
-            <span className="text-gray-500">{label}</span>
-            <span className="font-medium text-right break-all">{value}</span>
-        </div>
-    );
+function splitLines(text) {
+    return (text || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
 }
 
 function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
-    const [expanded, setExpanded] = useState(false);
     const bankInfo = banks.find((b) => b.name === card.bank);
     const paymentAccount = bankAccounts.find((account) => account.id === card.paymentMethod);
     const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
-    const rewardsList = (card.rewards || "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-    const usageList = (card.usage || "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    const rewardsList = splitLines(card.rewards);
+    const usageList = splitLines(card.usage);
 
     return (
-        <div className="bg-white rounded-xl shadow border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-                {bankInfo && (
-                    <Image
-                        src={bankInfo.image}
-                        alt={bankInfo.name}
-                        width={36}
-                        height={36}
-                        className="object-contain shrink-0"
-                    />
-                )}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold truncate">{card.name || "Unnamed Card"}</span>
-                        <button
-                            type="button"
-                            onClick={onEdit}
-                            className="text-gray-400 hover:text-gray-700 cursor-pointer shrink-0"
-                            aria-label="Edit"
-                        >
-                            ✎
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm text-gray-500 truncate">
-                            {[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ") || "—"}
-                        </span>
-                        {usageList.map((usage, index) => (
-                            <span
-                                key={index}
-                                className="text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5"
-                            >
-                                {usage}
-                            </span>
+        <InfoCard
+            image={bankInfo?.image}
+            imageAlt={bankInfo?.name}
+            title={card.name || "Unnamed Card"}
+            subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
+            badges={usageList.map((usage, index) => (
+                <span key={index} className="chip">{usage}</span>
+            ))}
+            link={card.link}
+            onEdit={onEdit}
+        >
+            <LoginDetailRow username={card.loginUsername} password={card.loginPassword} />
+            <DetailRow
+                label="Open Date"
+                value={
+                    card.openMonth && card.openYear
+                        ? `${card.openMonth}/${card.openYear} · ${formatAccountAge(card.openMonth, card.openYear)}`
+                        : ""
+                }
+            />
+            <DetailRow label="Cardholder" value={card.cardholder} />
+            <RevealableDetailRow label="Card Number" value={card.cardNumber} mask={maskLast4} />
+            <RevealableDetailRow label="CVC" value={card.cvc} mask={maskAll} />
+            <DetailRow
+                label="Expiration"
+                value={card.expMonth && card.expYear ? `${card.expMonth}/${card.expYear}` : ""}
+            />
+            <DetailRow
+                label="Credit Line"
+                value={card.creditLine ? `$${Number(card.creditLine).toLocaleString()}` : ""}
+            />
+            <DetailRow
+                label="Payments Due"
+                value={card.dueDate ? `${ordinal(Number(card.dueDate))} of every month` : ""}
+            />
+
+            {paymentAccount && (
+                <PaymentMethodCard
+                    bankInfo={paymentAccountBankInfo}
+                    name={paymentAccount.name}
+                    detail={paymentAccount.accountNumber ? maskLast4(paymentAccount.accountNumber) : null}
+                />
+            )}
+
+            {rewardsList.length > 0 && (
+                <div className="mt-3">
+                    <div className="detail-label text-sm mb-1">Rewards & Benefits</div>
+                    <ul className="list-disc list-inside text-sm">
+                        {rewardsList.map((reward, index) => (
+                            <li key={index}>{reward}</li>
                         ))}
-                    </div>
-                </div>
-                {card.link && (
-                    <a
-                        href={card.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg px-2 py-1 hover:bg-gray-50 cursor-pointer shrink-0"
-                    >
-                        Open
-                    </a>
-                )}
-                <button
-                    type="button"
-                    onClick={() => setExpanded((prev) => !prev)}
-                    className="text-gray-400 hover:text-gray-700 cursor-pointer shrink-0"
-                    aria-label="Toggle details"
-                >
-                    {expanded ? "▲" : "▼"}
-                </button>
-            </div>
-
-            {expanded && (
-                <div className="mt-3 border-t border-gray-100 pt-3">
-                    <LoginDetailRow username={card.loginUsername} password={card.loginPassword} />
-                    <DetailRow
-                        label="Open Date"
-                        value={
-                            card.openMonth && card.openYear
-                                ? `${card.openMonth}/${card.openYear} · ${formatAccountAge(card.openMonth, card.openYear)}`
-                                : ""
-                        }
-                    />
-                    <DetailRow label="Cardholder" value={card.cardholder} />
-                    <RevealableDetailRow label="Card Number" value={card.cardNumber} mask={maskLast4} />
-                    <RevealableDetailRow label="CVC" value={card.cvc} mask={maskAll} />
-                    <DetailRow
-                        label="Expiration"
-                        value={card.expMonth && card.expYear ? `${card.expMonth}/${card.expYear}` : ""}
-                    />
-                    <DetailRow
-                        label="Credit Line"
-                        value={card.creditLine ? `$${Number(card.creditLine).toLocaleString()}` : ""}
-                    />
-                    <DetailRow
-                        label="Payments Due"
-                        value={card.dueDate ? `${ordinal(Number(card.dueDate))} of every month` : ""}
-                    />
-
-                    {paymentAccount && (
-                        <div className="mt-2">
-                            <div className="text-sm text-gray-500 mb-1">Payment Method</div>
-                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
-                                {paymentAccountBankInfo && (
-                                    <Image
-                                        src={paymentAccountBankInfo.image}
-                                        alt={paymentAccountBankInfo.name}
-                                        width={28}
-                                        height={28}
-                                        className="object-contain shrink-0"
-                                    />
-                                )}
-                                <div className="min-w-0">
-                                    <div className="font-medium text-sm truncate">{paymentAccount.name}</div>
-                                    {paymentAccount.accountNumber && (
-                                        <div className="text-xs text-gray-500">{maskLast4(paymentAccount.accountNumber)}</div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {rewardsList.length > 0 && (
-                        <div className="mt-2">
-                            <div className="text-sm text-gray-500 mb-1">Rewards & Benefits</div>
-                            <ul className="list-disc list-inside text-sm">
-                                {rewardsList.map((reward, index) => (
-                                    <li key={index}>{reward}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {card.notes && (
-                        <div className="mt-2">
-                            <div className="text-sm text-gray-500 mb-1">Notes</div>
-                            <div className="text-sm whitespace-pre-wrap">{card.notes}</div>
-                        </div>
-                    )}
+                    </ul>
                 </div>
             )}
-        </div>
+
+            {card.notes && (
+                <div className="mt-3">
+                    <div className="detail-label text-sm mb-1">Notes</div>
+                    <div className="text-sm whitespace-pre-wrap">{card.notes}</div>
+                </div>
+            )}
+        </InfoCard>
     );
 }
 

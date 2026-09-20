@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
 import CreditCardInfo from "@/components/info/CreditCardInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 import { accountAgeInMonths, formatMonthsAge } from "@/lib/formUtils";
 
 export default function CreditCards() {
   const [cards, setCards] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -18,7 +21,10 @@ export default function CreditCards() {
   useEffect(() => {
     fetch("/api/credit-cards")
       .then((res) => res.json())
-      .then(setCards);
+      .then((data) => {
+        setCards(data);
+        setLoaded(true);
+      });
     fetch("/api/bank-accounts")
       .then((res) => res.json())
       .then(setBankAccounts);
@@ -70,35 +76,24 @@ export default function CreditCards() {
 
   return (
     <div>
-      {/* Stats + Rearrange + Add buttons */}
-      <div className="flex justify-between items-center gap-2 flex-wrap">
-        <div className="flex gap-4 text-sm text-gray-600">
-          {averageAgeLabel && <span>Average Age: <span className="font-semibold text-gray-800">{averageAgeLabel}</span></span>}
-          {totalCreditLine > 0 && (
-            <span>Total Credit Line: <span className="font-semibold text-gray-800">${totalCreditLine.toLocaleString()}</span></span>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setRearrangeModalKey((key) => key + 1);
-              setIsRearrangeOpen(true);
-            }}
-            className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
-          >
-            Rearrange
-          </button>
-          <button
-            onClick={handleAddClick}
-            className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-          >
-            Add
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Credit Cards"
+        count={loaded ? cards.length : null}
+        stats={[
+          { label: "Average Age", value: averageAgeLabel },
+          { label: "Total Credit Line", value: totalCreditLine > 0 ? `$${totalCreditLine.toLocaleString()}` : null },
+        ]}
+        onRearrange={() => {
+          setRearrangeModalKey((key) => key + 1);
+          setIsRearrangeOpen(true);
+        }}
+        onAdd={handleAddClick}
+      />
 
       {/* All credit cards */}
-      <div className="flex flex-col gap-4 mt-4">
+      {loaded && cards.length === 0 && <EmptyState noun="credit cards" onAdd={handleAddClick} />}
+
+      <div className="flex flex-col gap-3">
         {cards.map((card) => (
           <CreditCardInfo key={card.id} card={card} bankAccounts={bankAccounts} onEdit={() => handleEdit(card)} />
         ))}

@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import AddLoanModal from "@/components/modals/AddLoanModal";
 import LoanInfo from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function Loans() {
   const [loans, setLoans] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
   const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
@@ -16,7 +19,10 @@ export default function Loans() {
   useEffect(() => {
     fetch("/api/loans")
       .then((res) => res.json())
-      .then(setLoans);
+      .then((data) => {
+        setLoans(data);
+        setLoaded(true);
+      });
   }, []);
 
   function handleSaved(item) {
@@ -56,27 +62,21 @@ export default function Loans() {
 
   return (
     <div>
-      {/* Rearrange + Add buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => {
-            setRearrangeModalKey((key) => key + 1);
-            setIsRearrangeOpen(true);
-          }}
-          className="bg-gray-200 font-bold text-gray-800 p-2 rounded-xl hover:bg-gray-300 transition-colors cursor-pointer"
-        >
-          Rearrange
-        </button>
-        <button
-          onClick={handleAddClick}
-          className="bg-green-800 font-bold text-white p-2 rounded-xl hover:bg-green-900 transition-colors cursor-pointer"
-        >
-          Add
-        </button>
-      </div>
+      <PageHeader
+        title="Loans"
+        count={loaded ? loans.length : null}
+        stats={[]}
+        onRearrange={() => {
+          setRearrangeModalKey((key) => key + 1);
+          setIsRearrangeOpen(true);
+        }}
+        onAdd={handleAddClick}
+      />
 
       {/* All loans */}
-      <div className="flex flex-col gap-4 mt-4">
+      {loaded && loans.length === 0 && <EmptyState noun="loans" onAdd={handleAddClick} />}
+
+      <div className="flex flex-col gap-3">
         {loans.map((loan) => (
           <LoanInfo
             key={loan.id}
