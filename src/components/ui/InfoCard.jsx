@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowUpRightIcon, ChevronDownIcon, PencilIcon } from "@/components/ui/icons";
 
-function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, link, onEdit, children }) {
+function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, aside, link, onEdit, children }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -28,6 +28,7 @@ function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, link, o
                         <div className="flex flex-wrap gap-1.5 mt-1.5">{badges}</div>
                     )}
                 </div>
+                {aside && <div className="shrink-0 text-right">{aside}</div>}
                 {link && (
                     <a
                         href={link}

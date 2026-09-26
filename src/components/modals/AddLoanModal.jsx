@@ -17,6 +17,8 @@ const initialFormState = {
     loginPassword: "",
     amountLoaned: "",
     interestRate: "",
+    interestAmount: "",
+    amountPaid: "",
     monthlyPayment: "",
     paymentDay: "",
     notes: "",
@@ -126,6 +128,34 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                                 onChange={(e) => updateField("interestRate", onlyDecimal(e.target.value))}
                             />
                             <span>%</span>
+                        </div>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Interest Amount</span>
+                        <div className="flex items-center gap-2">
+                            <span>$</span>
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                className={inputClasses}
+                                value={form.interestAmount}
+                                onChange={(e) => updateField("interestAmount", onlyDecimal(e.target.value))}
+                            />
+                        </div>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Amount Paid</span>
+                        <div className="flex items-center gap-2">
+                            <span>$</span>
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                className={inputClasses}
+                                value={form.amountPaid}
+                                onChange={(e) => updateField("amountPaid", onlyDecimal(e.target.value))}
+                            />
                         </div>
                     </label>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AddLoanModal from "@/components/modals/AddLoanModal";
-import LoanInfo from "@/components/info/LoanInfo";
+import LoanInfo, { amountRemaining } from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -64,6 +64,7 @@ export default function Loans() {
     .filter((loan) => loan.monthlyPayment)
     .reduce((sum, loan) => sum + Number(loan.monthlyPayment), 0);
   const yearlyTotal = monthlyTotal * 12;
+  const totalDebt = loans.reduce((sum, loan) => sum + (amountRemaining(loan) ?? 0), 0);
   const formatMoney = (amount) =>
     amount > 0
       ? `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -77,6 +78,7 @@ export default function Loans() {
         stats={[
           { label: "Monthly Total", value: formatMoney(monthlyTotal) },
           { label: "Yearly Total", value: formatMoney(yearlyTotal) },
+          { label: "Total Debt", value: formatMoney(totalDebt) },
         ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);

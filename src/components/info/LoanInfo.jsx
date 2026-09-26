@@ -7,6 +7,11 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 
+export function amountRemaining(loan) {
+    if (!loan.amountLoaned) return null;
+    return Number(loan.amountLoaned) + Number(loan.interestAmount || 0) - Number(loan.amountPaid || 0);
+}
+
 function LoanInfo({ loan, onEdit }) {
     const providerInfo = loanProviders.find((p) => p.name === loan.provider);
 
@@ -14,18 +19,26 @@ function LoanInfo({ loan, onEdit }) {
     const amountLabel = loan.amountLoaned
         ? `$${Number(loan.amountLoaned).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : null;
+    const formatAmount = (amount) =>
+        amount
+            ? `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : null;
     const paymentLabel = loan.monthlyPayment
         ? `$${Number(loan.monthlyPayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`
         : null;
     const paymentDateLabel = loan.paymentDay ? `${ordinal(Number(loan.paymentDay))} of every month` : null;
     const rateLabel = loan.interestRate ? `${loan.interestRate}%` : null;
+    const remaining = amountRemaining(loan);
+    const remainingLabel = remaining !== null
+        ? `$${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : null;
 
     return (
         <InfoCard
             image={providerInfo?.image}
             imageAlt={providerInfo?.name}
             title={loan.name || "Unnamed Loan"}
-            subtitle={[typeLabel, loan.provider, amountLabel].filter(Boolean).join(" · ")}
+            subtitle={[typeLabel, loan.provider, remainingLabel].filter(Boolean).join(" · ")}
             highlight={paymentLabel}
             link={loan.link}
             onEdit={onEdit}
@@ -35,8 +48,17 @@ function LoanInfo({ loan, onEdit }) {
             <DetailRow label="Provider" value={loan.provider} />
             <DetailRow label="Amount Loaned" value={amountLabel} />
             <DetailRow label="Interest Rate" value={rateLabel} />
+            <DetailRow label="Interest Amount" value={formatAmount(loan.interestAmount)} />
+            <DetailRow label="Amount Paid" value={formatAmount(loan.amountPaid)} />
             <DetailRow label="Monthly Loan Payment" value={paymentLabel} />
             <DetailRow label="Monthly Loan Payment Date" value={paymentDateLabel} />
+
+            {remainingLabel && (
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--accent-soft)] px-3 py-2.5">
+                    <span className="text-sm font-medium text-[var(--accent)]">Amount Remaining</span>
+                    <span className="text-lg font-semibold tabular-nums text-[var(--accent)]">{remainingLabel}</span>
+                </div>
+            )}
 
             {loan.notes && (
                 <div className="mt-2">
