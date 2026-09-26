@@ -172,7 +172,7 @@ body {
   }
 
   .chip-accent {
-    @apply gap-1.5 px-2.5 py-1 transition-transform duration-150 hover:-translate-y-px;
+    @apply gap-1.5 px-2.5 py-1;
     background: var(--accent-soft);
     color: var(--accent);
     border-color: transparent;
