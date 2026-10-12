@@ -117,6 +117,7 @@ function SavedLoginPicker({ platform, logins, selectedId, onSelect }) {
 
 function LoginFields({ platform, username, password, onUsernameChange, onPasswordChange }) {
     const savedLogins = useSavedLogins(platform);
+    const [showPassword, setShowPassword] = useState(false);
     const selectedLogin = savedLogins.find(
         (login) => login.username === (username ?? "") && login.password === (password ?? "")
     );
@@ -149,13 +150,23 @@ function LoginFields({ platform, username, password, onUsernameChange, onPasswor
                 </label>
                 <label className="flex flex-col gap-1 flex-1 min-w-0">
                     <span className="field-label">Password</span>
-                    <input
-                        type="password"
-                        autoComplete="new-password"
-                        className={inputClasses}
-                        value={password ?? ""}
-                        onChange={(e) => onPasswordChange(e.target.value)}
-                    />
+                    <div className="relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            className={`${inputClasses} pr-9`}
+                            value={password ?? ""}
+                            onChange={(e) => onPasswordChange(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="icon-btn absolute right-1 top-1/2 -translate-y-1/2"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                            {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                        </button>
+                    </div>
                 </label>
             </div>
         </div>
