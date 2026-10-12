@@ -93,6 +93,8 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                 </label>
 
                 <LoginFields
+
+                    platform={form.broker}
                     username={form.loginUsername}
                     password={form.loginPassword}
                     onUsernameChange={(value) => updateField("loginUsername", value)}

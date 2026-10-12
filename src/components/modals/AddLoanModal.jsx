@@ -97,6 +97,8 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <LoginFields
+
+                        platform={form.provider}
                         username={form.loginUsername}
                         password={form.loginPassword}
                         onUsernameChange={(value) => updateField("loginUsername", value)}

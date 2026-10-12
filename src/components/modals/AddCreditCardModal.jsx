@@ -100,6 +100,8 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved }) {
                     </label>
 
                     <LoginFields
+
+                        platform={form.bank}
                         username={form.loginUsername}
                         password={form.loginPassword}
                         onUsernameChange={(value) => updateField("loginUsername", value)}

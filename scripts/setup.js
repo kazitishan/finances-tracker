@@ -13,6 +13,7 @@ if (fs.existsSync(infoPath)) {
     "subscriptions": [],
     "loans": [],
     "investment accounts": [],
+    "passwords": [],
   };
 
   if (!fs.existsSync(privateDir)) {

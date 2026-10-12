@@ -9,6 +9,7 @@ const DEFAULT_INFO = {
     subscriptions: [],
     loans: [],
     "investment accounts": [],
+    passwords: [],
 };
 
 const CATEGORY_KEYS = {
@@ -17,7 +18,44 @@ const CATEGORY_KEYS = {
     subscriptions: "subscriptions",
     loans: "loans",
     "investment-accounts": "investment accounts",
+    passwords: "passwords",
 };
+
+// The field that names each category's platform; saved logins are grouped by it, so a Chase
+// login entered on a bank account is offered again on a Chase credit card.
+const PLATFORM_FIELDS = {
+    "bank accounts": "bank",
+    "credit cards": "bank",
+    subscriptions: "subscription",
+    loans: "provider",
+    "investment accounts": "broker",
+};
+
+// Adds the item's login to `info.passwords`, or updates the password of a saved login with
+// the same platform and username.
+function saveLogin(info, key, item) {
+    const platform = item[PLATFORM_FIELDS[key]];
+    const username = item.loginUsername || "";
+    const password = item.loginPassword || "";
+    if (!platform || (!username && !password)) return;
+
+    const passwords = info.passwords || [];
+    const existing = passwords.find((login) => login.platform === platform && login.username === username);
+    if (!existing) {
+        info.passwords = [...passwords, { id: crypto.randomUUID(), platform, username, password }];
+    } else if (password && existing.password !== password) {
+        info.passwords = passwords.map((login) => (login === existing ? { ...login, password } : login));
+    }
+}
+
+// Files created before saved logins existed get a "passwords" key built from their items.
+function addPasswordsKey(info) {
+    info.passwords = [];
+    for (const key of Object.keys(PLATFORM_FIELDS)) {
+        for (const item of info[key] || []) saveLogin(info, key, item);
+    }
+    writeInfo(info);
+}
 
 export function getCategoryKey(category) {
     const key = CATEGORY_KEYS[category];
@@ -31,7 +69,9 @@ function readInfo() {
         fs.writeFileSync(INFO_PATH, JSON.stringify(DEFAULT_INFO, null, 2) + "\n");
         return { ...DEFAULT_INFO };
     }
-    return JSON.parse(fs.readFileSync(INFO_PATH, "utf-8"));
+    const info = JSON.parse(fs.readFileSync(INFO_PATH, "utf-8"));
+    if (!info.passwords) addPasswordsKey(info);
+    return info;
 }
 
 function writeInfo(info) {
@@ -49,6 +89,7 @@ export function addItem(category, item) {
     const key = getCategoryKey(category);
     const newItem = { ...item, id: crypto.randomUUID() };
     info[key] = [...(info[key] || []), newItem];
+    saveLogin(info, key, newItem);
     writeInfo(info);
     return newItem;
 }
@@ -62,6 +103,7 @@ export function updateItem(category, id, updates) {
         updated = { ...updates, id };
         return updated;
     });
+    if (updated) saveLogin(info, key, updated);
     writeInfo(info);
     return updated;
 }

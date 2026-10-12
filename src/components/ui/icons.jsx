@@ -52,6 +52,16 @@ export const ArrowDownIcon = (props) => (
     <Icon {...props}><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></Icon>
 );
 
+export const KeyIcon = (props) => (
+    <Icon {...props}>
+        <circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" />
+    </Icon>
+);
+
+export const CheckIcon = (props) => (
+    <Icon {...props}><path d="M20 6 9 17l-5-5" /></Icon>
+);
+
 export const TrashIcon = (props) => (
     <Icon {...props}>
         <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />

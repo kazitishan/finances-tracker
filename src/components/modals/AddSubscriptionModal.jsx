@@ -84,6 +84,8 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     </label>
 
                     <LoginFields
+
+                        platform={form.subscription}
                         username={form.loginUsername}
                         password={form.loginPassword}
                         onUsernameChange={(value) => updateField("loginUsername", value)}
