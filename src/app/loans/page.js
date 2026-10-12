@@ -6,6 +6,7 @@ import LoanInfo, { amountRemaining } from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
+import { formatCurrency } from "@/lib/formUtils";
 
 export default function Loans() {
   const [loans, setLoans] = useState([]);
@@ -65,10 +66,7 @@ export default function Loans() {
     .reduce((sum, loan) => sum + Number(loan.monthlyPayment), 0);
   const yearlyTotal = monthlyTotal * 12;
   const totalDebt = loans.reduce((sum, loan) => sum + (amountRemaining(loan) ?? 0), 0);
-  const formatMoney = (amount) =>
-    amount > 0
-      ? `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-      : null;
+  const formatMoney = (amount) => (amount > 0 ? formatCurrency(amount) : null);
 
   return (
     <div>

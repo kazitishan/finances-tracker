@@ -6,7 +6,7 @@ import CreditCardInfo from "@/components/info/CreditCardInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import { accountAgeInMonths, formatMonthsAge } from "@/lib/formUtils";
+import { accountAgeInMonths, formatCurrency, formatMonthsAge } from "@/lib/formUtils";
 
 export default function CreditCards() {
   const [cards, setCards] = useState([]);
@@ -81,7 +81,7 @@ export default function CreditCards() {
         count={loaded ? cards.length : null}
         stats={[
           { label: "Average Age", value: averageAgeLabel },
-          { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? `$${totalCreditLine.toLocaleString()}` : null },
+          { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
         ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);

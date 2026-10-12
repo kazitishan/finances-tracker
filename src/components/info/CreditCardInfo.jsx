@@ -1,9 +1,10 @@
 "use client";
 
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { maskAll, maskLast4, ordinal, formatAccountAge } from "@/lib/formUtils";
+import { maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
+import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
@@ -28,9 +29,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             imageAlt={bankInfo?.name}
             title={card.name || "Unnamed Card"}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
-            badges={usageList.map((usage, index) => (
-                <span key={index} className="chip chip-accent">{usage}</span>
-            ))}
+            tags={usageList}
             link={card.link}
             onEdit={onEdit}
         >
@@ -52,7 +51,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             />
             <DetailRow
                 label="Credit Line"
-                value={card.creditLine ? `$${Number(card.creditLine).toLocaleString()}` : ""}
+                value={card.creditLine ? formatCurrency(card.creditLine, { cents: false }) : ""}
             />
             <DetailRow
                 label="Payments Due"
@@ -68,22 +67,16 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             )}
 
             {rewardsList.length > 0 && (
-                <div className="mt-3">
-                    <div className="detail-label text-sm mb-1">Rewards & Benefits</div>
+                <DetailSection title="Rewards & Benefits">
                     <ul className="list-disc list-inside text-sm">
                         {rewardsList.map((reward, index) => (
                             <li key={index}>{reward}</li>
                         ))}
                     </ul>
-                </div>
+                </DetailSection>
             )}
 
-            {card.notes && (
-                <div className="mt-3">
-                    <div className="detail-label text-sm mb-1">Notes</div>
-                    <div className="text-sm whitespace-pre-wrap">{card.notes}</div>
-                </div>
-            )}
+            <NotesSection notes={card.notes} />
         </InfoCard>
     );
 }

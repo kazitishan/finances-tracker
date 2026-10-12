@@ -4,7 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowUpRightIcon, ChevronDownIcon, PencilIcon } from "@/components/ui/icons";
 
-function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, aside, link, onEdit, children }) {
+// Header layout shared by every card: subtitle for identifying details, neutral tags for
+// categories, and an optional `stat` ({ label, value, caption }) for the single key figure,
+// shown in the header and again on its own line when expanded.
+function InfoCard({ image, imageAlt, title, subtitle, tags = [], stat, link, onEdit, children }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -20,15 +23,21 @@ function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, aside, 
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{title}</div>
-                    {highlight && (
-                        <div className="text-sm font-medium text-[var(--accent)] tabular-nums truncate">{highlight}</div>
-                    )}
                     <div className="text-sm text-muted truncate">{subtitle || "—"}</div>
-                    {badges && badges.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">{badges}</div>
+                    {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {tags.map((tag, index) => (
+                                <span key={index} className="chip">{tag}</span>
+                            ))}
+                        </div>
                     )}
                 </div>
-                {aside && <div className="shrink-0 text-right">{aside}</div>}
+                {stat?.value && (
+                    <div className="key-stat">
+                        <div className="key-stat-value">{stat.value}</div>
+                        {stat.caption && <div className="key-stat-label">{stat.caption}</div>}
+                    </div>
+                )}
                 {link && (
                     <a
                         href={link}
@@ -73,7 +82,15 @@ function InfoCard({ image, imageAlt, title, subtitle, badges, highlight, aside, 
 
             <div className="expand" data-open={expanded}>
                 <div inert={!expanded}>
-                    <div className="mx-4 mb-4 pt-3 border-t border-[var(--border)]">{children}</div>
+                    <div className="mx-4 mb-4 pt-3 border-t border-[var(--border)]">
+                        {stat?.value && (
+                            <div className="key-stat-row">
+                                <span className="text-sm font-medium">{stat.label}</span>
+                                <span className="text-lg font-semibold tabular-nums">{stat.value}</span>
+                            </div>
+                        )}
+                        <div className="card-body">{children}</div>
+                    </div>
                 </div>
             </div>
         </div>

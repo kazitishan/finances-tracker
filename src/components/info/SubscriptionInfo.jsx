@@ -2,9 +2,10 @@
 
 import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { months, ordinal, maskLast4 } from "@/lib/formUtils";
+import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
+import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 
@@ -19,8 +20,10 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
             : null;
     const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
 
-    const costLabel = subscription.cost
-        ? `$${Number(subscription.cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${subscription.billingCycle === "year" ? "yr" : "mo"}`
+    const costStat = subscription.cost
+        ? subscription.billingCycle === "year"
+            ? { label: "Yearly Cost", value: formatCurrency(subscription.cost), caption: "per year" }
+            : { label: "Monthly Cost", value: formatCurrency(subscription.cost), caption: "per month" }
         : null;
 
     const monthLabel = months.find((month) => month.value === subscription.billingMonth)?.label;
@@ -34,12 +37,11 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
             imageAlt={subscriptionInfo?.name}
             title={subscription.name || "Unnamed Subscription"}
             subtitle={subscription.subscription}
-            highlight={costLabel}
+            stat={costStat}
             link={subscription.link}
             onEdit={onEdit}
         >
             <LoginDetailRow username={subscription.loginUsername} password={subscription.loginPassword} />
-            <DetailRow label="Cost" value={costLabel} />
             <DetailRow label="Renews" value={renewsLabel} />
 
             {paymentAccount && (
@@ -50,12 +52,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
                 />
             )}
 
-            {subscription.notes && (
-                <div className="mt-3">
-                    <div className="detail-label text-sm mb-1">Notes</div>
-                    <div className="text-sm whitespace-pre-wrap">{subscription.notes}</div>
-                </div>
-            )}
+            <NotesSection notes={subscription.notes} />
         </InfoCard>
     );
 }

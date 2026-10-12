@@ -6,6 +6,7 @@ import SubscriptionInfo from "@/components/info/SubscriptionInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
+import { formatCurrency } from "@/lib/formUtils";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -85,15 +86,11 @@ export default function Subscriptions() {
         stats={[
           {
             label: "Monthly Total",
-            value: monthlyTotal > 0
-              ? `$${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : null,
+            value: monthlyTotal > 0 ? formatCurrency(monthlyTotal) : null,
           },
           {
             label: "Yearly Total",
-            value: yearlyTotal > 0
-              ? `$${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              : null,
+            value: yearlyTotal > 0 ? formatCurrency(yearlyTotal) : null,
           },
         ]}
         onRearrange={() => {

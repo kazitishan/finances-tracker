@@ -56,6 +56,12 @@ export function ordinal(day) {
     return `${day}th`;
 }
 
+// "$1,234.56", or "$1,234" with { cents: false }.
+export function formatCurrency(amount, { cents = true } = {}) {
+    const digits = cents ? 2 : 0;
+    return `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+}
+
 export const dueDates = [];
 for (let day = 1; day <= 28; day++) {
     dueDates.push({ value: day, label: `${ordinal(day)} of every month` });

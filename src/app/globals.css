@@ -171,21 +171,6 @@ body {
     border: 1px solid var(--border);
   }
 
-  .chip-accent {
-    @apply gap-1.5 px-2.5 py-1;
-    background: var(--accent-soft);
-    color: var(--accent);
-    border-color: transparent;
-  }
-  .chip-accent::before {
-    content: "";
-    width: 0.375rem;
-    height: 0.375rem;
-    border-radius: 9999px;
-    background: currentColor;
-    opacity: 0.6;
-  }
-
   .link-btn {
     @apply inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium shrink-0 transition-colors duration-150;
     color: var(--accent);
@@ -246,4 +231,20 @@ body {
     @apply flex justify-between items-center gap-4 text-sm py-1.5;
   }
   .detail-label { color: var(--muted); }
+
+  /* The one figure that matters most on a card; the only place accent color marks data */
+  .key-stat { @apply shrink-0 text-right leading-tight; }
+  .key-stat-value { @apply font-semibold tabular-nums; color: var(--accent); }
+  .key-stat-label { @apply text-xs; color: var(--muted); }
+  .key-stat-row {
+    @apply flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 mb-2;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .card-body:empty::before {
+    @apply block text-sm;
+    content: "No other details";
+    color: var(--muted);
+  }
 }

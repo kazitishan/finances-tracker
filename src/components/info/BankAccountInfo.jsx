@@ -4,6 +4,7 @@ import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { interestPaymentOptions, maskAll, maskLast4 } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
+import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 
@@ -15,9 +16,10 @@ function BankAccountInfo({ account, onEdit }) {
             image={bankInfo?.image}
             imageAlt={bankInfo?.name}
             title={account.name || "Unnamed Account"}
-            subtitle={[account.bank, account.type, account.accountNumber ? maskLast4(account.accountNumber) : null]
+            subtitle={[account.bank, account.accountNumber ? maskLast4(account.accountNumber) : null]
                 .filter(Boolean)
                 .join(" · ")}
+            tags={[account.type].filter(Boolean)}
             link={account.link}
             onEdit={onEdit}
         >
@@ -31,8 +33,7 @@ function BankAccountInfo({ account, onEdit }) {
             />
 
             {account.type === "Checking" && (account.cardholder || account.cardNumber || account.expMonth || account.cvc || account.pin) && (
-                <>
-                    <div className="field-label mt-4 mb-1">Debit Card</div>
+                <DetailSection title="Debit Card">
                     <DetailRow label="Cardholder" value={account.cardholder} />
                     <RevealableDetailRow label="Card Number" value={account.cardNumber} mask={maskLast4} />
                     <RevealableDetailRow label="CVC" value={account.cvc} mask={maskAll} />
@@ -41,15 +42,10 @@ function BankAccountInfo({ account, onEdit }) {
                         label="Expiration"
                         value={account.expMonth && account.expYear ? `${account.expMonth}/${account.expYear}` : ""}
                     />
-                </>
+                </DetailSection>
             )}
 
-            {account.notes && (
-                <div className="mt-2">
-                    <div className="detail-label text-sm mb-1">Notes</div>
-                    <div className="text-sm whitespace-pre-wrap">{account.notes}</div>
-                </div>
-            )}
+            <NotesSection notes={account.notes} />
         </InfoCard>
     );
 }

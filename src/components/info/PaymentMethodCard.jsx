@@ -1,9 +1,9 @@
 import Image from "next/image";
+import DetailSection from "@/components/ui/DetailSection";
 
 function PaymentMethodCard({ bankInfo, name, detail }) {
     return (
-        <div className="mt-3">
-            <div className="detail-label text-sm mb-1.5">Payment Method</div>
+        <DetailSection title="Payment Method">
             <div className="flex items-center gap-3 rounded-xl p-2.5 bg-[var(--surface-hover)] border border-[var(--border)]">
                 <div className="logo-tile" style={{ width: "2rem", height: "2rem" }}>
                     {bankInfo && (
@@ -15,7 +15,7 @@ function PaymentMethodCard({ bankInfo, name, detail }) {
                     {detail && <div className="text-xs text-muted">{detail}</div>}
                 </div>
             </div>
-        </div>
+        </DetailSection>
     );
 }
 

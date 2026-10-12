@@ -6,7 +6,7 @@ import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
-import { daysUntil, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
+import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 
 function buildPayments(cards, subscriptions, bankAccounts, loans) {
   const cardPayments = cards
@@ -26,7 +26,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans) {
       href: "/subscriptions",
       name: subscription.name || subscription.subscription || "Unnamed Subscription",
       image: subscriptionCompanies.find((company) => company.name === subscription.subscription)?.image,
-      amount: subscription.cost ? `$${Number(subscription.cost).toFixed(2)}` : null,
+      amount: subscription.cost ? formatCurrency(subscription.cost) : null,
       date: subscription.billingCycle === "year"
         ? nextOccurrence(subscription.billingDay, subscription.billingMonth)
         : nextOccurrence(subscription.billingDay),
@@ -47,7 +47,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans) {
     href: "/loans",
     name: loan.name || loan.provider || "Unnamed Loan",
     image: loanProviders.find((provider) => provider.name === loan.provider)?.image,
-    amount: loan.monthlyPayment ? `$${Number(loan.monthlyPayment).toFixed(2)}` : null,
+    amount: loan.monthlyPayment ? formatCurrency(loan.monthlyPayment) : null,
     date: nextOccurrence(loan.paymentDay),
   }));
 
