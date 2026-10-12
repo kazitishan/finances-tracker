@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-function formatNames(names) {
-    if (names.length <= 2) return names.join(" and ");
-    if (names.length === 3) return `${names[0]}, ${names[1]} and ${names[2]}`;
-    return `${names[0]}, ${names[1]} and ${names.length - 2} others`;
-}
+import { formatNames } from "@/lib/formUtils";
 
 function LoginChangePrompt({ sharedWith, disabled, onChoose, onCancel }) {
     const ref = useRef(null);

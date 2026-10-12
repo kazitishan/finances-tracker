@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SettingsMenu from "@/components/SettingsMenu";
 
 const links = [
     { href: "/", label: "Home" },
@@ -20,25 +21,28 @@ function NavBar() {
             className="sticky top-0 z-40 border-b border-[var(--border)] backdrop-blur"
             style={{ background: "color-mix(in srgb, var(--background) 80%, transparent)" }}
         >
-            <nav className="mx-auto flex max-w-4xl items-center gap-1 overflow-x-auto px-6 py-3 md:px-10">
-                {links.map((link) => {
-                    const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            aria-current={active ? "page" : undefined}
-                            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors duration-150 ${
-                                active
-                                    ? "bg-[var(--accent-soft)] font-medium text-[var(--accent)]"
-                                    : "text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
-                            }`}
-                        >
-                            {link.label}
-                        </Link>
-                    );
-                })}
-            </nav>
+            <div className="mx-auto flex max-w-4xl items-center gap-2 px-6 py-3 md:px-10">
+                <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+                    {links.map((link) => {
+                        const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                aria-current={active ? "page" : undefined}
+                                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors duration-150 ${
+                                    active
+                                        ? "bg-[var(--accent-soft)] font-medium text-[var(--accent)]"
+                                        : "text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
+                                }`}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
+                <SettingsMenu />
+            </div>
         </header>
     );
 }

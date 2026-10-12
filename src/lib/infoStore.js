@@ -18,7 +18,6 @@ const CATEGORY_KEYS = {
     subscriptions: "subscriptions",
     loans: "loans",
     "investment-accounts": "investment accounts",
-    passwords: "passwords",
 };
 
 // The field that names each category's platform; saved logins are grouped by it, so a Chase
@@ -164,4 +163,53 @@ export function reorderItems(category, orderedIds) {
     info[key] = orderedIds.map((id) => byId.get(id)).filter(Boolean);
     writeInfo(info);
     return info[key];
+}
+
+export function exportInfo() {
+    return JSON.stringify(readInfo(), null, 2) + "\n";
+}
+
+// Saved logins, each with the items (`category` is the URL slug) signed in with it.
+export function listLogins() {
+    const info = readInfo();
+    const slugs = Object.fromEntries(Object.entries(CATEGORY_KEYS).map(([slug, key]) => [key, slug]));
+    return (info.passwords || []).map((login) => ({
+        ...login,
+        usedBy: itemsUsingLogin(info, login).map(({ key, item }) => ({ id: item.id, name: item.name, category: slugs[key] })),
+    }));
+}
+
+// Changes a saved login and every item signed in with it.
+export function updateLogin(id, { username = "", password = "" }) {
+    const info = readInfo();
+    const login = (info.passwords || []).find((saved) => saved.id === id);
+    if (!login) return null;
+
+    const updated = { ...login, username, password };
+    for (const { key, item: shared } of itemsUsingLogin(info, login)) {
+        info[key] = info[key].map((item) =>
+            item.id === shared.id ? { ...item, loginUsername: username, loginPassword: password } : item
+        );
+    }
+    // Merges into an identical saved login rather than keeping two copies.
+    info.passwords = info.passwords.some((saved) => saved.id !== id && sameLogin(saved, updated))
+        ? info.passwords.filter((saved) => saved.id !== id)
+        : info.passwords.map((saved) => (saved.id === id ? updated : saved));
+    writeInfo(info);
+    return updated;
+}
+
+// Removes a saved login and clears it from every item signed in with it.
+export function deleteLogin(id) {
+    const info = readInfo();
+    const login = (info.passwords || []).find((saved) => saved.id === id);
+    if (!login) return;
+
+    for (const { key, item: shared } of itemsUsingLogin(info, login)) {
+        info[key] = info[key].map((item) =>
+            item.id === shared.id ? { ...item, loginUsername: "", loginPassword: "" } : item
+        );
+    }
+    info.passwords = info.passwords.filter((saved) => saved.id !== id);
+    writeInfo(info);
 }

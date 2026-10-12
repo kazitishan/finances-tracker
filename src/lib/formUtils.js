@@ -62,6 +62,13 @@ export function formatCurrency(amount, { cents = true } = {}) {
     return `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
+// "A", "A and B", "A, B and C", or "A, B and 3 others".
+export function formatNames(names) {
+    if (names.length <= 2) return names.join(" and ");
+    if (names.length === 3) return `${names[0]}, ${names[1]} and ${names[2]}`;
+    return `${names[0]}, ${names[1]} and ${names.length - 2} others`;
+}
+
 export const dueDates = [];
 for (let day = 1; day <= 28; day++) {
     dueDates.push({ value: day, label: `${ordinal(day)} of every month` });
