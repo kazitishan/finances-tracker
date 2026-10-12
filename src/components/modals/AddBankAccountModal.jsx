@@ -27,10 +27,13 @@ const initialFormState = {
     notes: "",
 };
 
-function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) {
-    const [form, setForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
+function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete }) {
+    const [initialForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
+    const [form, setForm] = useState(initialForm);
     const [touched, setTouched] = useState({});
-    const { save, submitting, prompt } = useSaveItem({ category: "bank-accounts", itemId, form, onSaved, onClose });
+    const { save, remove, requestClose, submitting, prompt } = useSaveItem({
+        category: "bank-accounts", itemId, form, initialForm, onSaved, onDelete, onClose,
+    });
 
     if (!isOpen) return null;
 
@@ -42,9 +45,6 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
         setTouched((prev) => ({ ...prev, [field]: true }));
     }
 
-    function handleClose() {
-        onClose();
-    }
 
     const cardNumberError =
         touched.cardNumber && form.cardNumber.length > 0 && form.cardNumber.length !== 16;
@@ -52,7 +52,7 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
     const pinError = touched.pin && form.pin.length > 0 && form.pin.length !== 4;
 
     return (
-        <Modal title={itemId ? "Edit Bank Account" : "Add Bank Account"} onClose={handleClose}>
+        <Modal title={itemId ? "Edit Bank Account" : "Add Bank Account"} onClose={requestClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Name</span>
@@ -275,14 +275,16 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) 
                     </div>
 
                     {prompt || (
-                        <button
-                            type="button"
-                            onClick={() => save()}
-                            disabled={submitting}
-                            className="btn btn-primary mt-2 py-2.5"
-                        >
-                            {itemId ? "Save Changes" : "Add"}
-                        </button>
+                        <div className="flex gap-2 mt-2">
+                            {itemId && (
+                                <button type="button" onClick={remove} disabled={submitting} className="btn btn-danger py-2.5">
+                                    Delete
+                                </button>
+                            )}
+                            <button type="button" onClick={() => save()} disabled={submitting} className="btn btn-primary flex-1 py-2.5">
+                                {itemId ? "Save Changes" : "Add"}
+                            </button>
+                        </div>
                     )}
                 </div>
         </Modal>

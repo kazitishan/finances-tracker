@@ -10,6 +10,8 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import EditLoginModal from "@/components/modals/EditLoginModal";
+import SearchInput, { NoMatches } from "@/components/ui/SearchInput";
+import { matchesSearch } from "@/lib/formUtils";
 
 const categoryLabels = {
   "bank-accounts": "Bank Account",
@@ -24,6 +26,7 @@ const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions];
 export default function Passwords() {
   const [logins, setLogins] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [search, setSearch] = useState("");
   const [editingLogin, setEditingLogin] = useState(null);
   const [editModalKey, setEditModalKey] = useState(0);
 
@@ -50,9 +53,9 @@ export default function Passwords() {
     setEditModalKey((key) => key + 1);
   }
 
-  const sortedLogins = [...logins].sort(
-    (a, b) => a.platform.localeCompare(b.platform) || a.username.localeCompare(b.username)
-  );
+  const sortedLogins = logins
+    .filter((login) => matchesSearch([login.platform, login.username, ...login.usedBy.map((item) => item.name)], search))
+    .sort((a, b) => a.platform.localeCompare(b.platform) || a.username.localeCompare(b.username));
 
   return (
     <div>
@@ -62,6 +65,9 @@ export default function Passwords() {
           {loaded && <span>{logins.length} total · </span>}
           Editing a login updates every item that uses it.
         </div>
+        {logins.length > 0 && (
+          <SearchInput value={search} onChange={setSearch} placeholder="Search logins..." />
+        )}
       </div>
 
       {loaded && logins.length === 0 && (
@@ -69,6 +75,8 @@ export default function Passwords() {
           No saved logins yet. They&apos;re saved when you add a user name or password to an item.
         </div>
       )}
+
+      {logins.length > 0 && sortedLogins.length === 0 && <NoMatches query={search} />}
 
       <div className="flex flex-col gap-3">
         {sortedLogins.map((login) => {

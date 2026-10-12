@@ -3,12 +3,14 @@
 import { useState } from "react";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
+import { useToast } from "@/components/ToastProvider";
 import { formatNames } from "@/lib/formUtils";
 
 function EditLoginModal({ isOpen, onClose, login, onChanged }) {
     const [username, setUsername] = useState(login?.username ?? "");
     const [password, setPassword] = useState(login?.password ?? "");
     const [submitting, setSubmitting] = useState(false);
+    const showToast = useToast();
 
     if (!isOpen || !login) return null;
 
@@ -17,13 +19,17 @@ function EditLoginModal({ isOpen, onClose, login, onChanged }) {
     async function handleSave() {
         setSubmitting(true);
         try {
-            await fetch(`/api/passwords/${login.id}`, {
+            const res = await fetch(`/api/passwords/${login.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password }),
             });
+            if (!res.ok) throw new Error(`Save failed: ${res.status}`);
             await onChanged();
+            showToast("Login updated");
             onClose();
+        } catch {
+            showToast("Couldn't save");
         } finally {
             setSubmitting(false);
         }
@@ -37,16 +43,26 @@ function EditLoginModal({ isOpen, onClose, login, onChanged }) {
 
         setSubmitting(true);
         try {
-            await fetch(`/api/passwords/${login.id}`, { method: "DELETE" });
+            const res = await fetch(`/api/passwords/${login.id}`, { method: "DELETE" });
+            if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
             await onChanged();
+            showToast("Login deleted");
             onClose();
+        } catch {
+            showToast("Couldn't delete");
         } finally {
             setSubmitting(false);
         }
     }
 
+    function requestClose() {
+        const changed = username !== login.username || password !== login.password;
+        if (changed && !window.confirm("Discard unsaved changes?")) return;
+        onClose();
+    }
+
     return (
-        <Modal title={`Edit ${login.platform} Login`} onClose={onClose}>
+        <Modal title={`Edit ${login.platform} Login`} onClose={requestClose}>
             <div className="flex flex-col gap-4">
                 {usedByNames.length > 0 && (
                     <p className="text-sm text-muted">Changes also apply to {formatNames(usedByNames)}.</p>

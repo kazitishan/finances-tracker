@@ -22,7 +22,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #0c0a09;
     --surface: #171514;
     --surface-hover: #211e1c;
@@ -42,6 +42,27 @@
     --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #0c0a09;
+  --surface: #171514;
+  --surface-hover: #211e1c;
+  --border: #292524;
+  --border-strong: #3f3a37;
+  --foreground: #fafaf9;
+  --muted: #a8a29e;
+  --accent: #4ade80;
+  --accent-hover: #86efac;
+  --accent-soft: rgba(74, 222, 128, 0.1);
+  --accent-contrast: #052e16;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+  --ring: rgba(74, 222, 128, 0.3);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --shadow: none;
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -169,6 +190,13 @@ body {
     background: var(--surface-hover);
     color: var(--muted);
     border: 1px solid var(--border);
+  }
+
+  /* Warnings only, e.g. a card about to expire */
+  .chip-danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-color: transparent;
   }
 
   .link-btn {

@@ -22,9 +22,12 @@ const initialFormState = {
     notes: "",
 };
 
-function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved }) {
-    const [form, setForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
-    const { save, submitting, prompt } = useSaveItem({ category: "subscriptions", itemId, form, onSaved, onClose });
+function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete }) {
+    const [initialForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
+    const [form, setForm] = useState(initialForm);
+    const { save, remove, requestClose, submitting, prompt } = useSaveItem({
+        category: "subscriptions", itemId, form, initialForm, onSaved, onDelete, onClose,
+    });
 
     if (!isOpen) return null;
 
@@ -32,12 +35,8 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
         setForm((prev) => ({ ...prev, [field]: value }));
     }
 
-    function handleClose() {
-        onClose();
-    }
-
     return (
-        <Modal title={itemId ? "Edit Subscription" : "Add Subscription"} onClose={handleClose}>
+        <Modal title={itemId ? "Edit Subscription" : "Add Subscription"} onClose={requestClose}>
                 <div className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Name</span>
@@ -155,14 +154,16 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved })
                     </div>
 
                     {prompt || (
-                        <button
-                            type="button"
-                            onClick={() => save()}
-                            disabled={submitting}
-                            className="btn btn-primary mt-2 py-2.5"
-                        >
-                            {itemId ? "Save Changes" : "Add"}
-                        </button>
+                        <div className="flex gap-2 mt-2">
+                            {itemId && (
+                                <button type="button" onClick={remove} disabled={submitting} className="btn btn-danger py-2.5">
+                                    Delete
+                                </button>
+                            )}
+                            <button type="button" onClick={() => save()} disabled={submitting} className="btn btn-primary flex-1 py-2.5">
+                                {itemId ? "Save Changes" : "Add"}
+                            </button>
+                        </div>
                     )}
                 </div>
         </Modal>

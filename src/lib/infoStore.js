@@ -165,6 +165,20 @@ export function reorderItems(category, orderedIds) {
     return info[key];
 }
 
+// Replaces all info with an uploaded info.json. Returns false if `data` doesn't look like one:
+// it needs at least one category, and every known key it has must be a list.
+export function importInfo(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+    const keys = Object.keys(DEFAULT_INFO);
+    if (!Object.values(CATEGORY_KEYS).some((key) => key in data)) return false;
+    if (keys.some((key) => key in data && !Array.isArray(data[key]))) return false;
+
+    const info = Object.fromEntries(keys.map((key) => [key, data[key] || []]));
+    if ("passwords" in data) writeInfo(info);
+    else addPasswordsKey(info);
+    return true;
+}
+
 export function exportInfo() {
     return JSON.stringify(readInfo(), null, 2) + "\n";
 }

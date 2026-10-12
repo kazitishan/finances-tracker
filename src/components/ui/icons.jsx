@@ -75,6 +75,16 @@ export const DownloadIcon = (props) => (
     </Icon>
 );
 
+export const SearchIcon = (props) => (
+    <Icon {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>
+);
+
+export const UploadIcon = (props) => (
+    <Icon {...props}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m17 8-5-5-5 5" /><path d="M12 3v12" />
+    </Icon>
+);
+
 export const TrashIcon = (props) => (
     <Icon {...props}>
         <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />

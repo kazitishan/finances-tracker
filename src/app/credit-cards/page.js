@@ -6,10 +6,12 @@ import CreditCardInfo from "@/components/info/CreditCardInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import { accountAgeInMonths, formatCurrency, formatMonthsAge } from "@/lib/formUtils";
+import { NoMatches } from "@/components/ui/SearchInput";
+import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
 
 export default function CreditCards() {
   const [cards, setCards] = useState([]);
+  const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -50,7 +52,8 @@ export default function CreditCards() {
   }
 
   async function handleDelete(id) {
-    await fetch(`/api/credit-cards/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/credit-cards/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
     setCards((prev) => prev.filter((card) => card.id !== id));
   }
 
@@ -74,11 +77,15 @@ export default function CreditCards() {
     .filter((card) => card.creditLine)
     .reduce((sum, card) => sum + Number(card.creditLine), 0);
 
+  const filteredCards = cards.filter((card) => matchesSearch([card.name, card.bank, card.usage], search));
+
   return (
     <div>
       <PageHeader
         title="Credit Cards"
         count={loaded ? cards.length : null}
+        search={search}
+        onSearchChange={setSearch}
         stats={[
           { label: "Average Age", value: averageAgeLabel },
           { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
@@ -92,9 +99,10 @@ export default function CreditCards() {
 
       {/* All credit cards */}
       {loaded && cards.length === 0 && <EmptyState noun="credit cards" onAdd={handleAddClick} />}
+      {cards.length > 0 && filteredCards.length === 0 && <NoMatches query={search} />}
 
       <div className="flex flex-col gap-3">
-        {cards.map((card) => (
+        {filteredCards.map((card) => (
           <CreditCardInfo key={card.id} card={card} bankAccounts={bankAccounts} onEdit={() => handleEdit(card)} />
         ))}
       </div>
@@ -106,6 +114,7 @@ export default function CreditCards() {
         itemId={editingCard?.id}
         initialData={editingCard}
         onSaved={handleSaved}
+        onDelete={handleDelete}
       />
 
       <RearrangeModal

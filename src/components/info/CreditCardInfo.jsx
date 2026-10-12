@@ -1,7 +1,7 @@
 "use client";
 
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency } from "@/lib/formUtils";
+import { maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency, expiryStatus } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
@@ -22,6 +22,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
     const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
     const rewardsList = splitLines(card.rewards);
     const usageList = splitLines(card.usage);
+    const expiry = expiryStatus(card.expMonth, card.expYear);
 
     return (
         <InfoCard
@@ -29,7 +30,10 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             imageAlt={bankInfo?.name}
             title={card.name || "Unnamed Card"}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
-            tags={usageList}
+            tags={[
+                ...(expiry ? [{ label: expiry === "expired" ? "Expired" : "Expires soon", tone: "danger" }] : []),
+                ...usageList,
+            ]}
             link={card.link}
             onEdit={onEdit}
         >

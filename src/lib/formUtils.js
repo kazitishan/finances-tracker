@@ -69,6 +69,23 @@ export function formatNames(names) {
     return `${names[0]}, ${names[1]} and ${names.length - 2} others`;
 }
 
+// Case-insensitive match of `query` against any of `fields`; an empty query matches everything.
+export function matchesSearch(fields, query) {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return true;
+    return fields.filter(Boolean).join(" ").toLowerCase().includes(needle);
+}
+
+// "expired", "soon" (within 60 days), or null. Cards are valid through their expiry month.
+export function expiryStatus(expMonth, expYear) {
+    if (!expMonth || !expYear) return null;
+    const lastValidDay = new Date(Number(expYear), Number(expMonth), 0);
+    const daysLeft = daysUntil(lastValidDay);
+    if (daysLeft < 0) return "expired";
+    if (daysLeft <= 60) return "soon";
+    return null;
+}
+
 export const dueDates = [];
 for (let day = 1; day <= 28; day++) {
     dueDates.push({ value: day, label: `${ordinal(day)} of every month` });

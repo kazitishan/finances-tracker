@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
+import { useToast } from "@/components/ToastProvider";
 import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from "@/components/ui/icons";
 
 function RearrangeModal({ isOpen, onClose, items, getLabel, onReorder, onDelete }) {
     const [order, setOrder] = useState(items);
+    const showToast = useToast();
 
     if (!isOpen) return null;
 
@@ -29,8 +31,13 @@ function RearrangeModal({ isOpen, onClose, items, getLabel, onReorder, onDelete 
 
     async function handleDelete(id) {
         if (!window.confirm("Delete this item? This cannot be undone.")) return;
-        setOrder((prev) => prev.filter((item) => item.id !== id));
-        await onDelete(id);
+        try {
+            await onDelete(id);
+            setOrder((prev) => prev.filter((item) => item.id !== id));
+            showToast("Deleted");
+        } catch {
+            showToast("Couldn't delete");
+        }
     }
 
     async function handleDone() {

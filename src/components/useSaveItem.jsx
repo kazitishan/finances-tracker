@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatNames } from "@/lib/formUtils";
+import { useToast } from "@/components/ToastProvider";
 
 function LoginChangePrompt({ sharedWith, disabled, onChoose, onCancel }) {
     const ref = useRef(null);
@@ -33,7 +34,9 @@ function LoginChangePrompt({ sharedWith, disabled, onChoose, onCancel }) {
 
 // Saves a form for `category`. If the password of a login other items share was changed,
 // `prompt` asks whether to update those items too; render it in place of the save button.
-export function useSaveItem({ category, itemId, form, onSaved, onClose }) {
+// `requestClose` asks before discarding edits; `remove` deletes the item being edited.
+export function useSaveItem({ category, itemId, form, initialForm, onSaved, onDelete, onClose }) {
+    const showToast = useToast();
     const [submitting, setSubmitting] = useState(false);
     const [sharedWith, setSharedWith] = useState(null);
 
@@ -50,6 +53,7 @@ export function useSaveItem({ category, itemId, form, onSaved, onClose }) {
                 setSharedWith((await res.json()).sharedWith);
                 return;
             }
+            if (!res.ok) throw new Error(`Save failed: ${res.status}`);
             const saved = await res.json();
             onSaved?.(saved);
 
@@ -58,10 +62,33 @@ export function useSaveItem({ category, itemId, form, onSaved, onClose }) {
                 const items = await fetch(`/api/${category}`).then((r) => r.json());
                 items.filter((item) => item.id !== saved.id).forEach((item) => onSaved?.(item));
             }
+            showToast(loginMode === "update-all" ? "Saved everywhere" : itemId ? "Saved" : "Added");
             onClose();
+        } catch {
+            showToast("Couldn't save");
         } finally {
             setSubmitting(false);
         }
+    }
+
+    async function remove() {
+        if (!window.confirm("Delete this item? This cannot be undone.")) return;
+        setSubmitting(true);
+        try {
+            await onDelete(itemId);
+            showToast("Deleted");
+            onClose();
+        } catch {
+            showToast("Couldn't delete");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    function requestClose() {
+        const changed = JSON.stringify(form) !== JSON.stringify(initialForm);
+        if (changed && !window.confirm("Discard unsaved changes?")) return;
+        onClose();
     }
 
     const prompt = sharedWith && (
@@ -73,5 +100,5 @@ export function useSaveItem({ category, itemId, form, onSaved, onClose }) {
         />
     );
 
-    return { save, submitting, prompt };
+    return { save, remove, requestClose, submitting, prompt };
 }

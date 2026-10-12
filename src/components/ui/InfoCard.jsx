@@ -4,8 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowUpRightIcon, ChevronDownIcon, PencilIcon } from "@/components/ui/icons";
 
-// Header layout shared by every card: subtitle for identifying details, neutral tags for
-// categories, and an optional `stat` ({ label, value, caption }) for the single key figure,
+// Header layout shared by every card: subtitle for identifying details, tags for categories
+// (strings, or { label, tone: "danger" } for warnings), and an optional `stat` ({ label, value, caption }) for the single key figure,
 // shown in the header and again on its own line when expanded.
 function InfoCard({ image, imageAlt, title, subtitle, tags = [], stat, link, onEdit, children }) {
     const [expanded, setExpanded] = useState(false);
@@ -26,9 +26,13 @@ function InfoCard({ image, imageAlt, title, subtitle, tags = [], stat, link, onE
                     <div className="text-sm text-muted truncate">{subtitle || "—"}</div>
                     {tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {tags.map((tag, index) => (
-                                <span key={index} className="chip">{tag}</span>
-                            ))}
+                            {tags.map((tag, index) =>
+                                typeof tag === "string" ? (
+                                    <span key={index} className="chip">{tag}</span>
+                                ) : (
+                                    <span key={index} className={`chip${tag.tone === "danger" ? " chip-danger" : ""}`}>{tag.label}</span>
+                                )
+                            )}
                         </div>
                     )}
                 </div>

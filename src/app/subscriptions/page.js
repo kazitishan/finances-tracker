@@ -6,10 +6,12 @@ import SubscriptionInfo from "@/components/info/SubscriptionInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import { formatCurrency } from "@/lib/formUtils";
+import { NoMatches } from "@/components/ui/SearchInput";
+import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
+  const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [creditCards, setCreditCards] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
@@ -56,7 +58,8 @@ export default function Subscriptions() {
   }
 
   async function handleDelete(id) {
-    await fetch(`/api/subscriptions/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/subscriptions/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
     setSubscriptions((prev) => prev.filter((subscription) => subscription.id !== id));
   }
 
@@ -78,11 +81,17 @@ export default function Subscriptions() {
     .reduce((sum, subscription) => sum + Number(subscription.cost), 0);
   const yearlyTotal = monthlyTotal * 12 + yearlyPayments;
 
+  const filteredSubscriptions = subscriptions.filter((subscription) =>
+    matchesSearch([subscription.name, subscription.subscription], search)
+  );
+
   return (
     <div>
       <PageHeader
         title="Subscriptions"
         count={loaded ? subscriptions.length : null}
+        search={search}
+        onSearchChange={setSearch}
         stats={[
           {
             label: "Monthly Total",
@@ -102,9 +111,10 @@ export default function Subscriptions() {
 
       {/* All subscriptions */}
       {loaded && subscriptions.length === 0 && <EmptyState noun="subscriptions" onAdd={handleAddClick} />}
+      {subscriptions.length > 0 && filteredSubscriptions.length === 0 && <NoMatches query={search} />}
 
       <div className="flex flex-col gap-3">
-        {subscriptions.map((subscription) => (
+        {filteredSubscriptions.map((subscription) => (
           <SubscriptionInfo
             key={subscription.id}
             subscription={subscription}
@@ -122,6 +132,7 @@ export default function Subscriptions() {
         itemId={editingSubscription?.id}
         initialData={editingSubscription}
         onSaved={handleSaved}
+        onDelete={handleDelete}
       />
 
       <RearrangeModal
