@@ -4,6 +4,7 @@ import { useState } from "react";
 import BrokerDropdown from "@/components/dropdowns/BrokerDropdown";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
+import { useSaveItem } from "@/components/useSaveItem";
 import { investmentAccountTypes } from "@/components/info/InvestmentAccountInfo";
 import { inputClasses } from "@/lib/formUtils";
 
@@ -19,7 +20,7 @@ const initialFormState = {
 
 function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSaved }) {
     const [form, setForm] = useState(() => (initialData ? { ...initialFormState, ...initialData } : initialFormState));
-    const [submitting, setSubmitting] = useState(false);
+    const { save, submitting, prompt } = useSaveItem({ category: "investment-accounts", itemId, form, onSaved, onClose });
 
     if (!isOpen) return null;
 
@@ -29,23 +30,6 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
 
     function handleClose() {
         onClose();
-    }
-
-    async function handleSubmit() {
-        setSubmitting(true);
-        try {
-            const url = itemId ? `/api/investment-accounts/${itemId}` : "/api/investment-accounts";
-            const res = await fetch(url, {
-                method: itemId ? "PUT" : "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
-            });
-            const saved = await res.json();
-            onSaved?.(saved);
-            handleClose();
-        } finally {
-            setSubmitting(false);
-        }
     }
 
     return (
@@ -112,14 +96,16 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                     />
                 </div>
 
-                <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="btn btn-primary mt-2 py-2.5"
-                >
-                    {itemId ? "Save Changes" : "Add"}
-                </button>
+                {prompt || (
+                    <button
+                        type="button"
+                        onClick={() => save()}
+                        disabled={submitting}
+                        className="btn btn-primary mt-2 py-2.5"
+                    >
+                        {itemId ? "Save Changes" : "Add"}
+                    </button>
+                )}
             </div>
         </Modal>
     );

@@ -31,28 +31,48 @@ const PLATFORM_FIELDS = {
     "investment accounts": "broker",
 };
 
-// Adds the item's login to `info.passwords`, or updates the password of a saved login with
-// the same platform and username.
-function saveLogin(info, key, item) {
-    const platform = item[PLATFORM_FIELDS[key]];
-    const username = item.loginUsername || "";
-    const password = item.loginPassword || "";
-    if (!platform || (!username && !password)) return;
+function loginOf(key, item) {
+    return {
+        platform: item[PLATFORM_FIELDS[key]] || "",
+        username: item.loginUsername || "",
+        password: item.loginPassword || "",
+    };
+}
+
+function sameLogin(a, b) {
+    return a.platform === b.platform && a.username === b.username && a.password === b.password;
+}
+
+// Adds `login` to `info.passwords` unless it's already saved. With `replacing`, the saved
+// login it replaces gets the new password instead of a second entry being added.
+function saveLogin(info, login, replacing = null) {
+    if (!login.platform || (!login.username && !login.password)) return;
 
     const passwords = info.passwords || [];
-    const existing = passwords.find((login) => login.platform === platform && login.username === username);
-    if (!existing) {
-        info.passwords = [...passwords, { id: crypto.randomUUID(), platform, username, password }];
-    } else if (password && existing.password !== password) {
-        info.passwords = passwords.map((login) => (login === existing ? { ...login, password } : login));
+    const replaced = replacing && passwords.find((saved) => sameLogin(saved, replacing));
+    if (passwords.some((saved) => sameLogin(saved, login))) {
+        if (replaced) info.passwords = passwords.filter((saved) => saved !== replaced);
+    } else if (replaced) {
+        info.passwords = passwords.map((saved) => (saved === replaced ? { ...saved, password: login.password } : saved));
+    } else {
+        info.passwords = [...passwords, { id: crypto.randomUUID(), ...login }];
     }
+}
+
+// Every item, across categories, signed in with `login`, except the one with `excludeId`.
+function itemsUsingLogin(info, login, excludeId) {
+    return Object.keys(PLATFORM_FIELDS).flatMap((key) =>
+        (info[key] || [])
+            .filter((item) => item.id !== excludeId && sameLogin(loginOf(key, item), login))
+            .map((item) => ({ key, item }))
+    );
 }
 
 // Files created before saved logins existed get a "passwords" key built from their items.
 function addPasswordsKey(info) {
     info.passwords = [];
     for (const key of Object.keys(PLATFORM_FIELDS)) {
-        for (const item of info[key] || []) saveLogin(info, key, item);
+        for (const item of info[key] || []) saveLogin(info, loginOf(key, item));
     }
     writeInfo(info);
 }
@@ -89,23 +109,45 @@ export function addItem(category, item) {
     const key = getCategoryKey(category);
     const newItem = { ...item, id: crypto.randomUUID() };
     info[key] = [...(info[key] || []), newItem];
-    saveLogin(info, key, newItem);
+    saveLogin(info, loginOf(key, newItem));
     writeInfo(info);
     return newItem;
 }
 
-export function updateItem(category, id, updates) {
+// When only the password changed and other items share the old login, `loginMode` says what
+// to do: "update-all" changes their password too, "new" saves the password as a separate
+// login. Without it nothing is written and `sharedWith` names those items so the user can choose.
+export function updateItem(category, id, updates, loginMode = null) {
     const info = readInfo();
     const key = getCategoryKey(category);
-    let updated = null;
-    info[key] = (info[key] || []).map((item) => {
-        if (item.id !== id) return item;
-        updated = { ...updates, id };
-        return updated;
-    });
-    if (updated) saveLogin(info, key, updated);
+    const previous = (info[key] || []).find((item) => item.id === id);
+    if (!previous) return { item: null };
+
+    const updated = { ...updates, id };
+    const oldLogin = loginOf(key, previous);
+    const newLogin = loginOf(key, updated);
+    const passwordChanged = oldLogin.password && newLogin.password && oldLogin.password !== newLogin.password
+        && oldLogin.platform === newLogin.platform && oldLogin.username === newLogin.username;
+    const sharing = passwordChanged ? itemsUsingLogin(info, oldLogin, id) : [];
+
+    if (sharing.length > 0 && !loginMode) {
+        return { sharedWith: sharing.map(({ item }) => item.name || "Unnamed item") };
+    }
+
+    info[key] = info[key].map((item) => (item.id === id ? updated : item));
+
+    if (sharing.length > 0 && loginMode === "update-all") {
+        for (const { key: sharedKey, item: shared } of sharing) {
+            info[sharedKey] = info[sharedKey].map((item) =>
+                item.id === shared.id ? { ...item, loginPassword: newLogin.password } : item
+            );
+        }
+    }
+
+    const replacesOldLogin = passwordChanged && (sharing.length === 0 || loginMode === "update-all");
+    saveLogin(info, newLogin, replacesOldLogin ? oldLogin : null);
     writeInfo(info);
-    return updated;
+    return { item: updated };
 }
 
 export function deleteItem(category, id) {
