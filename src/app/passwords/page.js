@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { brokers } from "@/components/dropdowns/BrokerDropdown";
@@ -11,6 +11,8 @@ import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import EditLoginModal from "@/components/modals/EditLoginModal";
 import SearchInput, { NoMatches } from "@/components/ui/SearchInput";
+import FilterMenu from "@/components/ui/FilterMenu";
+import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
 
 const categoryLabels = {
@@ -22,8 +24,9 @@ const categoryLabels = {
 };
 
 const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions];
+const platformLogo = (name) => platforms.find((platform) => platform.name === name)?.image;
 
-export default function Passwords() {
+function Passwords() {
   const [logins, setLogins] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
@@ -53,8 +56,12 @@ export default function Passwords() {
     setEditModalKey((key) => key + 1);
   }
 
+  const filters = useUrlFilters(logins, [
+    { key: "platform", label: "Platform", getValue: (login) => login.platform, getImage: platformLogo },
+  ]);
+
   const sortedLogins = logins
-    .filter((login) => matchesSearch([login.platform, login.username, ...login.usedBy.map((item) => item.name)], search))
+    .filter((login) => filters.matches(login) && matchesSearch([login.platform, login.username, ...login.usedBy.map((item) => item.name)], search))
     .sort((a, b) => a.platform.localeCompare(b.platform) || a.username.localeCompare(b.username));
 
   return (
@@ -66,7 +73,10 @@ export default function Passwords() {
           Editing a login updates every item that uses it.
         </div>
         {logins.length > 0 && (
-          <SearchInput value={search} onChange={setSearch} placeholder="Search logins..." />
+          <div className="mt-4 flex gap-2">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search logins..." className="flex-1 min-w-0" />
+            <FilterMenu filters={filters} />
+          </div>
         )}
       </div>
 
@@ -119,5 +129,14 @@ export default function Passwords() {
         onChanged={loadLogins}
       />
     </div>
+  );
+}
+
+export default function PasswordsPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <Passwords />
+    </Suspense>
   );
 }

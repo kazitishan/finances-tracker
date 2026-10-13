@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AddInvestmentAccountModal from "@/components/modals/AddInvestmentAccountModal";
 import InvestmentAccountInfo from "@/components/info/InvestmentAccountInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
+import { useUrlFilters } from "@/components/useUrlFilters";
+import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import { matchesSearch } from "@/lib/formUtils";
 
-export default function InvestmentAccounts() {
+const brokerLogo = (name) => brokers.find((broker) => broker.name === name)?.image;
+
+function InvestmentAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -64,8 +68,13 @@ export default function InvestmentAccounts() {
     setAccounts(await res.json());
   }
 
+  const filters = useUrlFilters(accounts, [
+    { key: "broker", label: "Broker", getValue: (account) => account.broker, getImage: brokerLogo },
+    { key: "type", label: "Type", getValue: (account) => account.type },
+  ]);
+
   const filteredAccounts = accounts.filter((account) =>
-    matchesSearch([account.name, account.broker, account.type], search)
+    filters.matches(account) && matchesSearch([account.name, account.broker, account.type], search)
   );
 
   return (
@@ -75,6 +84,7 @@ export default function InvestmentAccounts() {
         count={loaded ? accounts.length : null}
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
         stats={[]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
@@ -117,5 +127,14 @@ export default function InvestmentAccounts() {
         onDelete={handleDelete}
       />
     </div>
+  );
+}
+
+export default function InvestingPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <InvestmentAccounts />
+    </Suspense>
   );
 }
