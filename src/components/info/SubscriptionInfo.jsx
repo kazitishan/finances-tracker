@@ -2,6 +2,7 @@
 
 import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
@@ -12,12 +13,7 @@ import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
     const subscriptionInfo = subscriptions.find((s) => s.name === subscription.subscription);
 
-    const [methodType, methodId] = (subscription.paymentMethod || "").split(":");
-    const paymentAccount = methodType === "credit"
-        ? creditCards.find((card) => card.id === methodId)
-        : methodType === "debit"
-            ? bankAccounts.find((account) => account.id === methodId)
-            : null;
+    const paymentAccount = findPaymentAccount(subscription.paymentMethod, { creditCards, bankAccounts });
     const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
 
     const costStat = subscription.cost

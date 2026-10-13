@@ -6,9 +6,10 @@ import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
+import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 
-function buildPayments(cards, subscriptions, bankAccounts, loans) {
+function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -51,7 +52,19 @@ function buildPayments(cards, subscriptions, bankAccounts, loans) {
     date: nextOccurrence(loan.paymentDay),
   }));
 
-  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments]
+  const insurancePayments = policies.map((policy) => ({
+    id: `insurance-${policy.id}`,
+    kind: "Insurance payment",
+    href: "/insurance",
+    name: policy.name || policy.provider || "Unnamed Insurance",
+    image: allInsuranceProviders.find((provider) => provider.name === policy.provider)?.image,
+    amount: policy.premium ? formatCurrency(policy.premium) : null,
+    date: policy.billingCycle === "year"
+      ? nextOccurrence(policy.billingDay, policy.billingMonth)
+      : nextOccurrence(policy.billingDay),
+  }));
+
+  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -67,8 +80,9 @@ export default function Home() {
       fetch("/api/subscriptions").then((res) => res.json()),
       fetch("/api/bank-accounts").then((res) => res.json()),
       fetch("/api/loans").then((res) => res.json()),
-    ]).then(([cards, subscriptions, bankAccounts, loans]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans));
+      fetch("/api/insurance").then((res) => res.json()),
+    ]).then(([cards, subscriptions, bankAccounts, loans, policies]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies));
       setLoaded(true);
     });
   }, []);

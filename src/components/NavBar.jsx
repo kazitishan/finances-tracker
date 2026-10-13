@@ -11,6 +11,7 @@ const links = [
     { href: "/subscriptions", label: "Subscriptions" },
     { href: "/loans", label: "Loans" },
     { href: "/investing", label: "Investing" },
+    { href: "/insurance", label: "Insurance" },
 ];
 
 function NavBar() {

@@ -8,6 +8,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
+import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
 import { subscriptions as subscriptionServices } from "@/components/dropdowns/SubscriptionDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 
@@ -85,19 +86,6 @@ function Subscriptions() {
     .reduce((sum, subscription) => sum + Number(subscription.cost), 0);
   const yearlyTotal = monthlyTotal * 12 + yearlyPayments;
 
-  function paymentMethodName(subscription) {
-    const [methodType, methodId] = (subscription.paymentMethod || "").split(":");
-    if (methodType === "credit") {
-      const card = creditCards.find((card) => card.id === methodId);
-      return card ? card.name || "Unnamed Card" : null;
-    }
-    if (methodType === "debit") {
-      const account = bankAccounts.find((account) => account.id === methodId);
-      return account ? account.name || "Unnamed Account" : null;
-    }
-    return null;
-  }
-
   const filters = useUrlFilters(subscriptions, [
     {
       key: "subscription",
@@ -105,7 +93,12 @@ function Subscriptions() {
       getValue: (subscription) => subscription.subscription,
       getImage: subscriptionLogo,
     },
-    { key: "paymentMethod", label: "Payment Method", getValue: paymentMethodName },
+    {
+      key: "paymentMethod",
+      label: "Payment Method",
+      getValue: (subscription) =>
+        findPaymentAccount(subscription.paymentMethod, { creditCards, bankAccounts })?.displayName,
+    },
   ]);
 
   const filteredSubscriptions = subscriptions.filter((subscription) =>

@@ -9,6 +9,7 @@ const DEFAULT_INFO = {
     subscriptions: [],
     loans: [],
     "investment accounts": [],
+    insurance: [],
     passwords: [],
 };
 
@@ -18,6 +19,7 @@ const CATEGORY_KEYS = {
     subscriptions: "subscriptions",
     loans: "loans",
     "investment-accounts": "investment accounts",
+    insurance: "insurance",
 };
 
 // The field that names each category's platform; saved logins are grouped by it, so a Chase
@@ -28,6 +30,7 @@ const PLATFORM_FIELDS = {
     subscriptions: "subscription",
     loans: "provider",
     "investment accounts": "broker",
+    insurance: "provider",
 };
 
 function loginOf(key, item) {

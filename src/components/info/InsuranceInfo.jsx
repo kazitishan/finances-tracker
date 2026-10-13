@@ -1,0 +1,70 @@
+"use client";
+
+import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
+import { insuranceTypeFields, insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
+import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
+import InfoCard from "@/components/ui/InfoCard";
+import DetailRow from "@/components/ui/DetailRow";
+import { NotesSection } from "@/components/ui/DetailSection";
+import LoginDetailRow from "@/components/info/LoginDetailRow";
+import PaymentMethodCard from "@/components/info/PaymentMethodCard";
+
+function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit }) {
+    const providerInfo = allInsuranceProviders.find((p) => p.name === insurance.provider);
+    const typeLabel = insuranceTypeLabel(insurance.type, insurance.otherType);
+    const typeFields = insuranceTypeFields[insurance.type] || [];
+
+    const paymentAccount = findPaymentAccount(insurance.paymentMethod, { creditCards, bankAccounts });
+    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
+
+    const premiumStat = insurance.premium
+        ? insurance.billingCycle === "year"
+            ? { label: "Yearly Premium", value: formatCurrency(insurance.premium), caption: "per year" }
+            : { label: "Monthly Premium", value: formatCurrency(insurance.premium), caption: "per month" }
+        : null;
+
+    const monthLabel = months.find((month) => month.value === insurance.billingMonth)?.label;
+    const paymentsDueLabel = insurance.billingCycle === "year"
+        ? (monthLabel && insurance.billingDay ? `${monthLabel} ${ordinal(Number(insurance.billingDay))}, every year` : "")
+        : (insurance.billingDay ? `${ordinal(Number(insurance.billingDay))} of every month` : "");
+
+    return (
+        <InfoCard
+            image={providerInfo?.image}
+            imageAlt={providerInfo?.name}
+            title={insurance.name || "Unnamed Insurance"}
+            subtitle={insurance.provider}
+            tags={[typeLabel].filter(Boolean)}
+            stat={premiumStat}
+            link={insurance.link}
+            onEdit={onEdit}
+        >
+            <LoginDetailRow username={insurance.loginUsername} password={insurance.loginPassword} />
+            {typeFields.map((field) => (
+                <DetailRow
+                    key={field.key}
+                    label={field.label}
+                    value={field.money && insurance[field.key]
+                        ? formatCurrency(insurance[field.key], { cents: false })
+                        : insurance[field.key]}
+                    copyable={field.copyable}
+                />
+            ))}
+            <DetailRow label="Payments Due" value={paymentsDueLabel} />
+
+            {paymentAccount && (
+                <PaymentMethodCard
+                    bankInfo={paymentAccountBankInfo}
+                    name={paymentAccount.displayName}
+                    detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}
+                />
+            )}
+
+            <NotesSection notes={insurance.notes} />
+        </InfoCard>
+    );
+}
+
+export default InsuranceInfo;

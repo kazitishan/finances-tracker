@@ -6,6 +6,7 @@ import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
+import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
@@ -21,9 +22,10 @@ const categoryLabels = {
   subscriptions: "Subscription",
   loans: "Loan",
   "investment-accounts": "Investment Account",
+  insurance: "Insurance",
 };
 
-const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions];
+const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions, ...allInsuranceProviders];
 const platformLogo = (name) => platforms.find((platform) => platform.name === name)?.image;
 
 function Passwords() {
