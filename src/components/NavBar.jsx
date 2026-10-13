@@ -10,7 +10,7 @@ const links = [
     { href: "/credit-cards", label: "Credit Cards" },
     { href: "/subscriptions", label: "Subscriptions" },
     { href: "/loans", label: "Loans" },
-    { href: "/investment-accounts", label: "Investment Accounts" },
+    { href: "/investing", label: "Investing" },
 ];
 
 function NavBar() {

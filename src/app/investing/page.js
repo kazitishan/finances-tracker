@@ -71,7 +71,7 @@ export default function InvestmentAccounts() {
   return (
     <div>
       <PageHeader
-        title="Investment Accounts"
+        title="Investing"
         count={loaded ? accounts.length : null}
         search={search}
         onSearchChange={setSearch}
