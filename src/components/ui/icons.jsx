@@ -79,6 +79,10 @@ export const SearchIcon = (props) => (
     <Icon {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>
 );
 
+export const FilterIcon = (props) => (
+    <Icon {...props}><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" /></Icon>
+);
+
 export const UploadIcon = (props) => (
     <Icon {...props}>
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m17 8-5-5-5 5" /><path d="M12 3v12" />

@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
 import CreditCardInfo from "@/components/info/CreditCardInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
+import { useUrlFilters } from "@/components/useUrlFilters";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
 
-export default function CreditCards() {
+const bankLogo = (name) => banks.find((bank) => bank.name === name)?.image;
+
+function CreditCards() {
   const [cards, setCards] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -77,7 +81,19 @@ export default function CreditCards() {
     .filter((card) => card.creditLine)
     .reduce((sum, card) => sum + Number(card.creditLine), 0);
 
-  const filteredCards = cards.filter((card) => matchesSearch([card.name, card.bank, card.usage], search));
+  function paymentMethodName(card) {
+    const account = bankAccounts.find((account) => account.id === card.paymentMethod);
+    return account ? account.name || "Unnamed Account" : null;
+  }
+
+  const filters = useUrlFilters(cards, [
+    { key: "bank", label: "Bank", getValue: (card) => card.bank, getImage: bankLogo },
+    { key: "paymentMethod", label: "Payment Method", getValue: paymentMethodName },
+  ]);
+
+  const filteredCards = cards.filter((card) =>
+    filters.matches(card) && matchesSearch([card.name, card.bank, card.usage], search)
+  );
 
   return (
     <div>
@@ -86,6 +102,7 @@ export default function CreditCards() {
         count={loaded ? cards.length : null}
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
         stats={[
           { label: "Average Age", value: averageAgeLabel },
           { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
@@ -127,5 +144,14 @@ export default function CreditCards() {
         onDelete={handleDelete}
       />
     </div>
+  );
+}
+
+export default function CreditCardsPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <CreditCards />
+    </Suspense>
   );
 }

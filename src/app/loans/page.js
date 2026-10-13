@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AddLoanModal from "@/components/modals/AddLoanModal";
 import LoanInfo, { amountRemaining } from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
+import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
+import { useUrlFilters } from "@/components/useUrlFilters";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 
-export default function Loans() {
+const providerLogo = (name) => loanProviders.find((provider) => provider.name === name)?.image;
+
+function Loans() {
   const [loans, setLoans] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -72,8 +76,13 @@ export default function Loans() {
   const totalDebt = loans.reduce((sum, loan) => sum + (amountRemaining(loan) ?? 0), 0);
   const formatMoney = (amount) => (amount > 0 ? formatCurrency(amount) : null);
 
+  const filters = useUrlFilters(loans, [
+    { key: "provider", label: "Provider", getValue: (loan) => loan.provider, getImage: providerLogo },
+    { key: "type", label: "Type", getValue: (loan) => loanTypeLabel(loan.type, loan.otherType) },
+  ]);
+
   const filteredLoans = loans.filter((loan) =>
-    matchesSearch([loan.name, loan.provider, loanTypeLabel(loan.type, loan.otherType)], search)
+    filters.matches(loan) && matchesSearch([loan.name, loan.provider, loanTypeLabel(loan.type, loan.otherType)], search)
   );
 
   return (
@@ -83,6 +92,7 @@ export default function Loans() {
         count={loaded ? loans.length : null}
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
         stats={[
           { label: "Monthly Total", value: formatMoney(monthlyTotal) },
           { label: "Yearly Total", value: formatMoney(yearlyTotal) },
@@ -129,5 +139,14 @@ export default function Loans() {
         onDelete={handleDelete}
       />
     </div>
+  );
+}
+
+export default function LoansPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <Loans />
+    </Suspense>
   );
 }

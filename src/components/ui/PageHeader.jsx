@@ -1,7 +1,8 @@
 import { ArrowUpDownIcon, PlusIcon } from "@/components/ui/icons";
 import SearchInput from "@/components/ui/SearchInput";
+import FilterMenu from "@/components/ui/FilterMenu";
 
-function PageHeader({ title, count, stats = [], search, onSearchChange, onRearrange, onAdd }) {
+function PageHeader({ title, count, stats = [], search, onSearchChange, filters, onRearrange, onAdd }) {
     const visibleStats = stats.filter((stat) => stat.value);
 
     return (
@@ -30,7 +31,15 @@ function PageHeader({ title, count, stats = [], search, onSearchChange, onRearra
                 </div>
             </div>
             {onSearchChange && count > 0 && (
-                <SearchInput value={search} onChange={onSearchChange} placeholder={`Search ${title.toLowerCase()}...`} />
+                <div className="mt-4 flex gap-2">
+                    <SearchInput
+                        value={search}
+                        onChange={onSearchChange}
+                        placeholder={`Search ${title.toLowerCase()}...`}
+                        className="flex-1 min-w-0"
+                    />
+                    {filters && <FilterMenu filters={filters} />}
+                </div>
             )}
         </div>
     );

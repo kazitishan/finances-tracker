@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AddBankAccountModal from "@/components/modals/AddBankAccountModal";
 import BankAccountInfo from "@/components/info/BankAccountInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
+import { useUrlFilters } from "@/components/useUrlFilters";
+import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { matchesSearch } from "@/lib/formUtils";
 
-export default function BankAccounts() {
+const bankLogo = (name) => banks.find((bank) => bank.name === name)?.image;
+
+function BankAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -62,8 +66,13 @@ export default function BankAccounts() {
     setAccounts(await res.json());
   }
 
+  const filters = useUrlFilters(accounts, [
+    { key: "type", label: "Account Type", getValue: (account) => account.type },
+    { key: "bank", label: "Bank", getValue: (account) => account.bank, getImage: bankLogo },
+  ]);
+
   const filteredAccounts = accounts.filter((account) =>
-    matchesSearch([account.name, account.bank, account.type], search)
+    filters.matches(account) && matchesSearch([account.name, account.bank, account.type], search)
   );
 
   return (
@@ -73,6 +82,7 @@ export default function BankAccounts() {
         count={loaded ? accounts.length : null}
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
         stats={[]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
@@ -111,5 +121,14 @@ export default function BankAccounts() {
         onDelete={handleDelete}
       />
     </div>
+  );
+}
+
+export default function BankAccountsPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <BankAccounts />
+    </Suspense>
   );
 }

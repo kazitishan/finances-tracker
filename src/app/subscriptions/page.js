@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AddSubscriptionModal from "@/components/modals/AddSubscriptionModal";
 import SubscriptionInfo from "@/components/info/SubscriptionInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
+import { useUrlFilters } from "@/components/useUrlFilters";
+import { subscriptions as subscriptionServices } from "@/components/dropdowns/SubscriptionDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 
-export default function Subscriptions() {
+const subscriptionLogo = (name) => subscriptionServices.find((service) => service.name === name)?.image;
+
+function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -81,8 +85,31 @@ export default function Subscriptions() {
     .reduce((sum, subscription) => sum + Number(subscription.cost), 0);
   const yearlyTotal = monthlyTotal * 12 + yearlyPayments;
 
+  function paymentMethodName(subscription) {
+    const [methodType, methodId] = (subscription.paymentMethod || "").split(":");
+    if (methodType === "credit") {
+      const card = creditCards.find((card) => card.id === methodId);
+      return card ? card.name || "Unnamed Card" : null;
+    }
+    if (methodType === "debit") {
+      const account = bankAccounts.find((account) => account.id === methodId);
+      return account ? account.name || "Unnamed Account" : null;
+    }
+    return null;
+  }
+
+  const filters = useUrlFilters(subscriptions, [
+    {
+      key: "subscription",
+      label: "Subscription",
+      getValue: (subscription) => subscription.subscription,
+      getImage: subscriptionLogo,
+    },
+    { key: "paymentMethod", label: "Payment Method", getValue: paymentMethodName },
+  ]);
+
   const filteredSubscriptions = subscriptions.filter((subscription) =>
-    matchesSearch([subscription.name, subscription.subscription], search)
+    filters.matches(subscription) && matchesSearch([subscription.name, subscription.subscription], search)
   );
 
   return (
@@ -92,6 +119,7 @@ export default function Subscriptions() {
         count={loaded ? subscriptions.length : null}
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
         stats={[
           {
             label: "Monthly Total",
@@ -145,5 +173,14 @@ export default function Subscriptions() {
         onDelete={handleDelete}
       />
     </div>
+  );
+}
+
+export default function SubscriptionsPage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <Subscriptions />
+    </Suspense>
   );
 }

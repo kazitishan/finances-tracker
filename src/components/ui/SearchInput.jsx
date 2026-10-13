@@ -1,8 +1,8 @@
 import { SearchIcon, XIcon } from "@/components/ui/icons";
 
-function SearchInput({ value, onChange, placeholder }) {
+function SearchInput({ value, onChange, placeholder, className = "mt-4" }) {
     return (
-        <div className="relative mt-4">
+        <div className={`relative ${className}`}>
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">
                 <SearchIcon size={15} />
             </span>
@@ -30,7 +30,11 @@ function SearchInput({ value, onChange, placeholder }) {
 }
 
 export function NoMatches({ query }) {
-    return <p className="py-10 text-center text-sm text-muted">No matches for &ldquo;{query.trim()}&rdquo;.</p>;
+    return (
+        <p className="py-10 text-center text-sm text-muted">
+            {query.trim() ? <>No matches for &ldquo;{query.trim()}&rdquo;.</> : "No matches for these filters."}
+        </p>
+    );
 }
 
 export default SearchInput;
