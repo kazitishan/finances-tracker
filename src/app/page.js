@@ -14,7 +14,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
     .map((card) => ({
       id: `card-${card.id}`,
       kind: "Credit card payment",
-      href: "/credit-cards",
+      href: "/expenses/credit-cards",
       name: card.name || card.bank || "Unnamed Card",
       image: banks.find((bank) => bank.name === card.bank)?.image,
       date: nextOccurrence(card.dueDate),
@@ -24,7 +24,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
     .map((subscription) => ({
       id: `subscription-${subscription.id}`,
       kind: "Subscription payment",
-      href: "/subscriptions",
+      href: "/expenses/subscriptions",
       name: subscription.name || subscription.subscription || "Unnamed Subscription",
       image: subscriptionCompanies.find((company) => company.name === subscription.subscription)?.image,
       amount: subscription.cost ? formatCurrency(subscription.cost) : null,
@@ -36,7 +36,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
   const interestPayments = bankAccounts.map((account) => ({
     id: `interest-${account.id}`,
     kind: "Interest payment",
-    href: "/bank-accounts",
+    href: "/accounts/bank-accounts",
     name: account.name || account.bank || "Unnamed Account",
     image: banks.find((bank) => bank.name === account.bank)?.image,
     date: nextInterestDate(account.interestPaymentDate),
@@ -45,7 +45,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
   const loanPayments = loans.map((loan) => ({
     id: `loan-${loan.id}`,
     kind: "Loan payment",
-    href: "/loans",
+    href: "/expenses/loans",
     name: loan.name || loan.provider || "Unnamed Loan",
     image: loanProviders.find((provider) => provider.name === loan.provider)?.image,
     amount: loan.monthlyPayment ? formatCurrency(loan.monthlyPayment) : null,
@@ -55,7 +55,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
   const insurancePayments = policies.map((policy) => ({
     id: `insurance-${policy.id}`,
     kind: "Insurance payment",
-    href: "/insurance",
+    href: "/expenses/insurance",
     name: policy.name || policy.provider || "Unnamed Insurance",
     image: allInsuranceProviders.find((provider) => provider.name === policy.provider)?.image,
     amount: policy.premium ? formatCurrency(policy.premium) : null,
@@ -97,9 +97,9 @@ export default function Home() {
       {loaded && payments.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-16 text-center text-sm text-muted">
           Nothing coming up. Add a due date to a{" "}
-          <Link href="/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link>,{" "}
-          <Link href="/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>, or an interest
-          date to a <Link href="/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
+          <Link href="/expenses/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link>,{" "}
+          <Link href="/expenses/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>, or an interest
+          date to a <Link href="/accounts/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
         </div>
       )}
 

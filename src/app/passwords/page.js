@@ -25,6 +25,15 @@ const categoryLabels = {
   insurance: "Insurance",
 };
 
+const categoryPaths = {
+  "bank-accounts": "/accounts/bank-accounts",
+  "credit-cards": "/expenses/credit-cards",
+  subscriptions: "/expenses/subscriptions",
+  loans: "/expenses/loans",
+  "investment-accounts": "/accounts/investing",
+  insurance: "/expenses/insurance",
+};
+
 const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions, ...allInsuranceProviders];
 const platformLogo = (name) => platforms.find((platform) => platform.name === name)?.image;
 
@@ -109,7 +118,7 @@ function Passwords() {
               <DetailSection title="Used By">
                 {login.usedBy.length > 0 ? (
                   login.usedBy.map((item) => (
-                    <Link key={item.id} href={`/${item.category}`} className="detail-row rounded-md px-2 -mx-2 hover:bg-[var(--surface-hover)]">
+                    <Link key={item.id} href={categoryPaths[item.category]} className="detail-row rounded-md px-2 -mx-2 hover:bg-[var(--surface-hover)]">
                       <span className="font-medium truncate">{item.name || "Unnamed item"}</span>
                       <span className="detail-label shrink-0">{categoryLabels[item.category]}</span>
                     </Link>
