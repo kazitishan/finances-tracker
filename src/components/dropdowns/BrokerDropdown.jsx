@@ -1,21 +1,9 @@
 "use client";
 
 import LogoDropdown from "@/components/dropdowns/LogoDropdown";
+import platforms from "@/data/platforms.json";
 
-export const brokers = [
-    {
-        name: 'Fidelity',
-        image: '/investment/fidelity.png',
-    },
-    {
-        name: 'Robinhood',
-        image: '/investment/robinhood.png',
-    },
-    {
-        name: 'Vanguard',
-        image: '/investment/vanguard.png',
-    },
-];
+export const brokers = platforms.broker;
 
 function BrokerDropdown({ value, onChange, customLogo, onCustomLogoChange }) {
     return (

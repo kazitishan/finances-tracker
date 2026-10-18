@@ -1,14 +1,10 @@
 "use client";
 
 import LogoDropdown from "@/components/dropdowns/LogoDropdown";
+import platforms from "@/data/platforms.json";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 
-export const loanCompanies = [
-    {
-        name: 'Federal Student Aid',
-        image: '/loans/fsa.png',
-    },
-];
+export const loanCompanies = platforms.loan;
 
 export const loanProviders = [...banks, ...loanCompanies].sort((a, b) => a.name.localeCompare(b.name));
 
