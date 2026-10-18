@@ -1,7 +1,7 @@
 "use client";
 
 import { banks } from "@/components/dropdowns/Dropdown";
-import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
+import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { insuranceTypeFields, insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
 import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";

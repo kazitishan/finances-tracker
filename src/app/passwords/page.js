@@ -2,8 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { banks, brokers, loanProviders, subscriptions } from "@/components/dropdowns/Dropdown";
-import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
+import { banks, brokers, loanProviders, subscriptions, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";

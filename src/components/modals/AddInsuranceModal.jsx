@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import InsuranceTypeDropdown, { allInsuranceFieldKeys, insuranceTypeFields } from "@/components/dropdowns/InsuranceTypeDropdown";
-import InsuranceProviderDropdown, { allInsuranceProviders, insuranceProvidersFor } from "@/components/dropdowns/InsuranceProviderDropdown";
+import Dropdown, { allInsuranceProviders, insuranceProvidersFor } from "@/components/dropdowns/Dropdown";
 import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal, onlyDigits } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -119,8 +119,8 @@ function AddInsuranceModal({ isOpen, onClose, itemId, initialData, onSaved, onDe
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Provider</span>
-                        <InsuranceProviderDropdown
-                            type={form.type}
+                        <Dropdown
+                            type={form.type === "Health" ? "health-insurance-provider" : "insurance-provider"}
                             value={form.provider}
                             onChange={(provider) => updateField("provider", provider)}
                             customLogo={form.customLogo}

@@ -9,7 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
-import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
+import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 
