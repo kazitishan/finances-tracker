@@ -5,9 +5,14 @@ import Image from "next/image";
 import ImageUploadButton from "@/components/ui/ImageUploadButton";
 import { PlusIcon } from "@/components/ui/icons";
 
-// A searchable dropdown of platforms with logos. Its last option, "Other", is for one that isn't listed:
-// the user types its name and uploads its logo. `customLogo` is that logo, the path of the uploaded image
-// or, until the form is saved, the picked image as a data URL.
+// Options are { name, image?, value?, detail?, keywords? }: `value` is what's selected (the name if left out),
+// `detail` is shown muted after the name, and `keywords` are extra text the search matches.
+const optionValue = (option) => option.value ?? option.name;
+const optionLabel = (option) => (option.detail ? `${option.name} · ${option.detail}` : option.name);
+
+// A searchable dropdown of options with logos. With `allowOther`, its last option, "Other", is for one that
+// isn't listed: the user types its name and uploads its logo. `customLogo` is that logo, the path of the
+// uploaded image or, until the form is saved, the picked image as a data URL.
 function LogoDropdown({
     options,
     value,
@@ -17,9 +22,11 @@ function LogoDropdown({
     placeholder,
     searchPlaceholder,
     namePlaceholder,
+    emptyText,
+    allowOther = true,
 }) {
-    const selectedOption = options.find((option) => option.name === value);
-    const [isOther, setIsOther] = useState(Boolean(value) && !selectedOption);
+    const selectedOption = options.find((option) => optionValue(option) === value);
+    const [isOther, setIsOther] = useState(allowOther && Boolean(value) && !selectedOption);
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const containerRef = useRef(null);
@@ -46,10 +53,10 @@ function LogoDropdown({
         }
     }, [open]);
 
-    function selectOption(name) {
+    function selectOption(option) {
         setIsOther(false);
-        onChange(name);
-        onCustomLogoChange("");
+        onChange(optionValue(option));
+        onCustomLogoChange?.("");
         closeDropdown();
     }
 
@@ -61,7 +68,7 @@ function LogoDropdown({
     }
 
     const filteredOptions = options.filter((option) =>
-        option.name.toLowerCase().includes(search.toLowerCase())
+        [option.name, option.keywords].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())
     );
     const searchName = filteredOptions.some((option) => option.name.toLowerCase() === search.trim().toLowerCase())
         ? ""
@@ -75,21 +82,21 @@ function LogoDropdown({
                     onClick={() => (open ? closeDropdown() : setOpen(true))}
                     className="field flex items-center justify-between gap-2 cursor-pointer text-left"
                 >
-                    <span className="flex items-center gap-2">
-                        {!isOther && selectedOption && (
+                    <span className="flex items-center gap-2 min-w-0">
+                        {!isOther && selectedOption?.image && (
                             <Image
                                 src={selectedOption.image}
                                 alt={selectedOption.name}
                                 width={20}
                                 height={20}
-                                className="object-contain"
+                                className="object-contain shrink-0"
                             />
                         )}
-                        <span className={isOther || selectedOption ? "" : "text-muted"}>
-                            {isOther ? "Other" : selectedOption ? selectedOption.name : placeholder}
+                        <span className={`truncate ${isOther || selectedOption ? "" : "text-muted"}`}>
+                            {isOther ? "Other" : selectedOption ? optionLabel(selectedOption) : placeholder}
                         </span>
                     </span>
-                    <span className="text-muted text-xs">▾</span>
+                    <span className="text-muted text-xs shrink-0">▾</span>
                 </button>
 
                 {open && (
@@ -106,34 +113,44 @@ function LogoDropdown({
                         </div>
                         <ul className="max-h-56 overflow-y-auto">
                             {filteredOptions.map((option) => (
-                                <li key={option.name}>
+                                <li key={optionValue(option)}>
                                     <button
                                         type="button"
-                                        onClick={() => selectOption(option.name)}
+                                        onClick={() => selectOption(option)}
                                         className="dropdown-item"
                                     >
-                                        <Image
-                                            src={option.image}
-                                            alt={option.name}
-                                            width={20}
-                                            height={20}
-                                            className="object-contain"
-                                        />
-                                        {option.name}
+                                        {option.image && (
+                                            <Image
+                                                src={option.image}
+                                                alt={option.name}
+                                                width={20}
+                                                height={20}
+                                                className="object-contain shrink-0"
+                                            />
+                                        )}
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {option.name}
+                                            {option.detail && <span className="text-muted"> · {option.detail}</span>}
+                                        </span>
                                     </button>
                                 </li>
                             ))}
-                            <li className={filteredOptions.length > 0 ? "border-t border-[var(--border)]" : ""}>
-                                <button type="button" onClick={selectOther} className="dropdown-item">
-                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-dashed border-[var(--border-strong)] text-muted">
-                                        <PlusIcon size={12} />
-                                    </span>
-                                    <span className="min-w-0 truncate">
-                                        Other
-                                        {searchName && <span className="text-muted"> · &ldquo;{searchName}&rdquo;</span>}
-                                    </span>
-                                </button>
-                            </li>
+                            {!allowOther && filteredOptions.length === 0 && (
+                                <li className="px-3 py-2 text-sm text-muted">{emptyText}</li>
+                            )}
+                            {allowOther && (
+                                <li className={filteredOptions.length > 0 ? "border-t border-[var(--border)]" : ""}>
+                                    <button type="button" onClick={selectOther} className="dropdown-item">
+                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-dashed border-[var(--border-strong)] text-muted">
+                                            <PlusIcon size={12} />
+                                        </span>
+                                        <span className="min-w-0 truncate">
+                                            Other
+                                            {searchName && <span className="text-muted"> · &ldquo;{searchName}&rdquo;</span>}
+                                        </span>
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     </div>
                 )}

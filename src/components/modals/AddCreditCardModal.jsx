@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Dropdown from "@/components/dropdowns/Dropdown";
-import BankAccountsDropdown from "@/components/dropdowns/BankAccountsDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
@@ -225,7 +224,8 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
 
                         <label className="flex flex-col gap-1">
                             <span className="field-label">Payment Method</span>
-                            <BankAccountsDropdown
+                            <Dropdown
+                                type="bank-account"
                                 value={form.paymentMethod}
                                 onChange={(accountId) => updateField("paymentMethod", accountId)}
                             />
