@@ -6,7 +6,7 @@ import LoanInfo, { amountRemaining } from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import { loanProviders } from "@/components/dropdowns/Dropdown";
-import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
@@ -79,11 +79,11 @@ function Loans() {
 
   const filters = useUrlFilters(loans, [
     { key: "provider", label: "Provider", getValue: (loan) => loan.provider, getImage: providerLogo },
-    { key: "type", label: "Type", getValue: (loan) => loanTypeLabel(loan.type, loan.otherType) },
+    { key: "type", label: "Type", getValue: (loan) => typeLabel(loan.type, loan.otherType) },
   ]);
 
   const filteredLoans = loans.filter((loan) =>
-    filters.matches(loan) && matchesSearch([loan.name, loan.provider, loanTypeLabel(loan.type, loan.otherType)], search)
+    filters.matches(loan) && matchesSearch([loan.name, loan.provider, typeLabel(loan.type, loan.otherType)], search)
   );
 
   return (

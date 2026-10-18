@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { inputClasses } from "@/lib/formUtils";
 
-export const insuranceTypes = ["Health", "Auto", "Life", "Home", "Other"];
-
-export function insuranceTypeLabel(type, otherType) {
+// The name to show for a type: what the user typed in when they picked "Other", otherwise the type itself.
+export function typeLabel(type, otherType) {
     if (type === "Other") return otherType || "Other";
     return type || "";
 }
 
-function InsuranceTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
+// A dropdown of the different `types` of a thing. When the type picked is "Other", a text field
+// below it asks what the type is; that's `otherValue`.
+function TypeDropdown({ types, value, otherValue, onChange, onOtherChange, placeholder, otherPlaceholder }) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef(null);
 
@@ -32,14 +33,14 @@ function InsuranceTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
                     onClick={() => setOpen((prev) => !prev)}
                     className="field flex items-center justify-between gap-2 cursor-pointer text-left"
                 >
-                    <span className={value ? "" : "text-muted"}>{value || "Select an insurance type"}</span>
+                    <span className={value ? "" : "text-muted"}>{value || placeholder}</span>
                     <span className="text-muted text-xs">▾</span>
                 </button>
 
                 {open && (
                     <div className="dropdown-panel">
                         <ul className="max-h-56 overflow-y-auto">
-                            {insuranceTypes.map((type) => (
+                            {types.map((type) => (
                                 <li key={type}>
                                     <button
                                         type="button"
@@ -62,7 +63,7 @@ function InsuranceTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
                 <input
                     type="text"
                     className={inputClasses}
-                    placeholder="Enter insurance type"
+                    placeholder={otherPlaceholder}
                     value={otherValue}
                     onChange={(e) => onOtherChange(e.target.value)}
                 />
@@ -71,4 +72,4 @@ function InsuranceTypeDropdown({ value, otherValue, onChange, onOtherChange }) {
     );
 }
 
-export default InsuranceTypeDropdown;
+export default TypeDropdown;

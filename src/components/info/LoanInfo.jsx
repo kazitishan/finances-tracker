@@ -1,7 +1,7 @@
 "use client";
 
 import { loanProviders } from "@/components/dropdowns/Dropdown";
-import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { formatCurrency, ordinal } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
@@ -15,7 +15,7 @@ export function amountRemaining(loan) {
 }
 
 function LoanInfo({ loan, onEdit }) {
-    const typeLabel = loanTypeLabel(loan.type, loan.otherType);
+    const typeName = typeLabel(loan.type, loan.otherType);
     const formatAmount = (amount) => (amount ? formatCurrency(amount) : null);
     const remaining = amountRemaining(loan);
 
@@ -25,7 +25,7 @@ function LoanInfo({ loan, onEdit }) {
             imageAlt={loan.provider}
             title={loan.name || "Unnamed Loan"}
             subtitle={loan.provider}
-            tags={[typeLabel].filter(Boolean)}
+            tags={[typeName].filter(Boolean)}
             stat={remaining !== null ? { label: "Amount Remaining", value: formatCurrency(remaining), caption: "remaining" } : null}
             link={loan.link}
             onEdit={onEdit}

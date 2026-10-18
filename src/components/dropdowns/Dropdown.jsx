@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LogoDropdown from "@/components/dropdowns/LogoDropdown";
+import TypeDropdown from "@/components/dropdowns/TypeDropdown";
 import platforms from "@/data/platforms.json";
 import { logoFor } from "@/lib/logos";
 import { maskLast4 } from "@/lib/formUtils";
@@ -20,6 +21,11 @@ export const allInsuranceProviders = [...healthInsuranceProviders, ...insuranceP
 export function insuranceProvidersFor(insuranceType) {
     return insuranceType === "Health" ? healthInsuranceProviders : insuranceProviders;
 }
+
+const typesByType = {
+    "insurance-type": ["Health", "Auto", "Life", "Home", "Other"],
+    "loan-type": ["Mortgage", "Student Loans", "Personal Loans", "Business Loans", "Auto Loan", "Other"],
+};
 
 const optionsByType = {
     bank: banks,
@@ -51,7 +57,10 @@ function placeholders(type) {
 // "insurance-provider"
 // "bank-account": Dropdown of the user's bank accounts.
 // "payment-method": Dropdown of the user's credit and debit cards.
-function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange }) {
+// "insurance-type": Dropdown of the insurance types (Health, Auto, Life, Home, Other).
+// "loan-type": Dropdown of the loan types (Mortgage, Student Loans, Personal Loans, Business Loans, Auto Loan, Other).
+//     Picking "Other" on either asks for the type; that's `otherValue`.
+function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, otherValue, onOtherChange }) {
     const [bankAccounts, setBankAccounts] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState([]);
 
@@ -59,6 +68,20 @@ function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange }) {
         if (type === "bank-account") getBankAccounts().then(setBankAccounts);
         if (type === "payment-method") getPaymentMethods().then(setPaymentMethods);
     }, [type]);
+
+    if (typesByType[type]) {
+        return (
+            <TypeDropdown
+                types={typesByType[type]}
+                value={value}
+                otherValue={otherValue}
+                onChange={onChange}
+                onOtherChange={onOtherChange}
+                placeholder={placeholders(type).placeholder}
+                otherPlaceholder={`Enter ${type.replaceAll("-", " ")}`}
+            />
+        );
+    }
 
     // The user's credit cards and the debit cards on their bank accounts, picked by `credit:<id>` / `debit:<id>`.
     if (type === "payment-method") {

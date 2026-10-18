@@ -2,7 +2,7 @@
 
 import { banks } from "@/components/dropdowns/Dropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
-import { insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { insuranceTypeFields } from "@/components/modals/AddInsuranceModal";
 import { findPaymentAccount } from "@/util/findPaymentAccount";
 import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
@@ -14,7 +14,7 @@ import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { logoFor } from "@/lib/logos";
 
 function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit }) {
-    const typeLabel = insuranceTypeLabel(insurance.type, insurance.otherType);
+    const typeName = typeLabel(insurance.type, insurance.otherType);
     const typeFields = insuranceTypeFields[insurance.type] || [];
 
     const paymentAccount = findPaymentAccount(insurance.paymentMethod, { creditCards, bankAccounts });
@@ -36,7 +36,7 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
             imageAlt={insurance.provider}
             title={insurance.name || "Unnamed Insurance"}
             subtitle={insurance.provider}
-            tags={[typeLabel].filter(Boolean)}
+            tags={[typeName].filter(Boolean)}
             stat={premiumStat}
             link={insurance.link}
             onEdit={onEdit}

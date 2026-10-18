@@ -8,7 +8,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
-import { insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
@@ -86,13 +86,13 @@ function Insurance() {
   const yearlyTotal = monthlyTotal * 12 + yearlyPayments;
 
   const filters = useUrlFilters(policies, [
-    { key: "type", label: "Type", getValue: (policy) => insuranceTypeLabel(policy.type, policy.otherType) },
+    { key: "type", label: "Type", getValue: (policy) => typeLabel(policy.type, policy.otherType) },
     { key: "provider", label: "Provider", getValue: (policy) => policy.provider, getImage: providerLogo },
   ]);
 
   const filteredPolicies = policies.filter((policy) =>
     filters.matches(policy) &&
-    matchesSearch([policy.name, policy.provider, insuranceTypeLabel(policy.type, policy.otherType)], search)
+    matchesSearch([policy.name, policy.provider, typeLabel(policy.type, policy.otherType)], search)
   );
 
   return (

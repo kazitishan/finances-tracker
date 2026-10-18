@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import InsuranceTypeDropdown from "@/components/dropdowns/InsuranceTypeDropdown";
 import Dropdown, { allInsuranceProviders, insuranceProvidersFor } from "@/components/dropdowns/Dropdown";
 import { months, dueDates, inputClasses, onlyDecimal, onlyDigits } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -154,7 +153,8 @@ function AddInsuranceModal({ isOpen, onClose, itemId, initialData, onSaved, onDe
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Type</span>
-                        <InsuranceTypeDropdown
+                        <Dropdown
+                            type="insurance-type"
                             value={form.type}
                             otherValue={form.otherType}
                             onChange={updateType}

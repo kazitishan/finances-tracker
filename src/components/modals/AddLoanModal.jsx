@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Dropdown from "@/components/dropdowns/Dropdown";
-import LoanTypeDropdown from "@/components/dropdowns/LoanTypeDropdown";
 import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
@@ -54,7 +53,8 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Type</span>
-                        <LoanTypeDropdown
+                        <Dropdown
+                            type="loan-type"
                             value={form.type}
                             otherValue={form.otherType}
                             onChange={(type) => updateField("type", type)}
