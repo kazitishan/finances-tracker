@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Dropdown from "@/components/dropdowns/Dropdown";
-import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
@@ -81,7 +80,8 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, o
 
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Payment Method</span>
-                        <PaymentMethodDropdown
+                        <Dropdown
+                            type="payment-method"
                             value={form.paymentMethod}
                             onChange={(paymentMethod) => updateField("paymentMethod", paymentMethod)}
                         />

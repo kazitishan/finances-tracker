@@ -6,6 +6,7 @@ import platforms from "@/data/platforms.json";
 import { logoFor } from "@/lib/logos";
 import { maskLast4 } from "@/lib/formUtils";
 import { getBankAccounts } from "@/util/getBankAccounts";
+import { getPaymentMethods } from "@/util/getPaymentMethods";
 
 export const banks = platforms.bank;
 export const brokers = platforms.broker;
@@ -49,12 +50,36 @@ function placeholders(type) {
 // "health-insurance-provider"
 // "insurance-provider"
 // "bank-account": Dropdown of the user's bank accounts.
+// "payment-method": Dropdown of the user's credit and debit cards.
 function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange }) {
     const [bankAccounts, setBankAccounts] = useState([]);
+    const [paymentMethods, setPaymentMethods] = useState([]);
 
     useEffect(() => {
         if (type === "bank-account") getBankAccounts().then(setBankAccounts);
+        if (type === "payment-method") getPaymentMethods().then(setPaymentMethods);
     }, [type]);
+
+    // The user's credit cards and the debit cards on their bank accounts, picked by `credit:<id>` / `debit:<id>`.
+    if (type === "payment-method") {
+        const options = paymentMethods.map((method) => ({
+            value: method.value,
+            name: method.name,
+            detail: maskLast4(method.last4),
+            image: logoFor(banks, method.bank, method.customLogo),
+            keywords: method.bank,
+        }));
+
+        return (
+            <LogoDropdown
+                options={options}
+                value={value}
+                onChange={onChange}
+                allowOther={false}
+                {...placeholders(type)}
+            />
+        );
+    }
 
     // The user's own bank accounts, picked by id. They're added on the Bank Accounts page, so there's no "Other".
     if (type === "bank-account") {
