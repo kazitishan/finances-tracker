@@ -1,12 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import InsuranceTypeDropdown, { allInsuranceFieldKeys, insuranceTypeFields } from "@/components/dropdowns/InsuranceTypeDropdown";
+import InsuranceTypeDropdown from "@/components/dropdowns/InsuranceTypeDropdown";
 import Dropdown, { allInsuranceProviders, insuranceProvidersFor } from "@/components/dropdowns/Dropdown";
 import { months, dueDates, inputClasses, onlyDecimal, onlyDigits } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
+
+const policyNumber = { key: "policyNumber", label: "Policy Number", copyable: true };
+const deductible = { key: "deductible", label: "Deductible", money: true };
+
+// The detail fields each insurance type asks for, in form order. `money` fields hold a dollar
+// amount, `options` fields are picked from a list, and `copyable` fields copy on click.
+export const insuranceTypeFields = {
+    Health: [
+        { key: "planName", label: "Plan Name" },
+        { key: "memberId", label: "Member ID", copyable: true },
+        { key: "groupNumber", label: "Group Number", copyable: true },
+        deductible,
+        { key: "outOfPocketMax", label: "Out-of-Pocket Maximum", money: true },
+        { key: "copay", label: "Primary Care Copay", money: true },
+    ],
+    Auto: [
+        policyNumber,
+        { key: "vehicles", label: "Covered Vehicles" },
+        { key: "coverage", label: "Coverage", options: ["Liability Only", "Full Coverage"] },
+        deductible,
+    ],
+    Life: [
+        policyNumber,
+        { key: "lifePolicyType", label: "Policy Type", options: ["Term", "Whole", "Universal", "Variable"] },
+        { key: "deathBenefit", label: "Death Benefit", money: true },
+        { key: "termEndYear", label: "Term Ends (Year)", digits: true },
+        { key: "beneficiaries", label: "Beneficiaries" },
+    ],
+    Home: [
+        policyNumber,
+        { key: "homePolicyType", label: "Policy Type", options: ["Homeowners", "Renters", "Condo"] },
+        { key: "propertyAddress", label: "Property Address" },
+        { key: "dwellingCoverage", label: "Dwelling Coverage", money: true },
+        { key: "personalPropertyCoverage", label: "Personal Property Coverage", money: true },
+        deductible,
+    ],
+    Other: [
+        policyNumber,
+        { key: "coverageAmount", label: "Coverage Amount", money: true },
+        deductible,
+    ],
+};
+
+const allInsuranceFieldKeys = [
+    ...new Set(Object.values(insuranceTypeFields).flatMap((fields) => fields.map((field) => field.key))),
+];
 
 const initialFormState = {
     name: "",
