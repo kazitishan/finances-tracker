@@ -11,8 +11,9 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import { insuranceTypeLabel } from "@/components/dropdowns/InsuranceTypeDropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
-const providerLogo = (name) => allInsuranceProviders.find((provider) => provider.name === name)?.image;
+const providerLogo = (name, policies) => logoFor(allInsuranceProviders, name, policies.find((policy) => policy.customLogo)?.customLogo);
 
 function Insurance() {
   const [policies, setPolicies] = useState([]);

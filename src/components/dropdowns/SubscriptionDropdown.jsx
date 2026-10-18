@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import LogoDropdown from "@/components/dropdowns/LogoDropdown";
 
 export const subscriptions = [
     {
@@ -86,104 +85,18 @@ export const subscriptions = [
     },
 ];
 
-function SubscriptionDropdown({ value, onChange }) {
-    const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const containerRef = useRef(null);
-    const searchInputRef = useRef(null);
-
-    function closeDropdown() {
-        setOpen(false);
-        setSearch("");
-    }
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                closeDropdown();
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        if (open) {
-            searchInputRef.current?.focus();
-        }
-    }, [open]);
-
-    const selectedSubscription = subscriptions.find((subscription) => subscription.name === value);
-    const filteredSubscriptions = subscriptions.filter((subscription) =>
-        subscription.name.toLowerCase().includes(search.toLowerCase())
-    );
-
+function SubscriptionDropdown({ value, onChange, customLogo, onCustomLogoChange }) {
     return (
-        <div className="relative" ref={containerRef}>
-            <button
-                type="button"
-                onClick={() => (open ? closeDropdown() : setOpen(true))}
-                className="field flex items-center justify-between gap-2 cursor-pointer text-left"
-            >
-                <span className="flex items-center gap-2">
-                    {selectedSubscription && (
-                        <Image
-                            src={selectedSubscription.image}
-                            alt={selectedSubscription.name}
-                            width={20}
-                            height={20}
-                            className="object-contain"
-                        />
-                    )}
-                    <span className={selectedSubscription ? "" : "text-muted"}>
-                        {selectedSubscription ? selectedSubscription.name : "Select a subscription"}
-                    </span>
-                </span>
-                <span className="text-muted text-xs">▾</span>
-            </button>
-
-            {open && (
-                <div className="dropdown-panel">
-                    <div className="p-2 border-b border-[var(--border)]">
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search subscriptions..."
-                            className="field py-1.5"
-                        />
-                    </div>
-                    <ul className="max-h-56 overflow-y-auto">
-                        {filteredSubscriptions.length > 0 ? (
-                            filteredSubscriptions.map((subscription) => (
-                                <li key={subscription.name}>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            onChange(subscription.name);
-                                            closeDropdown();
-                                        }}
-                                        className="dropdown-item"
-                                    >
-                                        <Image
-                                            src={subscription.image}
-                                            alt={subscription.name}
-                                            width={20}
-                                            height={20}
-                                            className="object-contain"
-                                        />
-                                        {subscription.name}
-                                    </button>
-                                </li>
-                            ))
-                        ) : (
-                            <li className="px-3 py-2 text-sm text-muted">No subscriptions found</li>
-                        )}
-                    </ul>
-                </div>
-            )}
-        </div>
+        <LogoDropdown
+            options={subscriptions}
+            value={value}
+            onChange={onChange}
+            customLogo={customLogo}
+            onCustomLogoChange={onCustomLogoChange}
+            placeholder="Select a subscription"
+            searchPlaceholder="Search subscriptions..."
+            namePlaceholder="Enter subscription name"
+        />
     );
 }
 

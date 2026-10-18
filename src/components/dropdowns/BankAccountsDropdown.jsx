@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskLast4 } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
 function BankAccountsDropdown({ value, onChange }) {
     const [accounts, setAccounts] = useState([]);
@@ -39,8 +40,8 @@ function BankAccountsDropdown({ value, onChange }) {
         }
     }, [open]);
 
-    function bankLogo(bankName) {
-        return banks.find((b) => b.name === bankName)?.image;
+    function bankLogo(account) {
+        return logoFor(banks, account.bank, account.customLogo);
     }
 
     const selectedAccount = accounts.find((account) => account.id === value);
@@ -56,9 +57,9 @@ function BankAccountsDropdown({ value, onChange }) {
                 className="field flex items-center justify-between gap-2 cursor-pointer text-left"
             >
                 <span className="flex items-center gap-2 min-w-0">
-                    {selectedAccount && bankLogo(selectedAccount.bank) && (
+                    {selectedAccount && bankLogo(selectedAccount) && (
                         <Image
-                            src={bankLogo(selectedAccount.bank)}
+                            src={bankLogo(selectedAccount)}
                             alt={selectedAccount.bank}
                             width={20}
                             height={20}
@@ -98,9 +99,9 @@ function BankAccountsDropdown({ value, onChange }) {
                                         }}
                                         className="dropdown-item"
                                     >
-                                        {bankLogo(account.bank) && (
+                                        {bankLogo(account) && (
                                             <Image
-                                                src={bankLogo(account.bank)}
+                                                src={bankLogo(account)}
                                                 alt={account.bank}
                                                 width={20}
                                                 height={20}

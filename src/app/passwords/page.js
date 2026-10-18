@@ -15,6 +15,7 @@ import SearchInput, { NoMatches } from "@/components/ui/SearchInput";
 import FilterMenu from "@/components/ui/FilterMenu";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
 const categoryLabels = {
   "bank-accounts": "Bank Account",
@@ -35,7 +36,7 @@ const categoryPaths = {
 };
 
 const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions, ...allInsuranceProviders];
-const platformLogo = (name) => platforms.find((platform) => platform.name === name)?.image;
+const platformLogo = (name, logins) => logoFor(platforms, name, logins.find((login) => login.customLogo)?.customLogo);
 
 function Passwords() {
   const [logins, setLogins] = useState([]);
@@ -101,11 +102,10 @@ function Passwords() {
 
       <div className="flex flex-col gap-3">
         {sortedLogins.map((login) => {
-          const platformInfo = platforms.find((platform) => platform.name === login.platform);
           return (
             <InfoCard
               key={login.id}
-              image={platformInfo?.image}
+              image={logoFor(platforms, login.platform, login.customLogo)}
               imageAlt={login.platform}
               title={login.platform}
               subtitle={[

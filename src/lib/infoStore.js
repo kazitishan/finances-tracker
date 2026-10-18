@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { deleteUpload, isPendingUpload, saveUpload } from "@/lib/uploads";
 
 const INFO_PATH = path.join(process.cwd(), "private", "info.json");
 
@@ -32,6 +33,24 @@ const PLATFORM_FIELDS = {
     "investment accounts": "broker",
     insurance: "provider",
 };
+
+// The public folder whose uploads/ holds the logo of a platform added through "Other".
+const UPLOAD_FOLDERS = {
+    "bank accounts": () => "banks",
+    "credit cards": () => "banks",
+    subscriptions: () => "subscriptions",
+    loans: () => "loans",
+    "investment accounts": () => "investment",
+    insurance: (item) => (item.type === "Health" ? "insurance/health" : "insurance"),
+};
+
+// A logo picked in the form arrives as a data URL; this writes it to its uploads folder and
+// stores the file's path on the item instead.
+function withSavedLogo(key, item) {
+    if (!isPendingUpload(item.customLogo)) return item;
+    const folder = UPLOAD_FOLDERS[key](item);
+    return { ...item, customLogo: saveUpload(folder, item[PLATFORM_FIELDS[key]], item.customLogo) };
+}
 
 function loginOf(key, item) {
     return {
@@ -109,7 +128,7 @@ export function listItems(category) {
 export function addItem(category, item) {
     const info = readInfo();
     const key = getCategoryKey(category);
-    const newItem = { ...item, id: crypto.randomUUID() };
+    const newItem = withSavedLogo(key, { ...item, id: crypto.randomUUID() });
     info[key] = [...(info[key] || []), newItem];
     saveLogin(info, loginOf(key, newItem));
     writeInfo(info);
@@ -136,7 +155,9 @@ export function updateItem(category, id, updates, loginMode = null) {
         return { sharedWith: sharing.map(({ item }) => item.name || "Unnamed item") };
     }
 
-    info[key] = info[key].map((item) => (item.id === id ? updated : item));
+    const saved = withSavedLogo(key, updated);
+    if (saved.customLogo !== previous.customLogo) deleteUpload(previous.customLogo);
+    info[key] = info[key].map((item) => (item.id === id ? saved : item));
 
     if (sharing.length > 0 && loginMode === "update-all") {
         for (const { key: sharedKey, item: shared } of sharing) {
@@ -149,12 +170,13 @@ export function updateItem(category, id, updates, loginMode = null) {
     const replacesOldLogin = passwordChanged && (sharing.length === 0 || loginMode === "update-all");
     saveLogin(info, newLogin, replacesOldLogin ? oldLogin : null);
     writeInfo(info);
-    return { item: updated };
+    return { item: saved };
 }
 
 export function deleteItem(category, id) {
     const info = readInfo();
     const key = getCategoryKey(category);
+    deleteUpload((info[key] || []).find((item) => item.id === id)?.customLogo);
     info[key] = (info[key] || []).filter((item) => item.id !== id);
     writeInfo(info);
 }
@@ -186,14 +208,19 @@ export function exportInfo() {
     return JSON.stringify(readInfo(), null, 2) + "\n";
 }
 
-// Saved logins, each with the items (`category` is the URL slug) signed in with it.
+// Saved logins, each with the items (`category` is the URL slug) signed in with it, and the logo
+// uploaded for its platform if it was added through "Other".
 export function listLogins() {
     const info = readInfo();
     const slugs = Object.fromEntries(Object.entries(CATEGORY_KEYS).map(([slug, key]) => [key, slug]));
-    return (info.passwords || []).map((login) => ({
-        ...login,
-        usedBy: itemsUsingLogin(info, login).map(({ key, item }) => ({ id: item.id, name: item.name, category: slugs[key] })),
-    }));
+    return (info.passwords || []).map((login) => {
+        const usedBy = itemsUsingLogin(info, login);
+        return {
+            ...login,
+            customLogo: usedBy.find(({ item }) => item.customLogo)?.item.customLogo || "",
+            usedBy: usedBy.map(({ key, item }) => ({ id: item.id, name: item.name, category: slugs[key] })),
+        };
+    });
 }
 
 // Changes a saved login and every item signed in with it.

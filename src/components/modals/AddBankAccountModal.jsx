@@ -10,6 +10,7 @@ import { useSaveItem } from "@/components/useSaveItem";
 const initialFormState = {
     name: "",
     bank: "",
+    customLogo: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -64,13 +65,15 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved, on
                         />
                     </label>
 
-                    <label className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="field-label">Bank</span>
                         <BankCompaniesDropdown
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
+                            customLogo={form.customLogo}
+                            onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
                         />
-                    </label>
+                    </div>
 
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Link</span>

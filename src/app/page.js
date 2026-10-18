@@ -8,6 +8,7 @@ import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
 import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
 function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
   const cardPayments = cards
@@ -16,7 +17,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
       kind: "Credit card payment",
       href: "/expenses/credit-cards",
       name: card.name || card.bank || "Unnamed Card",
-      image: banks.find((bank) => bank.name === card.bank)?.image,
+      image: logoFor(banks, card.bank, card.customLogo),
       date: nextOccurrence(card.dueDate),
     }));
 
@@ -26,7 +27,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
       kind: "Subscription payment",
       href: "/expenses/subscriptions",
       name: subscription.name || subscription.subscription || "Unnamed Subscription",
-      image: subscriptionCompanies.find((company) => company.name === subscription.subscription)?.image,
+      image: logoFor(subscriptionCompanies, subscription.subscription, subscription.customLogo),
       amount: subscription.cost ? formatCurrency(subscription.cost) : null,
       date: subscription.billingCycle === "year"
         ? nextOccurrence(subscription.billingDay, subscription.billingMonth)
@@ -38,7 +39,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
     kind: "Interest payment",
     href: "/accounts/bank-accounts",
     name: account.name || account.bank || "Unnamed Account",
-    image: banks.find((bank) => bank.name === account.bank)?.image,
+    image: logoFor(banks, account.bank, account.customLogo),
     date: nextInterestDate(account.interestPaymentDate),
   }));
 
@@ -47,7 +48,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
     kind: "Loan payment",
     href: "/expenses/loans",
     name: loan.name || loan.provider || "Unnamed Loan",
-    image: loanProviders.find((provider) => provider.name === loan.provider)?.image,
+    image: logoFor(loanProviders, loan.provider, loan.customLogo),
     amount: loan.monthlyPayment ? formatCurrency(loan.monthlyPayment) : null,
     date: nextOccurrence(loan.paymentDay),
   }));
@@ -57,7 +58,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
     kind: "Insurance payment",
     href: "/expenses/insurance",
     name: policy.name || policy.provider || "Unnamed Insurance",
-    image: allInsuranceProviders.find((provider) => provider.name === policy.provider)?.image,
+    image: logoFor(allInsuranceProviders, policy.provider, policy.customLogo),
     amount: policy.premium ? formatCurrency(policy.premium) : null,
     date: policy.billingCycle === "year"
       ? nextOccurrence(policy.billingDay, policy.billingMonth)

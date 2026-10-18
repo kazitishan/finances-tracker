@@ -11,8 +11,9 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
-const providerLogo = (name) => loanProviders.find((provider) => provider.name === name)?.image;
+const providerLogo = (name, loans) => logoFor(loanProviders, name, loans.find((loan) => loan.customLogo)?.customLogo);
 
 function Loans() {
   const [loans, setLoans] = useState([]);

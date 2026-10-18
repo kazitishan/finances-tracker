@@ -10,8 +10,9 @@ import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import { matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
-const brokerLogo = (name) => brokers.find((broker) => broker.name === name)?.image;
+const brokerLogo = (name, accounts) => logoFor(brokers, name, accounts.find((account) => account.customLogo)?.customLogo);
 
 function InvestmentAccounts() {
   const [accounts, setAccounts] = useState([]);

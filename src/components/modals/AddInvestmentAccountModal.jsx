@@ -12,6 +12,7 @@ const initialFormState = {
     name: "",
     type: "",
     broker: "",
+    customLogo: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -60,10 +61,15 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                     </select>
                 </label>
 
-                <label className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                     <span className="field-label">Broker</span>
-                    <BrokerDropdown value={form.broker} onChange={(broker) => updateField("broker", broker)} />
-                </label>
+                    <BrokerDropdown
+                        value={form.broker}
+                        onChange={(broker) => updateField("broker", broker)}
+                        customLogo={form.customLogo}
+                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                    />
+                </div>
 
                 <label className="flex flex-col gap-1">
                     <span className="field-label">Link</span>

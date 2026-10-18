@@ -10,8 +10,9 @@ import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
-const bankLogo = (name) => banks.find((bank) => bank.name === name)?.image;
+const bankLogo = (name, cards) => logoFor(banks, name, cards.find((card) => card.customLogo)?.customLogo);
 
 function CreditCards() {
   const [cards, setCards] = useState([]);

@@ -8,6 +8,7 @@ import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
+import { logoFor } from "@/lib/logos";
 
 function splitLines(text) {
     return (text || "")
@@ -17,17 +18,15 @@ function splitLines(text) {
 }
 
 function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
-    const bankInfo = banks.find((b) => b.name === card.bank);
     const paymentAccount = bankAccounts.find((account) => account.id === card.paymentMethod);
-    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
     const rewardsList = splitLines(card.rewards);
     const usageList = splitLines(card.usage);
     const expiry = expiryStatus(card.expMonth, card.expYear);
 
     return (
         <InfoCard
-            image={bankInfo?.image}
-            imageAlt={bankInfo?.name}
+            image={logoFor(banks, card.bank, card.customLogo)}
+            imageAlt={card.bank}
             title={card.name || "Unnamed Card"}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
             tags={[
@@ -64,7 +63,8 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    bankInfo={paymentAccountBankInfo}
+                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    imageAlt={paymentAccount.bank}
                     name={paymentAccount.name}
                     detail={paymentAccount.accountNumber ? maskLast4(paymentAccount.accountNumber) : null}
                 />

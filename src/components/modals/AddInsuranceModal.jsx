@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import InsuranceTypeDropdown, { allInsuranceFieldKeys, insuranceTypeFields } from "@/components/dropdowns/InsuranceTypeDropdown";
-import InsuranceProviderDropdown, { insuranceProvidersFor } from "@/components/dropdowns/InsuranceProviderDropdown";
+import InsuranceProviderDropdown, { allInsuranceProviders, insuranceProvidersFor } from "@/components/dropdowns/InsuranceProviderDropdown";
 import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal, onlyDigits } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -14,6 +14,7 @@ const initialFormState = {
     type: "",
     otherType: "",
     provider: "",
+    customLogo: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -81,13 +82,14 @@ function AddInsuranceModal({ isOpen, onClose, itemId, initialData, onSaved, onDe
         setForm((prev) => ({ ...prev, [field]: value }));
     }
 
-    // Health and non-health insurance have different providers, so switching between them clears the provider.
+    // Health and non-health insurance have different providers, so switching between them clears a listed
+    // provider. One entered through "Other" isn't on either list and is kept.
     function updateType(type) {
-        setForm((prev) => ({
-            ...prev,
-            type,
-            provider: insuranceProvidersFor(type).some((provider) => provider.name === prev.provider) ? prev.provider : "",
-        }));
+        setForm((prev) => {
+            const isListed = allInsuranceProviders.some((provider) => provider.name === prev.provider);
+            const fitsType = insuranceProvidersFor(type).some((provider) => provider.name === prev.provider);
+            return { ...prev, type, provider: !isListed || fitsType ? prev.provider : "" };
+        });
     }
 
     const typeFields = insuranceTypeFields[form.type] || [];
@@ -115,14 +117,16 @@ function AddInsuranceModal({ isOpen, onClose, itemId, initialData, onSaved, onDe
                         />
                     </div>
 
-                    <label className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="field-label">Provider</span>
                         <InsuranceProviderDropdown
                             type={form.type}
                             value={form.provider}
                             onChange={(provider) => updateField("provider", provider)}
+                            customLogo={form.customLogo}
+                            onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
                         />
-                    </label>
+                    </div>
 
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Link</span>

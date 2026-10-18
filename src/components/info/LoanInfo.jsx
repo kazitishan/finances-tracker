@@ -7,6 +7,7 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
+import { logoFor } from "@/lib/logos";
 
 export function amountRemaining(loan) {
     if (!loan.amountLoaned) return null;
@@ -14,16 +15,14 @@ export function amountRemaining(loan) {
 }
 
 function LoanInfo({ loan, onEdit }) {
-    const providerInfo = loanProviders.find((p) => p.name === loan.provider);
-
     const typeLabel = loanTypeLabel(loan.type, loan.otherType);
     const formatAmount = (amount) => (amount ? formatCurrency(amount) : null);
     const remaining = amountRemaining(loan);
 
     return (
         <InfoCard
-            image={providerInfo?.image}
-            imageAlt={providerInfo?.name}
+            image={logoFor(loanProviders, loan.provider, loan.customLogo)}
+            imageAlt={loan.provider}
             title={loan.name || "Unnamed Loan"}
             subtitle={loan.provider}
             tags={[typeLabel].filter(Boolean)}

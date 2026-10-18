@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskLast4 } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
 export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
     const creditMethods = creditCards
@@ -12,6 +13,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
             value: `credit:${card.id}`,
             name: card.name || "Unnamed Card",
             bank: card.bank,
+            customLogo: card.customLogo,
             last4: card.cardNumber,
             badge: "Credit",
         }));
@@ -22,6 +24,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
             value: `debit:${account.id}`,
             name: account.name || "Unnamed Account",
             bank: account.bank,
+            customLogo: account.customLogo,
             last4: account.cardNumber,
             badge: "Debit",
         }));
@@ -87,8 +90,8 @@ function PaymentMethodDropdown({ value, onChange }) {
         }
     }, [open]);
 
-    function bankLogo(bankName) {
-        return banks.find((b) => b.name === bankName)?.image;
+    function bankLogo(method) {
+        return logoFor(banks, method.bank, method.customLogo);
     }
 
     const selectedMethod = paymentMethods.find((method) => method.value === value);
@@ -104,9 +107,9 @@ function PaymentMethodDropdown({ value, onChange }) {
                 className="field flex items-center justify-between gap-2 cursor-pointer text-left"
             >
                 <span className="flex items-center gap-2 min-w-0">
-                    {selectedMethod && bankLogo(selectedMethod.bank) && (
+                    {selectedMethod && bankLogo(selectedMethod) && (
                         <Image
-                            src={bankLogo(selectedMethod.bank)}
+                            src={bankLogo(selectedMethod)}
                             alt={selectedMethod.bank}
                             width={20}
                             height={20}
@@ -146,9 +149,9 @@ function PaymentMethodDropdown({ value, onChange }) {
                                         }}
                                         className="dropdown-item"
                                     >
-                                        {bankLogo(method.bank) && (
+                                        {bankLogo(method) && (
                                             <Image
-                                                src={bankLogo(method.bank)}
+                                                src={bankLogo(method)}
                                                 alt={method.bank}
                                                 width={20}
                                                 height={20}

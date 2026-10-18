@@ -10,14 +10,13 @@ import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
+import { logoFor } from "@/lib/logos";
 
 function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit }) {
-    const providerInfo = allInsuranceProviders.find((p) => p.name === insurance.provider);
     const typeLabel = insuranceTypeLabel(insurance.type, insurance.otherType);
     const typeFields = insuranceTypeFields[insurance.type] || [];
 
     const paymentAccount = findPaymentAccount(insurance.paymentMethod, { creditCards, bankAccounts });
-    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
 
     const premiumStat = insurance.premium
         ? insurance.billingCycle === "year"
@@ -32,8 +31,8 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
 
     return (
         <InfoCard
-            image={providerInfo?.image}
-            imageAlt={providerInfo?.name}
+            image={logoFor(allInsuranceProviders, insurance.provider, insurance.customLogo)}
+            imageAlt={insurance.provider}
             title={insurance.name || "Unnamed Insurance"}
             subtitle={insurance.provider}
             tags={[typeLabel].filter(Boolean)}
@@ -56,7 +55,8 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    bankInfo={paymentAccountBankInfo}
+                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    imageAlt={paymentAccount.bank}
                     name={paymentAccount.displayName}
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}
                 />

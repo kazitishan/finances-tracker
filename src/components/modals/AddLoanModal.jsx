@@ -13,6 +13,7 @@ const initialFormState = {
     type: "",
     otherType: "",
     provider: "",
+    customLogo: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -61,13 +62,15 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
                         />
                     </div>
 
-                    <label className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="field-label">Loan Provider</span>
                         <LoanProviderDropdown
                             value={form.provider}
                             onChange={(provider) => updateField("provider", provider)}
+                            customLogo={form.customLogo}
+                            onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
                         />
-                    </label>
+                    </div>
 
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Link</span>

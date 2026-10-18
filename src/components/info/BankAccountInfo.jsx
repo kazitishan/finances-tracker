@@ -7,15 +7,15 @@ import DetailRow from "@/components/ui/DetailRow";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
+import { logoFor } from "@/lib/logos";
 
 function BankAccountInfo({ account, onEdit }) {
-    const bankInfo = banks.find((b) => b.name === account.bank);
     const debitExpiry = account.type === "Checking" ? expiryStatus(account.expMonth, account.expYear) : null;
 
     return (
         <InfoCard
-            image={bankInfo?.image}
-            imageAlt={bankInfo?.name}
+            image={logoFor(banks, account.bank, account.customLogo)}
+            imageAlt={account.bank}
             title={account.name || "Unnamed Account"}
             subtitle={[account.bank, account.accountNumber ? maskLast4(account.accountNumber) : null]
                 .filter(Boolean)

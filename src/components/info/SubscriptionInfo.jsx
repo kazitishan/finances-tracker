@@ -9,12 +9,10 @@ import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
+import { logoFor } from "@/lib/logos";
 
 function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
-    const subscriptionInfo = subscriptions.find((s) => s.name === subscription.subscription);
-
     const paymentAccount = findPaymentAccount(subscription.paymentMethod, { creditCards, bankAccounts });
-    const paymentAccountBankInfo = paymentAccount ? banks.find((b) => b.name === paymentAccount.bank) : null;
 
     const costStat = subscription.cost
         ? subscription.billingCycle === "year"
@@ -29,8 +27,8 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
 
     return (
         <InfoCard
-            image={subscriptionInfo?.image}
-            imageAlt={subscriptionInfo?.name}
+            image={logoFor(subscriptions, subscription.subscription, subscription.customLogo)}
+            imageAlt={subscription.subscription}
             title={subscription.name || "Unnamed Subscription"}
             subtitle={subscription.subscription}
             stat={costStat}
@@ -42,7 +40,8 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    bankInfo={paymentAccountBankInfo}
+                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    imageAlt={paymentAccount.bank}
                     name={paymentAccount.name}
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}
                 />

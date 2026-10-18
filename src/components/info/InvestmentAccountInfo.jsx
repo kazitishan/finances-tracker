@@ -4,16 +4,15 @@ import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
+import { logoFor } from "@/lib/logos";
 
 export const investmentAccountTypes = ["Brokerage", "Roth IRA", "401K"];
 
 function InvestmentAccountInfo({ account, onEdit }) {
-    const brokerInfo = brokers.find((b) => b.name === account.broker);
-
     return (
         <InfoCard
-            image={brokerInfo?.image}
-            imageAlt={brokerInfo?.name}
+            image={logoFor(brokers, account.broker, account.customLogo)}
+            imageAlt={account.broker}
             title={account.name || "Unnamed Account"}
             subtitle={account.broker}
             tags={[account.type].filter(Boolean)}

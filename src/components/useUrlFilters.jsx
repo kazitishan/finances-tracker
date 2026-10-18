@@ -3,19 +3,20 @@
 import { useSearchParams } from "next/navigation";
 
 // Filters live in the URL (e.g. /credit-cards?bank=Chase&bank=SoFi), so a filtered view can be bookmarked or shared.
-// Each definition is { key, label, getValue(item), getImage?(value) }; the options offered are only the values
-// that appear in the user's own items. URL values match case-insensitively, so ?bank=chase works too.
+// Each definition is { key, label, getValue(item), getImage?(value, items) }, where `items` are the items with
+// that value; the options offered are only the values that appear in the user's own items. URL values match
+// case-insensitively, so ?bank=chase works too.
 export function useUrlFilters(items, definitions) {
     const searchParams = useSearchParams();
 
     const groups = definitions.map((definition) => {
-        const counts = new Map();
+        const itemsByValue = new Map();
         for (const item of items) {
             const value = definition.getValue(item);
-            if (value) counts.set(value, (counts.get(value) || 0) + 1);
+            if (value) itemsByValue.set(value, [...(itemsByValue.get(value) || []), item]);
         }
-        const options = [...counts]
-            .map(([value, count]) => ({ value, count, image: definition.getImage?.(value) }))
+        const options = [...itemsByValue]
+            .map(([value, valueItems]) => ({ value, count: valueItems.length, image: definition.getImage?.(value, valueItems) }))
             .sort((a, b) => a.value.localeCompare(b.value));
         const selected = searchParams.getAll(definition.key).map((value) => value.toLowerCase());
         return { ...definition, options, selected };

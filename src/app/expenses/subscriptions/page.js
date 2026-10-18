@@ -11,8 +11,10 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
 import { subscriptions as subscriptionServices } from "@/components/dropdowns/SubscriptionDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
+import { logoFor } from "@/lib/logos";
 
-const subscriptionLogo = (name) => subscriptionServices.find((service) => service.name === name)?.image;
+const subscriptionLogo = (name, subscriptions) =>
+  logoFor(subscriptionServices, name, subscriptions.find((subscription) => subscription.customLogo)?.customLogo);
 
 function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);

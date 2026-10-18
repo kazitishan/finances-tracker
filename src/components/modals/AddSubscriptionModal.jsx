@@ -11,6 +11,7 @@ import { useSaveItem } from "@/components/useSaveItem";
 const initialFormState = {
     name: "",
     subscription: "",
+    customLogo: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -48,13 +49,15 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, o
                         />
                     </label>
 
-                    <label className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="field-label">Subscription</span>
                         <SubscriptionDropdown
                             value={form.subscription}
                             onChange={(subscription) => updateField("subscription", subscription)}
+                            customLogo={form.customLogo}
+                            onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
                         />
-                    </label>
+                    </div>
 
                     <label className="flex flex-col gap-1">
                         <span className="field-label">Link</span>
