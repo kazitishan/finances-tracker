@@ -5,32 +5,7 @@ import Image from "next/image";
 import { maskLast4 } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { banks } from "@/components/dropdowns/Dropdown";
-
-export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
-    const creditMethods = creditCards
-        .filter((card) => card.cardNumber)
-        .map((card) => ({
-            value: `credit:${card.id}`,
-            name: card.name || "Unnamed Card",
-            bank: card.bank,
-            customLogo: card.customLogo,
-            last4: card.cardNumber,
-            badge: "Credit",
-        }));
-
-    const debitMethods = bankAccounts
-        .filter((account) => account.cardNumber)
-        .map((account) => ({
-            value: `debit:${account.id}`,
-            name: account.name || "Unnamed Account",
-            bank: account.bank,
-            customLogo: account.customLogo,
-            last4: account.cardNumber,
-            badge: "Debit",
-        }));
-
-    return [...creditMethods, ...debitMethods];
-}
+import { getPaymentMethods } from "@/util/getPaymentMethods";
 
 // The credit card or bank account a `credit:<id>` / `debit:<id>` payment method points to, with a display name.
 export function findPaymentAccount(paymentMethod, { creditCards = [], bankAccounts = [] }) {
@@ -46,28 +21,16 @@ export function findPaymentAccount(paymentMethod, { creditCards = [], bankAccoun
     return null;
 }
 
-export function usePaymentMethods() {
-    const [creditCards, setCreditCards] = useState([]);
-    const [bankAccounts, setBankAccounts] = useState([]);
-
-    useEffect(() => {
-        fetch("/api/credit-cards")
-            .then((res) => res.json())
-            .then(setCreditCards);
-        fetch("/api/bank-accounts")
-            .then((res) => res.json())
-            .then(setBankAccounts);
-    }, []);
-
-    return buildPaymentMethods({ creditCards, bankAccounts });
-}
-
 function PaymentMethodDropdown({ value, onChange }) {
-    const paymentMethods = usePaymentMethods();
+    const [paymentMethods, setPaymentMethods] = useState([]);
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const containerRef = useRef(null);
     const searchInputRef = useRef(null);
+
+    useEffect(() => {
+        getPaymentMethods().then(setPaymentMethods);
+    }, []);
 
     function closeDropdown() {
         setOpen(false);
