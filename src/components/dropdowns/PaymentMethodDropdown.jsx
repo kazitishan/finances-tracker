@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskLast4 } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { banks } from "@/components/dropdowns/Dropdown";
 
 export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
     const creditMethods = creditCards

@@ -1,6 +1,5 @@
 "use client";
 
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { expiryStatus, interestPaymentOptions, maskAll, maskLast4 } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
@@ -8,6 +7,7 @@ import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { logoFor } from "@/lib/logos";
+import { banks } from "@/components/dropdowns/Dropdown";
 
 function BankAccountInfo({ account, onEdit }) {
     const debitExpiry = account.type === "Checking" ? expiryStatus(account.expMonth, account.expYear) : null;

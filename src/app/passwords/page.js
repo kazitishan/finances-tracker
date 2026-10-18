@@ -2,10 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { brokers } from "@/components/dropdowns/BrokerDropdown";
-import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
-import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
+import { banks, brokers, loanProviders, subscriptions } from "@/components/dropdowns/Dropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";

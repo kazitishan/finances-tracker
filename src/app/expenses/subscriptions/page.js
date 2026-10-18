@@ -8,8 +8,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
+import { subscriptions as subscriptionServices } from "@/components/dropdowns/Dropdown";
 import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
-import { subscriptions as subscriptionServices } from "@/components/dropdowns/SubscriptionDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 

@@ -8,9 +8,9 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
-import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import { matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { brokers } from "@/components/dropdowns/Dropdown";
 
 const brokerLogo = (name, accounts) => logoFor(brokers, name, accounts.find((account) => account.customLogo)?.customLogo);
 

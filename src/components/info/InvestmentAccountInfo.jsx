@@ -1,10 +1,10 @@
 "use client";
 
-import { brokers } from "@/components/dropdowns/BrokerDropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { logoFor } from "@/lib/logos";
+import { brokers } from "@/components/dropdowns/Dropdown";
 
 export const investmentAccountTypes = ["Brokerage", "Roth IRA", "401K"];
 

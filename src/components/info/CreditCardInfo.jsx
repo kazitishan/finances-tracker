@@ -1,6 +1,5 @@
 "use client";
 
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
 import { maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency, expiryStatus } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
@@ -9,6 +8,7 @@ import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { logoFor } from "@/lib/logos";
+import { banks } from "@/components/dropdowns/Dropdown";
 
 function splitLines(text) {
     return (text || "")

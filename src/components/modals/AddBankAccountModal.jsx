@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
 import { months, years, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy, interestPaymentOptions } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
+import Dropdown from "@/components/dropdowns/Dropdown";
 
 const initialFormState = {
     name: "",
@@ -67,7 +67,8 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved, on
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Bank</span>
-                        <BankCompaniesDropdown
+                        <Dropdown
+                            type="bank"
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
                             customLogo={form.customLogo}

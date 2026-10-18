@@ -155,7 +155,7 @@
             "image": "/insurance/health/unitedhealthcare.png"
         }
     ],
-    "loan": [
+    "loan-provider": [
         {
             "name": "Federal Student Aid",
             "image": "/loans/fsa.png"

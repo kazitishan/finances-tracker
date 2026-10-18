@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
-import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
-import { subscriptions as subscriptionCompanies } from "@/components/dropdowns/SubscriptionDropdown";
+import { banks, loanProviders, subscriptions as subscriptionCompanies } from "@/components/dropdowns/Dropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/InsuranceProviderDropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";

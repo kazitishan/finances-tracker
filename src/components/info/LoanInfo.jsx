@@ -1,6 +1,6 @@
 "use client";
 
-import { loanProviders } from "@/components/dropdowns/LoanProviderDropdown";
+import { loanProviders } from "@/components/dropdowns/Dropdown";
 import { loanTypeLabel } from "@/components/dropdowns/LoanTypeDropdown";
 import { formatCurrency, ordinal } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";

@@ -1,7 +1,6 @@
 "use client";
 
-import { subscriptions } from "@/components/dropdowns/SubscriptionDropdown";
-import { banks } from "@/components/dropdowns/BankCompaniesDropdown";
+import { subscriptions, banks } from "@/components/dropdowns/Dropdown";
 import { findPaymentAccount } from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import LoanProviderDropdown from "@/components/dropdowns/LoanProviderDropdown";
+import Dropdown from "@/components/dropdowns/Dropdown";
 import LoanTypeDropdown from "@/components/dropdowns/LoanTypeDropdown";
 import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -64,7 +64,8 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Loan Provider</span>
-                        <LoanProviderDropdown
+                        <Dropdown
+                            type="loan-provider"
                             value={form.provider}
                             onChange={(provider) => updateField("provider", provider)}
                             customLogo={form.customLogo}

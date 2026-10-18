@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import BrokerDropdown from "@/components/dropdowns/BrokerDropdown";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
 import { investmentAccountTypes } from "@/components/info/InvestmentAccountInfo";
 import { inputClasses } from "@/lib/formUtils";
+import Dropdown from "@/components/dropdowns/Dropdown";
 
 const initialFormState = {
     name: "",
@@ -63,7 +63,8 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
 
                 <div className="flex flex-col gap-1">
                     <span className="field-label">Broker</span>
-                    <BrokerDropdown
+                    <Dropdown
+                        type="broker"
                         value={form.broker}
                         onChange={(broker) => updateField("broker", broker)}
                         customLogo={form.customLogo}

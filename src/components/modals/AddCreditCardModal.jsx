@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import BankCompaniesDropdown from "@/components/dropdowns/BankCompaniesDropdown";
+import Dropdown from "@/components/dropdowns/Dropdown";
 import BankAccountsDropdown from "@/components/dropdowns/BankAccountsDropdown";
 import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -68,7 +68,8 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Bank</span>
-                        <BankCompaniesDropdown
+                        <Dropdown
+                            type="bank"
                             value={form.bank}
                             onChange={(bank) => updateField("bank", bank)}
                             customLogo={form.customLogo}

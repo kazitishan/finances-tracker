@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SubscriptionDropdown from "@/components/dropdowns/SubscriptionDropdown";
+import Dropdown from "@/components/dropdowns/Dropdown";
 import PaymentMethodDropdown from "@/components/dropdowns/PaymentMethodDropdown";
 import { months, dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
@@ -51,7 +51,8 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, o
 
                     <div className="flex flex-col gap-1">
                         <span className="field-label">Subscription</span>
-                        <SubscriptionDropdown
+                        <Dropdown
+                            type="subscription"
                             value={form.subscription}
                             onChange={(subscription) => updateField("subscription", subscription)}
                             customLogo={form.customLogo}
