@@ -4,7 +4,15 @@ import { deleteUpload, isPendingUpload, saveUpload } from "@/lib/uploads";
 
 const INFO_PATH = path.join(process.cwd(), "private", "info.json");
 
+// Budgeting info. Each income stream and additional expense is a one-key object,
+// { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }.
+const DEFAULT_USER_INFO = {
+    "income-streams": [],
+    "additional-expenses": [],
+};
+
 const DEFAULT_INFO = {
+    "user-info": DEFAULT_USER_INFO,
     "bank accounts": [],
     "credit cards": [],
     subscriptions: [],
@@ -104,20 +112,58 @@ export function getCategoryKey(category) {
     return key;
 }
 
+// "user-info" always comes first in the file. Files from before budgeting existed get an empty one.
+function withUserInfoFirst(info) {
+    const { "user-info": userInfo = DEFAULT_USER_INFO, ...rest } = info;
+    return { "user-info": userInfo, ...rest };
+}
+
 function readInfo() {
     if (!fs.existsSync(INFO_PATH)) {
         fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
         fs.writeFileSync(INFO_PATH, JSON.stringify(DEFAULT_INFO, null, 2) + "\n");
-        return { ...DEFAULT_INFO };
+        return structuredClone(DEFAULT_INFO);
     }
-    const info = JSON.parse(fs.readFileSync(INFO_PATH, "utf-8"));
+    const info = withUserInfoFirst(JSON.parse(fs.readFileSync(INFO_PATH, "utf-8")));
     if (!info.passwords) addPasswordsKey(info);
     return info;
 }
 
 function writeInfo(info) {
     fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
-    fs.writeFileSync(INFO_PATH, JSON.stringify(info, null, 2) + "\n");
+    fs.writeFileSync(INFO_PATH, JSON.stringify(withUserInfoFirst(info), null, 2) + "\n");
+}
+
+// A list of one-key { "<name>": <monthly amount> } objects with a name and a non-negative amount.
+function isAmountList(list) {
+    return Array.isArray(list) && list.every((entry) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+        const entries = Object.entries(entry);
+        if (entries.length !== 1) return false;
+        const [name, amount] = entries[0];
+        return name.trim() !== "" && Number.isFinite(amount) && amount >= 0;
+    });
+}
+
+function isUserInfo(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+        && isAmountList(value["income-streams"] ?? []) && isAmountList(value["additional-expenses"] ?? []);
+}
+
+export function getUserInfo() {
+    return readInfo()["user-info"];
+}
+
+// Replaces the budgeting info. Returns null, writing nothing, if `userInfo` isn't shaped like DEFAULT_USER_INFO.
+export function updateUserInfo(userInfo) {
+    if (!isUserInfo(userInfo)) return null;
+    const info = readInfo();
+    info["user-info"] = {
+        "income-streams": userInfo["income-streams"] ?? [],
+        "additional-expenses": userInfo["additional-expenses"] ?? [],
+    };
+    writeInfo(info);
+    return info["user-info"];
 }
 
 export function listItems(category) {
@@ -191,14 +237,19 @@ export function reorderItems(category, orderedIds) {
 }
 
 // Replaces all info with an uploaded info.json. Returns false if `data` doesn't look like one:
-// it needs at least one category, and every known key it has must be a list.
+// it needs at least one category, every known list key it has must be a list, and its budgeting info
+// (optional, for files from before budgeting existed) must be well-formed.
 export function importInfo(data) {
     if (!data || typeof data !== "object" || Array.isArray(data)) return false;
-    const keys = Object.keys(DEFAULT_INFO);
+    const listKeys = Object.keys(DEFAULT_INFO).filter((key) => key !== "user-info");
     if (!Object.values(CATEGORY_KEYS).some((key) => key in data)) return false;
-    if (keys.some((key) => key in data && !Array.isArray(data[key]))) return false;
+    if (listKeys.some((key) => key in data && !Array.isArray(data[key]))) return false;
+    if ("user-info" in data && !isUserInfo(data["user-info"])) return false;
 
-    const info = Object.fromEntries(keys.map((key) => [key, data[key] || []]));
+    const info = {
+        "user-info": { ...DEFAULT_USER_INFO, ...data["user-info"] },
+        ...Object.fromEntries(listKeys.map((key) => [key, data[key] || []])),
+    };
     if ("passwords" in data) writeInfo(info);
     else addPasswordsKey(info);
     return true;

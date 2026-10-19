@@ -102,6 +102,13 @@ function NavBar() {
                             </div>
                         );
                     })}
+                    <Link
+                        href="/budgeting"
+                        aria-current={pathname === "/budgeting" ? "page" : undefined}
+                        className={navItemClass(pathname === "/budgeting")}
+                    >
+                        Budgeting
+                    </Link>
                 </nav>
                 <SettingsMenu />
             </div>
