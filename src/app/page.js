@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { banks, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
+import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
 
-function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
+function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts) {
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -62,7 +63,17 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies) {
       : nextOccurrence(policy.billingDay),
   }));
 
-  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments]
+  const investmentPayments = allRecurringInvestments(investmentAccounts).map(({ investment, account }) => ({
+    id: `investment-${investment.id}`,
+    kind: "Recurring investment",
+    href: "/accounts/investing",
+    name: investmentName(investment, account),
+    image: logoFor(brokers, account.broker, account.customLogo),
+    amount: investment.amount ? formatCurrency(investment.amount) : null,
+    date: nextInvestmentDate(investment),
+  }));
+
+  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -79,8 +90,9 @@ export default function Home() {
       fetch("/api/bank-accounts").then((res) => res.json()),
       fetch("/api/loans").then((res) => res.json()),
       fetch("/api/insurance").then((res) => res.json()),
-    ]).then(([cards, subscriptions, bankAccounts, loans, policies]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies));
+      fetch("/api/investment-accounts").then((res) => res.json()),
+    ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts));
       setLoaded(true);
     });
   }, []);
@@ -89,7 +101,7 @@ export default function Home() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
-        <p className="mt-1 text-sm text-muted">Bills and interest coming up, soonest first.</p>
+        <p className="mt-1 text-sm text-muted">Bills, investments and interest coming up, soonest first.</p>
       </div>
 
       {loaded && payments.length === 0 && (

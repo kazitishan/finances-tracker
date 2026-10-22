@@ -18,6 +18,7 @@ function InvestmentAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [isRearrangeOpen, setIsRearrangeOpen] = useState(false);
@@ -31,6 +32,9 @@ function InvestmentAccounts() {
         setAccounts(data);
         setLoaded(true);
       });
+    fetch("/api/bank-accounts")
+      .then((res) => res.json())
+      .then(setBankAccounts);
   }, []);
 
   function handleSaved(item) {
@@ -75,7 +79,7 @@ function InvestmentAccounts() {
   ]);
 
   const filteredAccounts = accounts.filter((account) =>
-    filters.matches(account) && matchesSearch([account.name, account.broker, account.type], search)
+    filters.matches(account) && matchesSearch([account.name, account.broker, account.type, ...(account.recurringInvestments || []).map((investment) => investment.stock)], search)
   );
 
   return (
@@ -103,6 +107,7 @@ function InvestmentAccounts() {
           <InvestmentAccountInfo
             key={account.id}
             account={account}
+            bankAccounts={bankAccounts}
             onEdit={() => handleEdit(account)}
           />
         ))}

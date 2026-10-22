@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import LoginFields from "@/components/LoginFields";
+import RecurringInvestmentFields from "@/components/RecurringInvestmentFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
 import { investmentAccountTypes } from "@/components/info/InvestmentAccountInfo";
@@ -16,6 +17,7 @@ const initialFormState = {
     link: "",
     loginUsername: "",
     loginPassword: "",
+    recurringInvestments: [],
     notes: "",
 };
 
@@ -89,6 +91,11 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                     password={form.loginPassword}
                     onUsernameChange={(value) => updateField("loginUsername", value)}
                     onPasswordChange={(value) => updateField("loginPassword", value)}
+                />
+
+                <RecurringInvestmentFields
+                    investments={form.recurringInvestments}
+                    onChange={(investments) => updateField("recurringInvestments", investments)}
                 />
 
                 <div className="form-section">

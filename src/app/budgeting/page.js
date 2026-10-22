@@ -14,10 +14,11 @@ const CATEGORIES = [
   { key: "subscriptions", label: "Subscriptions", color: "var(--series-1)", href: "/expenses/subscriptions", group: "accounts" },
   { key: "loans", label: "Loans", color: "var(--series-2)", href: "/expenses/loans", group: "accounts" },
   { key: "insurance", label: "Insurance", color: "var(--series-3)", href: "/expenses/insurance", group: "accounts" },
+  { key: "investments", label: "Investments", color: "var(--series-4)", href: "/accounts/investing", group: "accounts" },
 ];
 // Additional expenses take the remaining chart colors in order. Past the last color, the rest share one
 // "Other Expenses" slice rather than getting a color that's too close to another.
-const ADDITIONAL_COLORS = ["var(--series-4)", "var(--series-5)", "var(--series-6)", "var(--series-7)", "var(--series-8)"];
+const ADDITIONAL_COLORS = ["var(--series-5)", "var(--series-6)", "var(--series-7)", "var(--series-8)"];
 const LEFT_OVER = { key: "left-over", label: "Left Over", color: "var(--border-strong)", group: "left-over" };
 
 // Income streams and additional expenses are stored as one-key objects: { "<name>": <monthly amount> }.
@@ -319,8 +320,8 @@ export default function BudgetingPage() {
 
       <section className="card p-5">
         <h2 className="font-semibold">From Your Accounts</h2>
-        <p className="mt-0.5 text-sm text-muted">Monthly costs of the subscriptions, loans and insurance you&apos;ve added.</p>
-        <div className="mt-4 grid gap-5 md:grid-cols-3">
+        <p className="mt-0.5 text-sm text-muted">Monthly costs of the subscriptions, loans, insurance and recurring investments you&apos;ve added.</p>
+        <div className="mt-4 grid gap-5 md:grid-cols-2">
           {CATEGORIES.map((category) => (
             <div key={category.key} className="min-w-0">
               <div className="flex items-center gap-2 text-sm font-medium">

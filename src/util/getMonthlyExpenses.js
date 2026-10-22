@@ -1,3 +1,5 @@
+import { allRecurringInvestments, investedInMonth, investmentName } from "@/lib/recurringInvestments";
+
 // What a bill costs a month; yearly bills are spread over 12 months.
 function monthly(amount, billingCycle) {
     return (Number(amount) || 0) / (billingCycle === "year" ? 12 : 1);
@@ -16,10 +18,13 @@ async function getItems(category) {
     return res.json();
 }
 
-// What each subscription, loan and insurance policy costs in the month of `date` (this month by default),
-// as { id, name, amount } lists. Items that cost nothing that month, or have no cost entered, are left out.
+// What each subscription, loan, insurance policy and recurring investment costs in the month of `date` (this
+// month by default), as { id, name, amount } lists. Items that cost nothing that month, or have no cost entered,
+// are left out.
 export async function getMonthlyExpenses(date = new Date()) {
-    const [subscriptions, loans, insurance] = await Promise.all(["subscriptions", "loans", "insurance"].map(getItems));
+    const [subscriptions, loans, insurance, investmentAccounts] = await Promise.all(
+        ["subscriptions", "loans", "insurance", "investment-accounts"].map(getItems)
+    );
     const withCost = (items) => items.filter((item) => item.amount > 0);
     const month = String(date.getMonth() + 1).padStart(2, "0");
 
@@ -38,6 +43,11 @@ export async function getMonthlyExpenses(date = new Date()) {
             id: policy.id,
             name: policy.name || policy.provider || "Unnamed Insurance",
             amount: monthly(policy.premium, policy.billingCycle),
+        }))),
+        investments: withCost(allRecurringInvestments(investmentAccounts).map(({ investment, account }) => ({
+            id: investment.id,
+            name: investmentName(investment, account),
+            amount: investedInMonth(investment, date),
         }))),
     };
 }
