@@ -8,8 +8,9 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
-import { matchesSearch } from "@/lib/formUtils";
+import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { allRecurringInvestments, investedInMonth } from "@/lib/recurringInvestments";
 import { brokers } from "@/components/dropdowns/Dropdown";
 
 const brokerLogo = (name, accounts) => logoFor(brokers, name, accounts.find((account) => account.customLogo)?.customLogo);
@@ -73,6 +74,10 @@ function InvestmentAccounts() {
     setAccounts(await res.json());
   }
 
+  // What the recurring investments put in this month, counting each time one goes through.
+  const monthlyTotal = allRecurringInvestments(accounts)
+    .reduce((sum, { investment }) => sum + investedInMonth(investment), 0);
+
   const filters = useUrlFilters(accounts, [
     { key: "broker", label: "Broker", getValue: (account) => account.broker, getImage: brokerLogo },
     { key: "type", label: "Type", getValue: (account) => account.type },
@@ -90,7 +95,9 @@ function InvestmentAccounts() {
         search={search}
         onSearchChange={setSearch}
         filters={filters}
-        stats={[]}
+        stats={[
+          { label: "Invested This Month", value: monthlyTotal > 0 ? formatCurrency(monthlyTotal) : null },
+        ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);
           setIsRearrangeOpen(true);

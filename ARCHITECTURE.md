@@ -738,6 +738,7 @@ Items with no computable date are dropped. The list is sorted by days until the 
 ### Investing: `/accounts/investing` (API slug `investment-accounts`)
 
 - Also loads bank accounts so it can show "from *Account*".
+- Header stat: **Invested This Month** = the sum of `investedInMonth` over every recurring investment, i.e. each amount times the number of days it runs this calendar month (the same figure Budgeting uses).
 - Filters: Broker, Type. Search: name, broker, type, **and every recurring investment's stock**.
 - Card: type chip; a **Recurring Investments** section listing stock, schedule ("Every Monday", "Every other Friday", "15th of every month", "Every market day"), funding account and amount.
 - The form edits recurring investments inline ([RecurringInvestmentFields](src/components/RecurringInvestmentFields.jsx)). Biweekly shows a **Next Investment** picker with the next two dates on the chosen weekday; whichever one you pick becomes `startDate`. Changing the weekday re-anchors `startDate` automatically (`withStartDate`).
