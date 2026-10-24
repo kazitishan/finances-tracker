@@ -19,6 +19,7 @@ const DEFAULT_INFO = {
     loans: [],
     "investment accounts": [],
     insurance: [],
+    utilities: [],
     passwords: [],
 };
 
@@ -29,6 +30,7 @@ const CATEGORY_KEYS = {
     loans: "loans",
     "investment-accounts": "investment accounts",
     insurance: "insurance",
+    utilities: "utilities",
 };
 
 // The field that names each category's platform; saved logins are grouped by it, so a Chase
@@ -40,9 +42,11 @@ const PLATFORM_FIELDS = {
     loans: "provider",
     "investment accounts": "broker",
     insurance: "provider",
+    utilities: "provider",
 };
 
 // The public folder whose uploads/ holds the logo of a platform added through "Other".
+// Utilities have none: their picture comes from their type.
 const UPLOAD_FOLDERS = {
     "bank accounts": () => "banks",
     "credit cards": () => "banks",

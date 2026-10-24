@@ -35,7 +35,7 @@ This document explains how Finances Tracker works: what runs where, how data is 
 A **single-user, local-only** personal finance organizer. You run it on your own machine with `npm run dev` and open it at `http://localhost:3000`. It stores:
 
 - **Accounts:** bank accounts (with debit cards) and investment accounts (with recurring investments).
-- **Expenses:** credit cards, subscriptions, loans and insurance policies.
+- **Expenses:** credit cards, subscriptions, loans, insurance policies and utilities.
 - **Logins:** usernames and passwords for each platform, deduplicated into a password manager.
 - **Budget:** income streams and extra monthly expenses.
 
@@ -127,8 +127,9 @@ Consequences:
 │   ├── investment/*.png        + uploads/
 │   ├── loans/*.png             + uploads/
 │   ├── subscriptions/*.png     + uploads/
-│   └── insurance/*.png         + uploads/, health/*.png, health/uploads/
-│       (each uploads/ keeps only its README.md in git; uploaded logos are git-ignored)
+│   ├── insurance/*.png         + uploads/, health/*.png, health/uploads/
+│   │   (each uploads/ keeps only its README.md in git; uploaded logos are git-ignored)
+│   └── utilities/*.svg         One icon per utility type (no uploads)
 └── src/
     ├── app/                    Routes (App Router)
     │   ├── layout.js           Root layout: theme script, KeepAlive, ToastProvider, NavBar
@@ -138,7 +139,7 @@ Consequences:
     │   ├── passwords/page.js   Password Manager
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
-    │   ├── expenses/{credit-cards,subscriptions,loans,insurance}/page.js
+    │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities}/page.js
     │   └── api/
     │       ├── [category]/route.js        GET list, POST add, PUT reorder
     │       ├── [category]/[id]/route.js   PUT update, DELETE
@@ -217,6 +218,7 @@ Key properties:
   "loans": [],
   "investment accounts": [],
   "insurance": [],
+  "utilities": [],
   "passwords": []
 }
 ```
@@ -233,6 +235,9 @@ Key properties:
 | `subscriptions` | `subscriptions` | `/expenses/subscriptions` |
 | `loans` | `loans` | `/expenses/loans` |
 | `insurance` | `insurance` | `/expenses/insurance` |
+| `utilities` | `utilities` | `/expenses/utilities` |
+
+Files created before utilities existed have no `"utilities"` key. That's fine: every store function reads a category with `info[key] || []`, and the key is written the first time a utility is added.
 
 `passwords` and `user-info` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
 
@@ -268,6 +273,7 @@ The **platform field** per category (`PLATFORM_FIELDS` in infoStore):
 | loans | `provider` | banks + `platforms["loan-provider"]`, sorted |
 | investment accounts | `broker` | `platforms.broker` |
 | insurance | `provider` | `platforms.healthInsurance` if type is Health, else `platforms.insurance` |
+| utilities | `provider` | **none**: a plain text field. Utilities have no `customLogo`; their picture comes from their type |
 
 **Bank account** ([AddBankAccountModal.jsx](src/components/modals/AddBankAccountModal.jsx))
 
@@ -359,6 +365,30 @@ $ = `money` (decimal input with a `$` prefix, shown as whole dollars). † = `co
 
 **Every insurance item stores the union of all type fields**, mostly as `""`, because `initialFormState` includes all of them. Only the current type's fields are shown.
 
+**Utility** ([AddUtilityModal.jsx](src/components/modals/AddUtilityModal.jsx))
+
+| Field | Values |
+|---|---|
+| `provider` | free text (e.g. "Con Edison"); also the platform its saved login is grouped under |
+| `type` | `Water`, `Energy`, `Gas`, `Internet`, `Phone`, `Cable TV`, `Trash`, `Other` |
+| `otherType` | free text, used when `type === "Other"` |
+| `cost`, `billingCycle`, `billingMonth`, `billingDay` | same meaning as the subscription billing fields ("Payment Month" / "Payment Day" in the form) |
+
+There's no `customLogo` and no payment method. The card's picture is `utilityIcon(type)` from [UtilityInfo.jsx](src/components/info/UtilityInfo.jsx):
+
+| Type | Icon |
+|---|---|
+| Water | `/utilities/water.svg` |
+| Energy | `/utilities/energy.svg` |
+| Gas | `/utilities/gas.svg` |
+| Internet | `/utilities/wifi.svg` |
+| Phone | `/utilities/phone.svg` |
+| Cable TV | `/utilities/tv.svg` |
+| Trash | `/utilities/trash.svg` |
+| Other, or none | `/utilities/utility.svg` (a plug) |
+
+The icons are full-tile SVGs: a colored 48×48 square with a white line glyph, so they fill the rounded `.logo-tile` the same way the brand PNGs do. `next/image` serves `.svg` sources unoptimized automatically, so no `dangerouslyAllowSVG` config is needed.
+
 ### Saved login (`passwords[]`)
 
 ```json
@@ -403,7 +433,7 @@ Internal tables:
 | `DEFAULT_USER_INFO`, `DEFAULT_INFO` | Empty document shapes |
 | `CATEGORY_KEYS` | URL slug → storage key |
 | `PLATFORM_FIELDS` | storage key → the field naming the platform |
-| `UPLOAD_FOLDERS` | storage key → `public/` subfolder for uploaded logos (insurance picks `insurance/health` when `type === "Health"`) |
+| `UPLOAD_FOLDERS` | storage key → `public/` subfolder for uploaded logos (insurance picks `insurance/health` when `type === "Health"`). Utilities have no entry because they never carry a `customLogo` |
 
 Internal helpers:
 
@@ -617,7 +647,7 @@ Sticky header with a translucent blurred background. Items:
 
 - **Home** → `/`
 - **Accounts ▾** → Bank Accounts, Investing
-- **Expenses ▾** → Credit Cards, Subscriptions, Loans, Insurance
+- **Expenses ▾** → Credit Cards, Subscriptions, Loans, Insurance, Utilities
 - **Budgeting** → `/budgeting`
 - **⚙ Settings** (right side)
 
@@ -726,6 +756,7 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 | Bank account | Interest payment | next first or last day of the month (`interestPaymentDate`) | — |
 | Loan | Loan payment | next `paymentDay` | `monthlyPayment` |
 | Insurance | Insurance payment | same as subscription, using `premium` | `premium` |
+| Utility | Utility payment | same as subscription | `cost` |
 | Recurring investment | Recurring investment | `nextInvestmentDate()` | `amount` |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
@@ -769,6 +800,12 @@ Items with no computable date are dropped. The list is sorted by days until the 
 - Filters: Type, Provider. Search: name, provider, type label.
 - Form: switching between Health and non-Health **clears a listed provider** that doesn't fit the new type. A provider entered through Other is kept.
 
+### Utilities: `/expenses/utilities`
+
+- Stats: same Monthly and Yearly Total rules as subscriptions, using `cost`.
+- Filters: Type (each option shows its type icon), Provider. Search: name, provider, type label.
+- Card: the type icon; subtitle is the provider; type chip (shows `otherType` for Other); key stat "Monthly/Yearly Cost"; "Payments Due" row.
+
 ### Password Manager: `/passwords`
 
 Reached from Settings, not the nav bar. Lists saved logins sorted by platform, then username. Each card shows the logo, username, "Used by N items", masked username and password, and a **Used By** list linking to each item's page. Edit and Delete work as described in [§9](#9-saved-logins-the-password-system). Filter: Platform. Search: platform, username, names of the items using it.
@@ -778,21 +815,21 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive.
 
 - **Income Streams** and **Additional Expenses** cards: add `name + $amount` rows or remove them. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
-- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance and Investments, each with a link to its page.
+- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments and Utilities, each with a link to its page.
 - **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Monthly Income, Monthly Spending, Left Over or Over Budget).
 
 Calculation:
 
 ```
 income    = Σ income streams
-spending  = Σ subscriptions + loans + insurance + investments (this month)  +  Σ additional expenses
+spending  = Σ subscriptions + loans + insurance + investments + utilities (this month)  +  Σ additional expenses
 leftOver  = income − spending
-slices    = [Subscriptions, Loans, Insurance, Investments, …additional, Left Over (if > 0)]  (zero slices hidden)
+slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, …additional, Left Over (if > 0)]  (zero slices hidden)
 ring size = max(income, spending)          // so over-budget fills the ring with spending
 share %   = amount / (income > 0 ? income : spending)
 ```
 
-Colors: the account categories use the fixed `--series-1..4`. Additional expenses take `--series-5..8` in order. With **more than 4** additional expenses, the first 3 get their own colors and the rest merge into one "Other Expenses (n)" slice in `--series-8`. Left Over is neutral (`--border-strong`). Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Left Over, Over Budget (red), or Spending when there's no income.
+Colors: the account categories use the fixed `--series-1..5` (Utilities, added last, is `--series-5`, so the older categories kept their colors). Additional expenses take `--series-6..8` in order. With **more than 3** additional expenses, the first 2 get their own colors and the rest merge into one "Other Expenses (n)" slice in `--series-8`. Left Over is neutral (`--border-strong`). Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Left Over, Over Budget (red), or Spending when there's no income.
 
 ---
 
@@ -840,6 +877,7 @@ Only **weekends** are skipped. Market holidays are not accounted for.
 |---|---|
 | Subscription, monthly | `cost` |
 | Subscription, yearly | full `cost`, **only in its renewal month** (otherwise 0) |
+| Utility | same as subscription (`billedCost` handles both) |
 | Loan | `monthlyPayment` |
 | Insurance, monthly | `premium` |
 | Insurance, yearly | `premium / 12`, **spread across every month** |
@@ -860,9 +898,9 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 | `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
-| `insurance-type`, `loan-type` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
+| `insurance-type`, `loan-type`, `utility-type` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
 
-Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". An unknown type throws.
+Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". "An" is used before a/e/i/o only, so the result reads "Select a utility type". An unknown type throws.
 
 **`LogoDropdown`** is a searchable button-plus-panel. Options are `{ name, image?, value?, detail?, keywords? }`; the search matches `name` and `keywords`. It closes on an outside click and autofocuses its search box.
 
@@ -961,7 +999,8 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 
 **Inconsistent conventions**
 - Credit card `paymentMethod` is a **bare bank account id**, while subscription and insurance `paymentMethod` is **`credit:`/`debit:`-prefixed**. They're different dropdown types under the same field name.
-- Budgeting counts **yearly subscriptions in full in their renewal month**, but **spreads yearly insurance premiums evenly (÷ 12)**.
+- Budgeting counts **yearly subscriptions and utilities in full in their billing month**, but **spreads yearly insurance premiums evenly (÷ 12)**.
+- Saved logins for utilities show no logo in the Password Manager, because the provider is free text and the type icon isn't looked up there.
 - `SubscriptionInfo` passes `paymentAccount.name` to the payment box, while `InsuranceInfo` passes `displayName` (which has the "Unnamed …" fallback).
 - The credit card stat is labeled "Total **Monthly** Credit Line", but it's simply the sum of credit lines.
 - The Investing page lives at `/accounts/investing`, but its API slug is `investment-accounts`.

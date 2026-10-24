@@ -20,6 +20,7 @@ const categoryLabels = {
   loans: "Loan",
   "investment-accounts": "Investment Account",
   insurance: "Insurance",
+  utilities: "Utility",
 };
 
 const categoryPaths = {
@@ -29,6 +30,7 @@ const categoryPaths = {
   loans: "/expenses/loans",
   "investment-accounts": "/accounts/investing",
   insurance: "/expenses/insurance",
+  utilities: "/expenses/utilities",
 };
 
 const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions, ...allInsuranceProviders];

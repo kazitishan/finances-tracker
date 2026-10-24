@@ -28,6 +28,7 @@ if (fs.existsSync(infoPath)) {
     "loans": [],
     "investment accounts": [],
     "insurance": [],
+    "utilities": [],
     "passwords": [],
   };
 

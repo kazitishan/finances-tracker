@@ -7,8 +7,9 @@ import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, 
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
+import { utilityIcon } from "@/components/info/UtilityInfo";
 
-function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts) {
+function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities) {
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -63,6 +64,18 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       : nextOccurrence(policy.billingDay),
   }));
 
+  const utilityPayments = utilities.map((utility) => ({
+    id: `utility-${utility.id}`,
+    kind: "Utility payment",
+    href: "/expenses/utilities",
+    name: utility.name || utility.provider || "Unnamed Utility",
+    image: utilityIcon(utility.type),
+    amount: utility.cost ? formatCurrency(utility.cost) : null,
+    date: utility.billingCycle === "year"
+      ? nextOccurrence(utility.billingDay, utility.billingMonth)
+      : nextOccurrence(utility.billingDay),
+  }));
+
   const investmentPayments = allRecurringInvestments(investmentAccounts).map(({ investment, account }) => ({
     id: `investment-${investment.id}`,
     kind: "Recurring investment",
@@ -73,7 +86,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextInvestmentDate(investment),
   }));
 
-  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...investmentPayments]
+  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -91,8 +104,9 @@ export default function Home() {
       fetch("/api/loans").then((res) => res.json()),
       fetch("/api/insurance").then((res) => res.json()),
       fetch("/api/investment-accounts").then((res) => res.json()),
-    ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts));
+      fetch("/api/utilities").then((res) => res.json()),
+    ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities));
       setLoaded(true);
     });
   }, []);

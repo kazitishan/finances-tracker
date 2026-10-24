@@ -25,6 +25,7 @@ export function insuranceProvidersFor(insuranceType) {
 const typesByType = {
     "insurance-type": ["Health", "Auto", "Life", "Home", "Other"],
     "loan-type": ["Mortgage", "Student Loans", "Personal Loans", "Business Loans", "Auto Loan", "Other"],
+    "utility-type": ["Water", "Energy", "Gas", "Internet", "Phone", "Cable TV", "Trash", "Other"],
 };
 
 const optionsByType = {
@@ -38,7 +39,8 @@ const optionsByType = {
 
 function placeholders(type) {
     const label = type.replaceAll("-", " ");
-    const article = /^[aeiou]/.test(label) ? "an" : "a";
+    // "u" is left out for "a utility type".
+    const article = /^[aeio]/.test(label) ? "an" : "a";
     return {
         placeholder: `Select ${article} ${label}`,
         searchPlaceholder: `Search ${label}s...`,
@@ -59,7 +61,8 @@ function placeholders(type) {
 // "payment-method": Dropdown of the user's credit and debit cards.
 // "insurance-type": Dropdown of the insurance types (Health, Auto, Life, Home, Other).
 // "loan-type": Dropdown of the loan types (Mortgage, Student Loans, Personal Loans, Business Loans, Auto Loan, Other).
-//     Picking "Other" on either asks for the type; that's `otherValue`.
+// "utility-type": Dropdown of the utility types (Water, Energy, Gas, Internet, Phone, Cable TV, Trash, Other).
+//     Picking "Other" on any of these asks for the type; that's `otherValue`.
 function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, otherValue, onOtherChange }) {
     const [bankAccounts, setBankAccounts] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState([]);
