@@ -228,6 +228,8 @@ export default function BudgetingPage() {
   const spending = sum(accountSlices.map((slice) => slice.amount))
     + sum(additionalExpenses.map((entry) => entryOf(entry)[1]));
   const leftOver = income - spending;
+  // Only categories with something to pay this month get a list under From Your Accounts.
+  const accountCategories = CATEGORIES.filter((category) => expenses[category.key].length > 0);
 
   // Categories with nothing to pay this month are left off the chart and its legend.
   const slices = [
@@ -319,20 +321,19 @@ export default function BudgetingPage() {
         />
       </div>
 
-      <section className="card p-5">
-        <h2 className="font-semibold">From Your Accounts</h2>
-        <p className="mt-0.5 text-sm text-muted">Monthly costs of the subscriptions, loans, insurance, utilities and recurring investments you&apos;ve added.</p>
-        <div className="mt-4 grid gap-5 md:grid-cols-2">
-          {CATEGORIES.map((category) => (
-            <div key={category.key} className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Swatch color={category.color} />
-                <span className="flex-1">{category.label}</span>
-                <Link href={category.href} className="icon-btn -mr-1.5" aria-label={`Go to ${category.label}`}>
-                  <ArrowUpRightIcon size={14} />
-                </Link>
-              </div>
-              {expenses[category.key].length > 0 ? (
+      {accountCategories.length > 0 && (
+        <section className="card p-5">
+          <h2 className="font-semibold">From Your Accounts</h2>
+          <div className="mt-4 grid gap-5 md:grid-cols-2">
+            {accountCategories.map((category) => (
+              <div key={category.key} className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Swatch color={category.color} />
+                  <span className="flex-1">{category.label}</span>
+                  <Link href={category.href} className="icon-btn -mr-1.5" aria-label={`Go to ${category.label}`}>
+                    <ArrowUpRightIcon size={14} />
+                  </Link>
+                </div>
                 <ul className="mt-1.5">
                   {expenses[category.key].map((item) => (
                     <li key={item.id} className="flex items-center gap-3 py-1 text-sm">
@@ -341,13 +342,11 @@ export default function BudgetingPage() {
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="mt-1.5 text-sm text-muted">None with a cost yet.</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

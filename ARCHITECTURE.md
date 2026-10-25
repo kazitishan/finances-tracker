@@ -815,7 +815,7 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive.
 
 - **Income Streams** and **Additional Expenses** cards: add `name + $amount` rows or remove them. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
-- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments and Utilities, each with a link to its page.
+- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments and Utilities, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
 - **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Monthly Income, Monthly Spending, Left Over or Over Budget).
 
 Calculation:
