@@ -129,7 +129,8 @@ Consequences:
 │   ├── subscriptions/*.png     + uploads/
 │   ├── insurance/*.png         + uploads/, health/*.png, health/uploads/
 │   │   (each uploads/ keeps only its README.md in git; uploaded logos are git-ignored)
-│   └── utilities/*.svg         One icon per utility type (no uploads)
+│   ├── utilities/*.svg         One icon per utility type (no uploads)
+│   └── income/suitcase.svg     Paycheck picture on Home
 └── src/
     ├── app/                    Routes (App Router)
     │   ├── layout.js           Root layout: theme script, KeepAlive, ToastProvider, NavBar
@@ -165,6 +166,7 @@ Consequences:
     │   ├── uploads.js          Logo file writes/deletes (server-only, uses fs)
     │   ├── formUtils.js        Formatting, masking, input sanitizing, date helpers
     │   ├── recurringInvestments.js  Investment schedule math
+    │   ├── incomeStreams.js    Income stream shape and payday math
     │   └── logos.js            logoFor()
     └── util/                   Client-side fetch helpers + pure lookups
         ├── getBankAccounts.js, getPaymentMethods.js, getUserInfo.js, saveUserInfo.js
@@ -247,7 +249,7 @@ Files created before utilities existed have no `"utilities"` key. That's fine: e
 - Empty fields are stored as `""`, not omitted. Each modal's `initialFormState` defines every key.
 - Each item gets `id: crypto.randomUUID()` on the server when it's added.
 - **Updates replace the whole item.** `PUT` sends the full form, and the server stores `{ ...updates, id }`; it doesn't merge with the old object.
-- Exceptions to "strings only": `recurringInvestments` is an array, and `user-info` amounts are real numbers.
+- Exceptions to "strings only": `recurringInvestments` is an array, and additional expense amounts are real numbers.
 
 ### Item schemas
 
@@ -403,12 +405,34 @@ See [§9](#9-saved-logins-the-password-system).
 
 ```json
 {
-  "income-streams":      [ { "Day job": 5200 } ],
+  "income-streams":      [ { "id": "uuid", "name": "Day job", "...": "see below" } ],
   "additional-expenses": [ { "Rent": 3500 }, { "Groceries": 600 } ]
 }
 ```
 
-Each entry is a **one-key object** `{ "<name>": <monthly amount> }`, with a real number amount that is ≥ 0. Order is preserved. Duplicate names are allowed because each entry is its own object.
+Each additional expense is a **one-key object** `{ "<name>": <monthly amount> }`, with a real number amount that is ≥ 0. Order is preserved. Duplicate names are allowed because each entry is its own object.
+
+**Income stream** ([AddIncomeStreamModal.jsx](src/components/modals/AddIncomeStreamModal.jsx), documented in [incomeStreams.js](src/lib/incomeStreams.js)). These stay in `user-info` rather than being a category, so they're saved with `PUT /api/user-info` and the modal doesn't use `useSaveItem`.
+
+| Field | Values |
+|---|---|
+| `id` | UUID, created in the browser |
+| `name` | required |
+| `type` | `Full-time Job`, `Part-time Job`, `Contract`, `Freelancing`, `Gig Work`, `Other`, or `""` |
+| `otherType` | free text, used when `type === "Other"` |
+| `frequency` | `"weekly"` \| `"biweekly"` \| `"twice-monthly"` \| `"monthly"` \| `""` ("No set schedule", the default, for income paid out whenever) |
+| `dayOfWeek` | `"1"`–`"5"` (Mon–Fri), for weekly and biweekly |
+| `startDate` | `"YYYY-MM-DD"`, for biweekly: anchors which weeks it pays, same as a recurring investment |
+| `dayOfMonth` | `"1"`–`"28"` or `"last"`, for monthly and twice-monthly |
+| `secondDayOfMonth` | same values, for twice-monthly; must differ from `dayOfMonth` |
+| `amountType` | `"paycheck"` (default) for a fixed paycheck, `"estimate"` for income that varies. Streams saved before this field existed have none, which reads as `"paycheck"` |
+| `paycheckAmount` | decimal string, required for `"paycheck"`: what **one** paycheck pays, not the monthly total |
+| `monthlyEstimate` | decimal string, required for `"estimate"`: what the user expects to make in a month. It's one value used for every month until they change it |
+| `paymentType` | `Direct Deposit`, `Check`, `Cash`, `Other`, or `""` |
+| `otherPaymentType` | free text, used when `paymentType === "Other"` |
+| `bankAccount` | **bank account `id`** the deposit goes to; only shown for Direct Deposit |
+
+The form can't be saved without a name and an amount above 0 (or with the same day picked twice for `twice-monthly`). The frequency and paydays are optional.
 
 ### Migrations (automatic, on read)
 
@@ -417,6 +441,7 @@ Each entry is a **one-key object** `{ "<name>": <monthly amount> }`, with a real
 | File doesn't exist | `readInfo()` | Creates it with `DEFAULT_INFO` |
 | No `"user-info"` | `withUserInfoFirst()` (and `setup.js`) | Adds an empty one, placed first |
 | No `"passwords"` key | `addPasswordsKey()` | Builds `passwords` from every item's login, then writes the file |
+| An income stream shaped `{ "<name>": <monthly amount> }` | `migrateIncomeStreams()` | Replaces it with a full stream with `frequency: "monthly"` and that amount as `paycheckAmount`, then writes the file. It has no `dayOfMonth` until it's next edited, so it counts in the budget but isn't on Home |
 
 ---
 
@@ -441,14 +466,14 @@ Internal helpers:
 
 | Function | What it does |
 |---|---|
-| `readInfo()` | Creates the file if missing; parses it; puts user-info first; adds `passwords` if missing |
+| `readInfo()` | Creates the file if missing; parses it; puts user-info first; adds `passwords` if missing; migrates old income streams |
 | `writeInfo(info)` | `mkdir -p private/`, writes JSON with user-info first |
 | `withSavedLogo(key, item)` | If `item.customLogo` is a `data:` URL, saves it via `saveUpload` and replaces it with the public path |
 | `loginOf(key, item)` | `{ platform: item[platformField], username: item.loginUsername, password: item.loginPassword }` |
 | `sameLogin(a, b)` | All three of platform, username and password are equal |
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
 | `itemsUsingLogin(info, login, excludeId?)` | Every item across all categories whose login equals `login` |
-| `isAmountList`, `isUserInfo` | Validate the user-info shape |
+| `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape. `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
 
 Exports:
 
@@ -749,7 +774,7 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 
 ### Home: [src/app/page.js](src/app/page.js)
 
-"Bills, investments and interest coming up, soonest first." It fetches six categories in parallel and builds one list:
+"Bills, paychecks, investments and interest coming up, soonest first." It fetches every category with dates, plus `user-info`, in parallel and builds one list:
 
 | Source | Kind label | Date rule | Amount shown |
 |---|---|---|---|
@@ -761,6 +786,7 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 | Insurance | Insurance payment | same as subscription, using `premium` | `premium` |
 | Utility | Utility payment | same as subscription | `cost` |
 | Recurring investment | Recurring investment | `nextInvestmentDate()` | `amount` |
+| Income stream with a payday | Paycheck (suitcase picture, links to Budgeting) | `nextPayday()` | `paycheckAmount`; — for estimated income, since a monthly estimate says nothing about one payout |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
 
@@ -815,16 +841,16 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 
 ### Budgeting: [src/app/budgeting/page.js](src/app/budgeting/page.js)
 
-The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive.
+The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive. It also loads bank accounts, to name where direct deposits go.
 
-- **Income Streams** and **Additional Expenses** cards: add `name + $amount` rows or remove them. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
+- **Income Streams** and **Additional Expenses** cards, stacked with Income Streams on top. Income streams are added, edited and deleted through [AddIncomeStreamModal](src/components/modals/AddIncomeStreamModal.jsx). Each stream is a bordered row (same `--border-strong` as `.field`, no picture) showing its type, "Biweekly · Next Paycheck: Wed, Nov 11" (or "No set schedule"), its paycheck or monthly estimate, how it's paid, and what it pays this month. Additional expenses are `name + $amount` rows added and removed inline. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
 - **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments, Utilities and Annual Fees, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
 - **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Monthly Income, Monthly Spending, Left Over or Over Budget).
 
 Calculation:
 
 ```
-income    = Σ income streams
+income    = Σ paidInMonth(income stream)        // monthly estimate, or paycheck × paydays this month
 spending  = Σ subscriptions + loans + insurance + investments + utilities + annual fees (this month)  +  Σ additional expenses
 leftOver  = income − spending
 slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, Annual Fees, …additional, Left Over (if > 0)]  (zero slices hidden)
@@ -873,6 +899,22 @@ Only **weekends** are skipped. Market holidays are not accounted for.
 - `nextInvestmentDate(inv)` scans the next 40 days; it returns `null` if the schedule is incomplete.
 - `investedInMonth(inv, date)` = `amount × (number of run days in that calendar month)`. A weekly $50 investment can cost $200 or $250 depending on the month.
 - `describeSchedule`, `allRecurringInvestments(accounts)` (flattens to `{investment, account}`), and `investmentName` ("VOO · My Roth IRA").
+- `withStartDate(schedule)`, `nextMatchingDate(matches)` and `countInMonth(matches, date)` are generic, and income streams use them too.
+
+### [incomeStreams.js](src/lib/incomeStreams.js)
+
+Paydays are **not** moved for weekends or holidays: a stream set to the 15th pays on the 15th.
+
+| Frequency | Pays on |
+|---|---|
+| `weekly`, `biweekly` | Same rules as recurring investments; `isPayday` calls `isInvestmentDay` directly, which is why streams share its field names |
+| `twice-monthly` | `dayOfMonth` and `secondDayOfMonth` |
+| `monthly` | `dayOfMonth` |
+
+- `dayOfMonth` can be `"last"`, meaning the last day of that month.
+- `nextPayday(stream)` returns `null` if the schedule is incomplete, which drops it from Home.
+- `paidInMonth(stream, date)` is `monthlyEstimate` for estimated income, otherwise `paycheckAmount × (number of paydays in that calendar month)`. A biweekly stream pays 2 or 3 paychecks depending on the month.
+- **A fixed paycheck with no payday filled in uses `TYPICAL_PAYCHECKS`** instead of counting: weekly × 4, biweekly × 2, twice-monthly × 2, monthly × 1, and no frequency × 1. That's how migrated streams keep their amount.
 
 ### Monthly cost rules (Budgeting, via [getMonthlyExpenses.js](src/util/getMonthlyExpenses.js))
 
@@ -902,7 +944,7 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 | `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
-| `insurance-type`, `loan-type`, `utility-type` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
+| `insurance-type`, `loan-type`, `utility-type`, `income-type`, `payment-type` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
 
 Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". "An" is used before a/e/i/o only, so the result reads "Select a utility type". An unknown type throws.
 
@@ -940,6 +982,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | Modal | Notes |
 |---|---|
 | `Add*Modal` (6) | One per category; see [§6](#6-data-storage-privateinfojson) for fields. Validation is **soft**: card number ≠ 16 digits, CVC ≠ 3 or PIN ≠ 4 shows an error after blur but **doesn't block saving** |
+| `AddIncomeStreamModal` | Opened from Budgeting. Unlike the category modals, validation is **hard** (Save stays disabled until there's a name and an amount, because the budget needs them), and saving goes through the page's `onSave` / `onDelete` |
 | `RearrangeModal` | See [§13](#13-anatomy-of-a-category-page) |
 | `EditLoginModal` | Password Manager edit/delete; "Changes also apply to …" |
 | `ImageUploadDialog` | Rendered with `createPortal` into `document.body` so it sits above the form that opened it |
@@ -999,11 +1042,12 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.
-- Switching insurance type keeps the old type's fields (hidden). Switching billing from yearly to monthly keeps `billingMonth`. Clearing a credit card's `annualFee` keeps `renewalMonth` and `renewalDay`, which is why Home, Budgeting and the card all check for a fee first.
+- Switching insurance type keeps the old type's fields (hidden). Switching billing from yearly to monthly keeps `billingMonth`. Clearing a credit card's `annualFee` keeps `renewalMonth` and `renewalDay`, which is why Home, Budgeting and the card all check for a fee first. Changing an income stream's frequency keeps the old schedule fields, changing its payment type keeps `bankAccount`, and switching between a fixed paycheck and an estimate keeps the other amount, which is why anything reading `paycheckAmount` checks `isEstimated` first.
 
 **Inconsistent conventions**
 - Credit card `paymentMethod` is a **bare bank account id**, while subscription and insurance `paymentMethod` is **`credit:`/`debit:`-prefixed**. They're different dropdown types under the same field name.
 - Budgeting counts **yearly subscriptions and utilities in full in their billing month**, but **spreads yearly insurance premiums evenly (÷ 12)**.
+- Monthly recurring investments on a weekend move to the following Monday, while paydays never move.
 - Saved logins for utilities show no logo in the Password Manager, because the provider is free text and the type icon isn't looked up there.
 - `SubscriptionInfo` passes `paymentAccount.name` to the payment box, while `InsuranceInfo` passes `displayName` (which has the "Unnamed …" fallback).
 - The credit card stat is labeled "Total **Monthly** Credit Line", but it's simply the sum of credit lines.

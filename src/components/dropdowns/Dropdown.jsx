@@ -26,6 +26,8 @@ const typesByType = {
     "insurance-type": ["Health", "Auto", "Life", "Home", "Other"],
     "loan-type": ["Mortgage", "Student Loans", "Personal Loans", "Business Loans", "Auto Loan", "Other"],
     "utility-type": ["Water", "Energy", "Gas", "Internet", "Phone", "Cable TV", "Trash", "Other"],
+    "income-type": ["Full-time Job", "Part-time Job", "Contract", "Freelancing", "Gig Work", "Other"],
+    "payment-type": ["Direct Deposit", "Check", "Cash", "Other"],
 };
 
 const optionsByType = {
@@ -62,6 +64,8 @@ function placeholders(type) {
 // "insurance-type": Dropdown of the insurance types (Health, Auto, Life, Home, Other).
 // "loan-type": Dropdown of the loan types (Mortgage, Student Loans, Personal Loans, Business Loans, Auto Loan, Other).
 // "utility-type": Dropdown of the utility types (Water, Energy, Gas, Internet, Phone, Cable TV, Trash, Other).
+// "income-type": Dropdown of the income types (Full-time Job, Part-time Job, Contract, Freelancing, Gig Work, Other).
+// "payment-type": Dropdown of how income is paid (Direct Deposit, Check, Cash, Other).
 //     Picking "Other" on any of these asks for the type; that's `otherValue`.
 function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, otherValue, onOtherChange }) {
     const [bankAccounts, setBankAccounts] = useState([]);

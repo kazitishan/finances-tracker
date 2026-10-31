@@ -6,10 +6,22 @@ import Image from "next/image";
 import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { isEstimated, nextPayday } from "@/lib/incomeStreams";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
 import { utilityIcon } from "@/components/info/UtilityInfo";
+import { getUserInfo } from "@/util/getUserInfo";
 
-function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities) {
+function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, incomeStreams) {
+  const paychecks = incomeStreams.map((stream) => ({
+    id: `paycheck-${stream.id}`,
+    kind: "Paycheck",
+    href: "/budgeting",
+    name: stream.name,
+    image: "/income/suitcase.svg",
+    amount: stream.paycheckAmount && !isEstimated(stream) ? formatCurrency(stream.paycheckAmount) : null,
+    date: nextPayday(stream),
+  }));
+
   const cardPayments = cards
     .map((card) => ({
       id: `card-${card.id}`,
@@ -98,7 +110,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextInvestmentDate(investment),
   }));
 
-  return [...cardPayments, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
+  return [...paychecks, ...cardPayments, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -117,8 +129,9 @@ export default function Home() {
       fetch("/api/insurance").then((res) => res.json()),
       fetch("/api/investment-accounts").then((res) => res.json()),
       fetch("/api/utilities").then((res) => res.json()),
-    ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities));
+      getUserInfo(),
+    ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo]) => {
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo["income-streams"]));
       setLoaded(true);
     });
   }, []);
@@ -127,7 +140,7 @@ export default function Home() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
-        <p className="mt-1 text-sm text-muted">Bills, investments and interest coming up, soonest first.</p>
+        <p className="mt-1 text-sm text-muted">Bills, paychecks, investments and interest coming up, soonest first.</p>
       </div>
 
       {loaded && payments.length === 0 && (

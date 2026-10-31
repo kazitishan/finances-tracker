@@ -8,8 +8,8 @@ import {
     isInvestmentDay,
     marketWeekdays,
     nextWeekdays,
-    parseDateString,
     toDateString,
+    withStartDate,
 } from "@/lib/recurringInvestments";
 
 const emptyInvestment = {
@@ -21,14 +21,6 @@ const emptyInvestment = {
     startDate: "",
     bankAccount: "",
 };
-
-// Every two weeks needs to know which week it's on. It's saved as `startDate`; this keeps it on the chosen weekday.
-function withStartDate(investment) {
-    if (investment.frequency !== "biweekly" || !investment.dayOfWeek) return investment;
-    const start = parseDateString(investment.startDate);
-    if (start && start.getDay() === Number(investment.dayOfWeek)) return investment;
-    return { ...investment, startDate: toDateString(nextWeekdays(investment.dayOfWeek)[0]) };
-}
 
 function RecurringInvestment({ investment, onChange, onRemove }) {
     function updateField(field, value) {

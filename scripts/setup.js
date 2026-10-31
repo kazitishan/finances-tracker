@@ -4,7 +4,8 @@ const path = require("path");
 const privateDir = path.join(__dirname, "..", "private");
 const infoPath = path.join(privateDir, "info.json");
 
-// Budgeting info. Each income stream and additional expense is { "<name>": <monthly amount> }.
+// Budgeting info. Income streams are described in src/lib/incomeStreams.js. Each additional expense is
+// { "<name>": <monthly amount> }.
 const defaultUserInfo = {
   "income-streams": [],
   "additional-expenses": [],

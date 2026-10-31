@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { emptyIncomeStream } from "@/lib/incomeStreams";
 import { deleteUpload, isPendingUpload, saveUpload } from "@/lib/uploads";
 
 const INFO_PATH = path.join(process.cwd(), "private", "info.json");
 
-// Budgeting info. Each income stream and additional expense is a one-key object,
-// { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }.
+// Budgeting info. Income streams are described in lib/incomeStreams.js. Each additional expense is a
+// one-key object, { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }.
 const DEFAULT_USER_INFO = {
     "income-streams": [],
     "additional-expenses": [],
@@ -122,6 +123,31 @@ function withUserInfoFirst(info) {
     return { "user-info": userInfo, ...rest };
 }
 
+// A one-key { "<name>": <monthly amount> } object with a name and a non-negative amount.
+function isAmountEntry(entry) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+    const entries = Object.entries(entry);
+    if (entries.length !== 1) return false;
+    const [name, amount] = entries[0];
+    return name.trim() !== "" && Number.isFinite(amount) && amount >= 0;
+}
+
+// Income streams used to be { "<name>": <monthly amount> } too. Each becomes a stream paid once a month, which
+// keeps its amount in the budget; its pay date gets filled in the next time it's edited.
+function migrateIncomeStreams(info) {
+    const streams = info["user-info"]["income-streams"] ?? [];
+    if (!streams.some(isAmountEntry)) return;
+    info["user-info"] = {
+        ...info["user-info"],
+        "income-streams": streams.map((stream) => {
+            if (!isAmountEntry(stream)) return stream;
+            const [name, amount] = Object.entries(stream)[0];
+            return { ...emptyIncomeStream, id: crypto.randomUUID(), name, frequency: "monthly", paycheckAmount: String(amount) };
+        }),
+    };
+    writeInfo(info);
+}
+
 function readInfo() {
     if (!fs.existsSync(INFO_PATH)) {
         fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
@@ -130,6 +156,7 @@ function readInfo() {
     }
     const info = withUserInfoFirst(JSON.parse(fs.readFileSync(INFO_PATH, "utf-8")));
     if (!info.passwords) addPasswordsKey(info);
+    migrateIncomeStreams(info);
     return info;
 }
 
@@ -138,20 +165,20 @@ function writeInfo(info) {
     fs.writeFileSync(INFO_PATH, JSON.stringify(withUserInfoFirst(info), null, 2) + "\n");
 }
 
-// A list of one-key { "<name>": <monthly amount> } objects with a name and a non-negative amount.
-function isAmountList(list) {
-    return Array.isArray(list) && list.every((entry) => {
-        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
-        const entries = Object.entries(entry);
-        if (entries.length !== 1) return false;
-        const [name, amount] = entries[0];
-        return name.trim() !== "" && Number.isFinite(amount) && amount >= 0;
-    });
+function isIncomeStream(entry) {
+    return Boolean(entry) && typeof entry === "object" && !Array.isArray(entry)
+        && typeof entry.id === "string" && entry.id !== ""
+        && typeof entry.name === "string" && entry.name.trim() !== ""
+        && Number(entry.paycheckAmount) >= 0 && Number(entry.monthlyEstimate ?? 0) >= 0;
 }
 
+// Old-style entries are allowed so an older download can be imported; readInfo() migrates them.
 function isUserInfo(value) {
+    const incomeStreams = value?.["income-streams"] ?? [];
+    const additionalExpenses = value?.["additional-expenses"] ?? [];
     return Boolean(value) && typeof value === "object" && !Array.isArray(value)
-        && isAmountList(value["income-streams"] ?? []) && isAmountList(value["additional-expenses"] ?? []);
+        && Array.isArray(incomeStreams) && incomeStreams.every((entry) => isIncomeStream(entry) || isAmountEntry(entry))
+        && Array.isArray(additionalExpenses) && additionalExpenses.every(isAmountEntry);
 }
 
 export function getUserInfo() {

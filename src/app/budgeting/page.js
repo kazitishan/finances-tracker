@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
+import AddIncomeStreamModal from "@/components/modals/AddIncomeStreamModal";
 import { useToast } from "@/components/ToastProvider";
-import { ArrowUpRightIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import { ArrowUpRightIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { formatCurrency, inputClasses, months, onlyDecimal } from "@/lib/formUtils";
+import { incomeFrequencies, isEstimated, nextPayday, paidInMonth } from "@/lib/incomeStreams";
+import { getBankAccounts } from "@/util/getBankAccounts";
 import { getUserInfo } from "@/util/getUserInfo";
 import { saveUserInfo } from "@/util/saveUserInfo";
 import { getMonthlyExpenses } from "@/util/getMonthlyExpenses";
@@ -23,7 +27,7 @@ const CATEGORIES = [
 const ADDITIONAL_COLORS = ["var(--series-7)", "var(--series-8)"];
 const LEFT_OVER = { key: "left-over", label: "Left Over", color: "var(--border-strong)", group: "left-over" };
 
-// Income streams and additional expenses are stored as one-key objects: { "<name>": <monthly amount> }.
+// Additional expenses are stored as one-key objects: { "<name>": <monthly amount> }.
 const entryOf = (entry) => Object.entries(entry)[0];
 const sum = (amounts) => amounts.reduce((total, amount) => total + amount, 0);
 const percentOf = (amount, total) => (total > 0 ? `${Math.round((amount / total) * 100)}%` : "–");
@@ -120,6 +124,72 @@ function StatTile({ label, value, tone }) {
   );
 }
 
+// "Biweekly · Next Paycheck: Wed, Nov 11", or just the frequency when the stream has no pay date yet.
+function scheduleLabel(stream) {
+  const frequency = incomeFrequencies.find((frequency) => frequency.value === stream.frequency)?.label;
+  const next = nextPayday(stream);
+  const nextLabel = next && `Next Paycheck: ${next.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+  return [frequency, nextLabel].filter(Boolean).join(" · ");
+}
+
+function amountLabel(stream) {
+  return isEstimated(stream)
+    ? `${formatCurrency(stream.monthlyEstimate)} estimated per month`
+    : `${formatCurrency(stream.paycheckAmount)} per paycheck`;
+}
+
+// "Direct Deposit to Chase Checking", or just the payment type when there's no account to name.
+function paymentLabel(stream, bankAccounts) {
+  const type = typeLabel(stream.paymentType, stream.otherPaymentType);
+  const account = stream.paymentType === "Direct Deposit" && bankAccounts.find((account) => account.id === stream.bankAccount);
+  return account ? `${type} to ${account.name || "Unnamed Account"}` : type;
+}
+
+// The income streams, each with what it pays this month. Adding and editing happen in AddIncomeStreamModal.
+function IncomeStreamList({ streams, bankAccounts, onAdd, onEdit }) {
+  const total = sum(streams.map((stream) => paidInMonth(stream)));
+
+  return (
+    <section className="card flex flex-col p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-semibold">Income Streams</h2>
+        <span className="text-sm tabular-nums text-muted">{formatCurrency(total)} / mo</span>
+      </div>
+
+      {streams.length > 0 ? (
+        <ul className="mt-3 flex flex-col gap-2">
+          {streams.map((stream) => (
+            <li key={stream.id} className="flex items-center gap-3 rounded-lg border border-[var(--border-strong)] p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="truncate">{stream.name}</div>
+                <div className="truncate text-xs text-muted">
+                  {[typeLabel(stream.type, stream.otherType), scheduleLabel(stream)].filter(Boolean).join(" · ")}
+                </div>
+                <div className="truncate text-xs text-muted">
+                  {[amountLabel(stream), paymentLabel(stream, bankAccounts)].filter(Boolean).join(" · ")}
+                </div>
+              </div>
+              <span className="tabular-nums">{formatCurrency(paidInMonth(stream))}</span>
+              <button type="button" onClick={() => onEdit(stream)} className="icon-btn" aria-label={`Edit ${stream.name}`}>
+                <PencilIcon size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 rounded-lg border border-dashed border-[var(--border-strong)] px-3 py-4 text-center text-sm text-muted">
+          Add a job or other income to see what&apos;s left each month.
+        </p>
+      )}
+
+      <button type="button" onClick={onAdd} className="btn btn-primary mt-4 self-start">
+        <PlusIcon size={14} />
+        Add
+      </button>
+    </section>
+  );
+}
+
 // A list of named monthly amounts, with a row to add another.
 function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onRemove }) {
   const [name, setName] = useState("");
@@ -197,10 +267,15 @@ export default function BudgetingPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [expenses, setExpenses] = useState(null);
   const [hovered, setHovered] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [editingStream, setEditingStream] = useState(null);
+  const [incomeModalKey, setIncomeModalKey] = useState(0);
 
   useEffect(() => {
     getUserInfo().then(setUserInfo).catch(() => showToast("Couldn't load your budget"));
     getMonthlyExpenses().then(setExpenses).catch(() => showToast("Couldn't load your expenses"));
+    getBankAccounts().then(setBankAccounts).catch(() => showToast("Couldn't load your bank accounts"));
   }, [showToast]);
 
   if (!userInfo || !expenses) return null;
@@ -208,20 +283,40 @@ export default function BudgetingPage() {
   const incomeStreams = userInfo["income-streams"];
   const additionalExpenses = userInfo["additional-expenses"];
 
-  // Saves right away, putting the list back if the save fails.
+  // Saves right away, putting the list back if the save fails. Resolves to whether it saved.
   async function updateList(key, list) {
     const previous = userInfo;
     const next = { ...userInfo, [key]: list };
     setUserInfo(next);
     try {
       await saveUserInfo(next);
+      return true;
     } catch {
       setUserInfo(previous);
       showToast("Couldn't save");
+      return false;
     }
   }
 
-  const income = sum(incomeStreams.map((entry) => entryOf(entry)[1]));
+  function openIncomeModal(stream) {
+    setEditingStream(stream);
+    setIncomeModalKey((key) => key + 1);
+    setIsIncomeModalOpen(true);
+  }
+
+  function saveStream(stream) {
+    const exists = incomeStreams.some((existing) => existing.id === stream.id);
+    return updateList(
+      "income-streams",
+      exists ? incomeStreams.map((existing) => (existing.id === stream.id ? stream : existing)) : [...incomeStreams, stream]
+    );
+  }
+
+  function deleteStream(id) {
+    return updateList("income-streams", incomeStreams.filter((stream) => stream.id !== id));
+  }
+
+  const income = sum(incomeStreams.map((stream) => paidInMonth(stream)));
   const accountSlices = CATEGORIES.map((category) => ({
     ...category,
     amount: sum(expenses[category.key].map((item) => item.amount)),
@@ -303,14 +398,12 @@ export default function BudgetingPage() {
         </div>
       </section>
 
-      <div className="mb-4 grid gap-4 md:grid-cols-2">
-        <AmountList
-          title="Income Streams"
-          entries={incomeStreams}
-          emptyText="Add a job or other income to see what's left each month."
-          namePlaceholder="e.g. Day job"
-          onAdd={(entry) => updateList("income-streams", [...incomeStreams, entry])}
-          onRemove={(index) => updateList("income-streams", incomeStreams.filter((_, i) => i !== index))}
+      <div className="mb-4 flex flex-col gap-4">
+        <IncomeStreamList
+          streams={incomeStreams}
+          bankAccounts={bankAccounts}
+          onAdd={() => openIncomeModal(null)}
+          onEdit={openIncomeModal}
         />
         <AmountList
           title="Additional Expenses"
@@ -348,6 +441,15 @@ export default function BudgetingPage() {
           </div>
         </section>
       )}
+
+      <AddIncomeStreamModal
+        key={`income-${incomeModalKey}`}
+        isOpen={isIncomeModalOpen}
+        onClose={() => setIsIncomeModalOpen(false)}
+        initialData={editingStream}
+        onSave={saveStream}
+        onDelete={deleteStream}
+      />
     </div>
   );
 }

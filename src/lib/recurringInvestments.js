@@ -9,10 +9,10 @@ import { ordinal } from "@/lib/formUtils";
 // Market holidays aren't accounted for; only weekends are skipped.
 
 export const investmentFrequencies = [
-    { value: "daily", label: "Every market day" },
-    { value: "weekly", label: "Every week" },
-    { value: "biweekly", label: "Every two weeks" },
-    { value: "monthly", label: "Every month" },
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "biweekly", label: "Biweekly" },
+    { value: "monthly", label: "Monthly" },
 ];
 
 export const marketWeekdays = [
@@ -54,6 +54,34 @@ export function nextWeekdays(weekday, count = 2) {
     return Array.from({ length: count }, (_, index) => addDays(first, index * 7));
 }
 
+// Every two weeks needs to know which week it's on. It's saved as `startDate`; this keeps it on the chosen weekday.
+export function withStartDate(schedule) {
+    if (schedule.frequency !== "biweekly" || !schedule.dayOfWeek) return schedule;
+    const start = parseDateString(schedule.startDate);
+    if (start && start.getDay() === Number(schedule.dayOfWeek)) return schedule;
+    return { ...schedule, startDate: toDateString(nextWeekdays(schedule.dayOfWeek)[0]) };
+}
+
+// The next date (today included) that `matches`, looking far enough ahead for any monthly schedule, or null.
+export function nextMatchingDate(matches) {
+    const today = startOfToday();
+    for (let offset = 0; offset < 40; offset++) {
+        const date = addDays(today, offset);
+        if (matches(date)) return date;
+    }
+    return null;
+}
+
+// How many days in the month of `date` satisfy `matches`.
+export function countInMonth(matches, date) {
+    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    let times = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+        if (matches(new Date(date.getFullYear(), date.getMonth(), day))) times++;
+    }
+    return times;
+}
+
 // A monthly investment set for a weekend goes through the Monday after.
 function monthlyDateIn(dayOfMonth, year, month) {
     const date = new Date(year, month, Number(dayOfMonth));
@@ -84,23 +112,13 @@ export function isInvestmentDay(investment, date) {
 
 // The next date (today included) the investment goes through, or null if its schedule isn't filled in.
 export function nextInvestmentDate(investment) {
-    const today = startOfToday();
-    for (let offset = 0; offset < 40; offset++) {
-        const date = addDays(today, offset);
-        if (isInvestmentDay(investment, date)) return date;
-    }
-    return null;
+    return nextMatchingDate((date) => isInvestmentDay(investment, date));
 }
 
 // What the investment puts in during the month of `date`: its amount times how many times it goes through that month.
 export function investedInMonth(investment, date = new Date()) {
     const amount = Number(investment.amount) || 0;
-    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    let times = 0;
-    for (let day = 1; day <= daysInMonth; day++) {
-        if (isInvestmentDay(investment, new Date(date.getFullYear(), date.getMonth(), day))) times++;
-    }
-    return amount * times;
+    return amount * countInMonth((day) => isInvestmentDay(investment, day), date);
 }
 
 // "Every market day", "Every Monday", "Every other Friday", "15th of every month", or "" if incomplete.
