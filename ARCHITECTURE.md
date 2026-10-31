@@ -294,6 +294,8 @@ The **platform field** per category (`PLATFORM_FIELDS` in infoStore):
 | `creditLine` | digits only, whole dollars |
 | `paymentMethod` | **bank account `id`** (plain id, *not* `debit:<id>`; see [§11](#11-cross-item-references)) |
 | `dueDate` | `"1"`–`"28"`, day of the month |
+| `annualFee` | decimal string (dollars); empty or `0` means no fee |
+| `renewalMonth`, `renewalDay` | `"01"`–`"12"` and `"1"`–`"28"`, when the annual fee is charged each year. The form only shows them when `annualFee` is above 0 |
 | `rewards` | multi-line text; **each line becomes a bullet** |
 | `usage` | multi-line text; **each line becomes a chip** on the card and is searchable |
 
@@ -752,6 +754,7 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 | Source | Kind label | Date rule | Amount shown |
 |---|---|---|---|
 | Credit card | Credit card payment | next `dueDate` day | — |
+| Credit card with an `annualFee` above 0 and a `renewalMonth` | Annual fee | next `renewalMonth`/`renewalDay` | `annualFee` |
 | Subscription | Subscription payment | monthly: next `billingDay`; yearly: next `billingMonth`/`billingDay` | `cost` |
 | Bank account | Interest payment | next first or last day of the month (`interestPaymentDate`) | — |
 | Loan | Loan payment | next `paymentDay` | `monthlyPayment` |
@@ -777,9 +780,9 @@ Items with no computable date are dropped. The list is sorted by days until the 
 ### Credit Cards: `/expenses/credit-cards`
 
 - Also loads bank accounts (for the payment method).
-- Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; and **Total Monthly Credit Line**, the sum of `creditLine`.
+- Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; **Total Monthly Credit Line**, the sum of `creditLine`; and **Total Annual Fees**, the sum of `annualFee`.
 - Filters: Bank, Payment Method (bank account name). Search: name, bank, usage.
-- Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", the Payment Method box, Rewards & Benefits bullets, notes.
+- Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", Annual Fee, "Annual Fee Renews: March 15th, every year" (both hidden when there's no fee), the Payment Method box, Rewards & Benefits bullets, notes.
 
 ### Subscriptions: `/expenses/subscriptions`
 
@@ -815,21 +818,21 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive.
 
 - **Income Streams** and **Additional Expenses** cards: add `name + $amount` rows or remove them. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
-- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments and Utilities, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
+- **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments, Utilities and Annual Fees, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
 - **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Monthly Income, Monthly Spending, Left Over or Over Budget).
 
 Calculation:
 
 ```
 income    = Σ income streams
-spending  = Σ subscriptions + loans + insurance + investments + utilities (this month)  +  Σ additional expenses
+spending  = Σ subscriptions + loans + insurance + investments + utilities + annual fees (this month)  +  Σ additional expenses
 leftOver  = income − spending
-slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, …additional, Left Over (if > 0)]  (zero slices hidden)
+slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, Annual Fees, …additional, Left Over (if > 0)]  (zero slices hidden)
 ring size = max(income, spending)          // so over-budget fills the ring with spending
 share %   = amount / (income > 0 ? income : spending)
 ```
 
-Colors: the account categories use the fixed `--series-1..5` (Utilities, added last, is `--series-5`, so the older categories kept their colors). Additional expenses take `--series-6..8` in order. With **more than 3** additional expenses, the first 2 get their own colors and the rest merge into one "Other Expenses (n)" slice in `--series-8`. Left Over is neutral (`--border-strong`). Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Left Over, Over Budget (red), or Spending when there's no income.
+Colors: the account categories use the fixed `--series-1..6` (newer categories took the next color, so older ones kept theirs: Utilities is `--series-5`, Annual Fees is `--series-6`). Additional expenses take `--series-7..8` in order. With **more than 2** additional expenses, the first gets its own color and the rest merge into one "Other Expenses (n)" slice in `--series-8`. Left Over is neutral (`--border-strong`). Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Left Over, Over Budget (red), or Spending when there's no income.
 
 ---
 
@@ -882,6 +885,7 @@ Only **weekends** are skipped. Market holidays are not accounted for.
 | Insurance, monthly | `premium` |
 | Insurance, yearly | `premium / 12`, **spread across every month** |
 | Recurring investment | `investedInMonth` (actual run days this month) |
+| Credit card annual fee | full `annualFee`, **only in its `renewalMonth`**, including after the renewal day has passed (otherwise 0) |
 
 Items costing 0 this month are left out. Note that yearly subscriptions and yearly insurance are handled differently; see [§19](#19-quirks-inconsistencies-and-gotchas).
 
@@ -995,7 +999,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.
-- Switching insurance type keeps the old type's fields (hidden). Switching billing from yearly to monthly keeps `billingMonth`.
+- Switching insurance type keeps the old type's fields (hidden). Switching billing from yearly to monthly keeps `billingMonth`. Clearing a credit card's `annualFee` keeps `renewalMonth` and `renewalDay`, which is why Home, Budgeting and the card all check for a fee first.
 
 **Inconsistent conventions**
 - Credit card `paymentMethod` is a **bare bank account id**, while subscription and insurance `paymentMethod` is **`credit:`/`debit:`-prefixed**. They're different dropdown types under the same field name.

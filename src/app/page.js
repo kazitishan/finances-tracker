@@ -20,6 +20,18 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       date: nextOccurrence(card.dueDate),
     }));
 
+  const annualFeePayments = cards
+    .filter((card) => Number(card.annualFee) > 0 && card.renewalMonth)
+    .map((card) => ({
+      id: `annual-fee-${card.id}`,
+      kind: "Annual fee",
+      href: "/expenses/credit-cards",
+      name: card.name || card.bank || "Unnamed Card",
+      image: logoFor(banks, card.bank, card.customLogo),
+      amount: formatCurrency(card.annualFee),
+      date: nextOccurrence(card.renewalDay, card.renewalMonth),
+    }));
+
   const subscriptionPayments = subscriptions
     .map((subscription) => ({
       id: `subscription-${subscription.id}`,
@@ -86,7 +98,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextInvestmentDate(investment),
   }));
 
-  return [...cardPayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
+  return [...cardPayments, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);

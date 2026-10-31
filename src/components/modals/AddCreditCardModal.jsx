@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Dropdown from "@/components/dropdowns/Dropdown";
-import { months, years, pastYears, dueDates, inputClasses, onlyDigits, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
+import { months, years, pastYears, dueDates, inputClasses, onlyDigits, onlyDecimal, groupFromRight, stripSpacesOnCopy } from "@/lib/formUtils";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
@@ -24,6 +24,9 @@ const initialFormState = {
     creditLine: "",
     paymentMethod: "",
     dueDate: "",
+    annualFee: "",
+    renewalMonth: "",
+    renewalDay: "",
     rewards: "",
     usage: "",
     notes: "",
@@ -246,6 +249,56 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
                                 ))}
                             </select>
                         </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="field-label">Annual Fee</span>
+                            <div className="flex items-center gap-2">
+                                <span>$</span>
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className={inputClasses}
+                                    value={form.annualFee}
+                                    onChange={(e) => updateField("annualFee", onlyDecimal(e.target.value))}
+                                />
+                            </div>
+                        </label>
+
+                        {Number(form.annualFee) > 0 && (
+                            <div className="flex gap-4">
+                                <label className="flex flex-col gap-1 flex-1">
+                                    <span className="field-label">Renewal Month</span>
+                                    <select
+                                        className={inputClasses}
+                                        value={form.renewalMonth}
+                                        onChange={(e) => updateField("renewalMonth", e.target.value)}
+                                    >
+                                        <option value="">--</option>
+                                        {months.map((month) => (
+                                            <option key={month.value} value={month.value}>
+                                                {month.value} - {month.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <label className="flex flex-col gap-1 flex-1">
+                                    <span className="field-label">Renewal Day</span>
+                                    <select
+                                        className={inputClasses}
+                                        value={form.renewalDay}
+                                        onChange={(e) => updateField("renewalDay", e.target.value)}
+                                    >
+                                        <option value="">--</option>
+                                        {dueDates.map((dueDate) => (
+                                            <option key={dueDate.value} value={dueDate.value}>
+                                                {dueDate.label.replace(" of every month", "")}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-section">

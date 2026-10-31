@@ -16,10 +16,11 @@ const CATEGORIES = [
   { key: "insurance", label: "Insurance", color: "var(--series-3)", href: "/expenses/insurance", group: "accounts" },
   { key: "investments", label: "Investments", color: "var(--series-4)", href: "/accounts/investing", group: "accounts" },
   { key: "utilities", label: "Utilities", color: "var(--series-5)", href: "/expenses/utilities", group: "accounts" },
+  { key: "annualFees", label: "Annual Fees", color: "var(--series-6)", href: "/expenses/credit-cards", group: "accounts" },
 ];
 // Additional expenses take the remaining chart colors in order. Past the last color, the rest share one
 // "Other Expenses" slice rather than getting a color that's too close to another.
-const ADDITIONAL_COLORS = ["var(--series-6)", "var(--series-7)", "var(--series-8)"];
+const ADDITIONAL_COLORS = ["var(--series-7)", "var(--series-8)"];
 const LEFT_OVER = { key: "left-over", label: "Left Over", color: "var(--border-strong)", group: "left-over" };
 
 // Income streams and additional expenses are stored as one-key objects: { "<name>": <monthly amount> }.

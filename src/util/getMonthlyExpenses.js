@@ -18,12 +18,12 @@ async function getItems(category) {
     return res.json();
 }
 
-// What each subscription, loan, insurance policy, utility and recurring investment costs in the month of `date`
-// (this month by default), as { id, name, amount } lists. Items that cost nothing that month, or have no cost
-// entered, are left out.
+// What each subscription, loan, insurance policy, utility, recurring investment and card annual fee costs in the
+// month of `date` (this month by default), as { id, name, amount } lists. Items that cost nothing that month, or
+// have no cost entered, are left out.
 export async function getMonthlyExpenses(date = new Date()) {
-    const [subscriptions, loans, insurance, utilities, investmentAccounts] = await Promise.all(
-        ["subscriptions", "loans", "insurance", "utilities", "investment-accounts"].map(getItems)
+    const [subscriptions, loans, insurance, utilities, investmentAccounts, creditCards] = await Promise.all(
+        ["subscriptions", "loans", "insurance", "utilities", "investment-accounts", "credit-cards"].map(getItems)
     );
     const withCost = (items) => items.filter((item) => item.amount > 0);
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -53,6 +53,11 @@ export async function getMonthlyExpenses(date = new Date()) {
             id: investment.id,
             name: investmentName(investment, account),
             amount: investedInMonth(investment, date),
+        }))),
+        annualFees: withCost(creditCards.map((card) => ({
+            id: card.id,
+            name: card.name || card.bank || "Unnamed Card",
+            amount: card.renewalMonth === month ? Number(card.annualFee) || 0 : 0,
         }))),
     };
 }

@@ -82,6 +82,8 @@ function CreditCards() {
     .filter((card) => card.creditLine)
     .reduce((sum, card) => sum + Number(card.creditLine), 0);
 
+  const totalAnnualFees = cards.reduce((sum, card) => sum + (Number(card.annualFee) || 0), 0);
+
   function paymentMethodName(card) {
     const account = bankAccounts.find((account) => account.id === card.paymentMethod);
     return account ? account.name || "Unnamed Account" : null;
@@ -107,6 +109,7 @@ function CreditCards() {
         stats={[
           { label: "Average Age", value: averageAgeLabel },
           { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
+          { label: "Total Annual Fees", value: totalAnnualFees > 0 ? formatCurrency(totalAnnualFees) : null },
         ]}
         onRearrange={() => {
           setRearrangeModalKey((key) => key + 1);

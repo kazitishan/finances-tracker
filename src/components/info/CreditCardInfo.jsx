@@ -1,6 +1,6 @@
 "use client";
 
-import { maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency, expiryStatus } from "@/lib/formUtils";
+import { months, maskAll, maskLast4, ordinal, formatAccountAge, formatCurrency, expiryStatus } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
@@ -22,6 +22,8 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
     const rewardsList = splitLines(card.rewards);
     const usageList = splitLines(card.usage);
     const expiry = expiryStatus(card.expMonth, card.expYear);
+    const hasAnnualFee = Number(card.annualFee) > 0;
+    const renewalMonthLabel = months.find((month) => month.value === card.renewalMonth)?.label;
 
     return (
         <InfoCard
@@ -59,6 +61,15 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
             <DetailRow
                 label="Payments Due"
                 value={card.dueDate ? `${ordinal(Number(card.dueDate))} of every month` : ""}
+            />
+            <DetailRow label="Annual Fee" value={hasAnnualFee ? formatCurrency(card.annualFee) : ""} />
+            <DetailRow
+                label="Annual Fee Renews"
+                value={
+                    hasAnnualFee && renewalMonthLabel && card.renewalDay
+                        ? `${renewalMonthLabel} ${ordinal(Number(card.renewalDay))}, every year`
+                        : ""
+                }
             />
 
             {paymentAccount && (
