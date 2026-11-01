@@ -5,7 +5,7 @@ import Link from "next/link";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import AddIncomeStreamModal from "@/components/modals/AddIncomeStreamModal";
 import { useToast } from "@/components/ToastProvider";
-import { ArrowUpRightIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import { ArrowUpRightIcon, CheckIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { formatCurrency, inputClasses, months, onlyDecimal } from "@/lib/formUtils";
 import { incomeFrequencies, isEstimated, nextPayday, paidInMonth } from "@/lib/incomeStreams";
 import { getBankAccounts } from "@/util/getBankAccounts";
@@ -201,11 +201,33 @@ function IncomeStreamList({ streams, bankAccounts, onAdd, onEdit }) {
   );
 }
 
-// A list of named monthly amounts, with a row to add another.
-function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onRemove }) {
+const isValidEntry = (name, amount) => name.trim() !== "" && Number(amount) > 0;
+
+function AmountInput({ value, onChange }) {
+  return (
+    <div className="relative w-28 shrink-0">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        className={`${inputClasses} pl-6`}
+        placeholder="0.00"
+        aria-label="Monthly amount"
+        value={value}
+        onChange={(e) => onChange(onlyDecimal(e.target.value))}
+      />
+    </div>
+  );
+}
+
+// A list of named monthly amounts, each editable in place, with a row to add another.
+function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onEdit, onRemove }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const canAdd = name.trim() !== "" && Number(amount) > 0;
+  // The row being edited: { index, name, amount }.
+  const [editing, setEditing] = useState(null);
+  const canAdd = isValidEntry(name, amount);
+  const canSaveEdit = editing !== null && isValidEntry(editing.name, editing.amount);
   const total = sum(entries.map((entry) => entryOf(entry)[1]));
 
   function handleSubmit(event) {
@@ -214,6 +236,19 @@ function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onRemov
     onAdd({ [name.trim()]: Number(amount) });
     setName("");
     setAmount("");
+  }
+
+  function handleEditSubmit(event) {
+    event.preventDefault();
+    if (!canSaveEdit) return;
+    onEdit(editing.index, { [editing.name.trim()]: Number(editing.amount) });
+    setEditing(null);
+  }
+
+  function handleRemove(index) {
+    // Removing a row above the one being edited moves that row up.
+    if (editing && index < editing.index) setEditing({ ...editing, index: editing.index - 1 });
+    onRemove(index);
   }
 
   return (
@@ -227,13 +262,50 @@ function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onRemov
         <ul className="mt-3">
           {entries.map((entry, index) => {
             const [entryName, entryAmount] = entryOf(entry);
+            if (editing?.index === index) {
+              return (
+                <li key={index} className="border-b border-[var(--border)] py-1.5 text-sm last:border-b-0">
+                  <form
+                    onSubmit={handleEditSubmit}
+                    onKeyDown={(e) => e.key === "Escape" && setEditing(null)}
+                    className="flex items-center gap-2"
+                  >
+                    <input
+                      type="text"
+                      autoFocus
+                      className={`${inputClasses} min-w-0 flex-1`}
+                      aria-label="Name"
+                      value={editing.name}
+                      onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                    />
+                    <AmountInput value={editing.amount} onChange={(value) => setEditing({ ...editing, amount: value })} />
+                    <button type="submit" disabled={!canSaveEdit} className="icon-btn disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Save ${entryName}`}>
+                      <CheckIcon size={14} />
+                    </button>
+                    <button type="button" onClick={() => setEditing(null)} className="icon-btn" aria-label="Cancel editing">
+                      <XIcon size={14} />
+                    </button>
+                  </form>
+                </li>
+              );
+            }
             return (
               <li key={index} className="flex items-center gap-3 border-b border-[var(--border)] py-1.5 text-sm last:border-b-0">
                 <span className="min-w-0 flex-1 truncate">{entryName}</span>
                 <span className="tabular-nums">{formatCurrency(entryAmount)}</span>
-                <button type="button" onClick={() => onRemove(index)} className="icon-btn" aria-label={`Remove ${entryName}`}>
-                  <XIcon size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ index, name: entryName, amount: String(entryAmount) })}
+                    className="icon-btn"
+                    aria-label={`Edit ${entryName}`}
+                  >
+                    <PencilIcon size={14} />
+                  </button>
+                  <button type="button" onClick={() => handleRemove(index)} className="icon-btn" aria-label={`Remove ${entryName}`}>
+                    <XIcon size={14} />
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -252,18 +324,7 @@ function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onRemov
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <div className="relative w-28 shrink-0">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            className={`${inputClasses} pl-6`}
-            placeholder="0.00"
-            aria-label="Monthly amount"
-            value={amount}
-            onChange={(e) => setAmount(onlyDecimal(e.target.value))}
-          />
-        </div>
+        <AmountInput value={amount} onChange={setAmount} />
         <button type="submit" disabled={!canAdd} className="btn btn-primary shrink-0">
           <PlusIcon size={14} />
           Add
@@ -435,6 +496,7 @@ export default function BudgetingPage() {
           emptyText="Nothing added yet."
           namePlaceholder="e.g. Rent"
           onAdd={(entry) => updateList("additional-expenses", [...additionalExpenses, entry])}
+          onEdit={(index, entry) => updateList("additional-expenses", additionalExpenses.map((existing, i) => (i === index ? entry : existing)))}
           onRemove={(index) => updateList("additional-expenses", additionalExpenses.filter((_, i) => i !== index))}
         />
       </div>
