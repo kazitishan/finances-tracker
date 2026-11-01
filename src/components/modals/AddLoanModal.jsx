@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Dropdown from "@/components/dropdowns/Dropdown";
 import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
+import LoanDisbursementFields from "@/components/LoanDisbursementFields";
 import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
@@ -22,6 +23,7 @@ const initialFormState = {
     amountPaid: "",
     monthlyPayment: "",
     paymentDay: "",
+    disbursements: [],
     notes: "",
 };
 
@@ -177,6 +179,11 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
                             ))}
                         </select>
                     </label>
+
+                    <LoanDisbursementFields
+                        disbursements={form.disbursements}
+                        onChange={(disbursements) => updateField("disbursements", disbursements)}
+                    />
 
                     <div className="form-section">
                         <span className="field-label">Notes</span>

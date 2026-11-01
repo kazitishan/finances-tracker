@@ -153,6 +153,7 @@ Consequences:
     ├── components/
     │   ├── NavBar.jsx, SettingsMenu.jsx, ToastProvider.jsx, KeepAlive.jsx
     │   ├── LoginFields.jsx               Username/password inputs + saved-login picker
+    │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
     │   ├── useSaveItem.jsx               Save/delete/close logic shared by all item modals
     │   ├── useUrlFilters.jsx             URL-backed filter state
@@ -249,7 +250,7 @@ Files created before utilities existed have no `"utilities"` key. That's fine: e
 - Empty fields are stored as `""`, not omitted. Each modal's `initialFormState` defines every key.
 - Each item gets `id: crypto.randomUUID()` on the server when it's added.
 - **Updates replace the whole item.** `PUT` sends the full form, and the server stores `{ ...updates, id }`; it doesn't merge with the old object.
-- Exceptions to "strings only": `recurringInvestments` is an array, and additional expense amounts are real numbers.
+- Exceptions to "strings only": `recurringInvestments` and `disbursements` are arrays, and additional expense amounts are real numbers.
 
 ### Item schemas
 
@@ -320,8 +321,20 @@ The **platform field** per category (`PLATFORM_FIELDS` in infoStore):
 | `amountLoaned`, `interestAmount`, `amountPaid`, `monthlyPayment` | decimal strings (dollars) |
 | `interestRate` | decimal string (percent) |
 | `paymentDay` | `"1"`–`"28"` |
+| `disbursements` | array of `{ "id": "uuid (created in the browser)", "date": "YYYY-MM-DD", "amount": "5000" }`, any number of them. Either value can be `""`. Loans saved before this field existed have none. They don't change `amountLoaned` or amount remaining; the only calculation they feed is estimated interest, below |
 
 Amount remaining = `amountLoaned + interestAmount − amountPaid` (`amountRemaining()` in [LoanInfo.jsx](src/components/info/LoanInfo.jsx)); it's `null` if `amountLoaned` is empty.
+
+Estimated interest (`estimatedInterest()` in the same file) is simple interest so far, on a 365-day year. It's display only: `interestAmount` is still typed in by hand, and amount remaining uses that.
+
+```
+rate         = interestRate / 100
+counted      = each disbursement's amount, oldest first, stopping once they reach amountLoaned (no ceiling if it's empty)
+dollar-days  = Σ counted × days since that disbursement  −  amountPaid × days since the first disbursement / 2
+interest     = max(0, dollar-days) × rate / 365
+```
+
+Payments have no dates, so the `/ 2` treats `amountPaid` as coming off the balance evenly since the first disbursement. It's `null` without an interest rate or at least one disbursement with both a date and an amount. Disbursements dated in the future accrue nothing.
 
 **Investment account** ([AddInvestmentAccountModal.jsx](src/components/modals/AddInvestmentAccountModal.jsx))
 
@@ -821,7 +834,9 @@ Items with no computable date are dropped. The list is sorted by days until the 
 
 - Stats: **Monthly Total** (sum of `monthlyPayment`), **Yearly Total** (× 12), **Total Debt** (sum of amount remaining).
 - Filters: Provider, Type. Search: name, provider, type label.
-- Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other).
+- Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other). When expanded, the green box shows how the amount adds up: Amount Loaned, Interest Amount (with a `+` before its number), Amount Paid (with a `−` before its number), a total line, then Amount Remaining. With no `amountLoaned` there's no box, so Interest Amount and Amount Paid are plain detail rows instead. Below that, a **Disbursements** section listing each date and amount, oldest first, skipping rows left blank.
+- An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (see [§6](#6-data-storage-privateinfojson)).
+- The form edits disbursements inline ([LoanDisbursementFields](src/components/LoanDisbursementFields.jsx)), one row per disbursement with a native date picker.
 
 ### Insurance: `/expenses/insurance`
 
@@ -967,7 +982,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 
 | Component | Notes |
 |---|---|
-| `InfoCard` | Logo tile, title, subtitle (or "—"), chips (strings, or `{label, tone:"danger"}`), optional key `stat` `{label, value, caption}` shown in the header and again in the expanded body, **Open** link (`target=_blank`, `noopener`), Edit pencil, chevron. Clicking the header toggles it. The collapsed body is `inert`. If no detail rows render, CSS shows "No other details" |
+| `InfoCard` | Logo tile, title, subtitle (or "—"), chips (strings, or `{label, tone:"danger"}`), optional key `stat` `{label, value, caption, lines}` shown in the header and again in the expanded body, where optional `lines` (`[{label, value}]`, the figures that add up to it) sit above it with a total line between, **Open** link (`target=_blank`, `noopener`), Edit pencil, chevron. Clicking the header toggles it. The collapsed body is `inert`. If no detail rows render, CSS shows "No other details" |
 | `Modal` | Backdrop + panel; X, backdrop click and **Escape** close it. A module-level **stack** makes Escape close only the innermost modal. Locks body scroll while open |
 | `PageHeader` | Title, "N total", non-empty stats, Rearrange + Add buttons, search + filter row (only when count > 0) |
 | `FilterMenu` | Renders `useUrlFilters` groups |

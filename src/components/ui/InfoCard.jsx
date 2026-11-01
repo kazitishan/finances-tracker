@@ -5,8 +5,8 @@ import Image from "next/image";
 import { ArrowUpRightIcon, ChevronDownIcon, PencilIcon } from "@/components/ui/icons";
 
 // Header layout shared by every card: subtitle for identifying details, tags for categories
-// (strings, or { label, tone: "danger" } for warnings), and an optional `stat` ({ label, value, caption }) for the single key figure,
-// shown in the header and again on its own line when expanded.
+// (strings, or { label, tone: "danger" } for warnings), and an optional `stat` ({ label, value, caption, lines }) for the single key figure,
+// shown in the header and again on its own line when expanded. `lines` ([{ label, value }]) add up to it, and are shown above it when expanded.
 function InfoCard({ image, imageAlt, title, subtitle, tags = [], stat, link, onEdit, children }) {
     const [expanded, setExpanded] = useState(false);
 
@@ -88,9 +88,21 @@ function InfoCard({ image, imageAlt, title, subtitle, tags = [], stat, link, onE
                 <div inert={!expanded}>
                     <div className="mx-4 mb-4 pt-3 border-t border-[var(--border)]">
                         {stat?.value && (
-                            <div className="key-stat-row">
-                                <span className="text-sm font-medium">{stat.label}</span>
-                                <span className="text-lg font-semibold tabular-nums">{stat.value}</span>
+                            <div className="key-stat-box">
+                                {stat.lines && (
+                                    <div className="key-stat-lines">
+                                        {stat.lines.map((line) => (
+                                            <div key={line.label} className="key-stat-line">
+                                                <span>{line.label}</span>
+                                                <span className="tabular-nums">{line.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="key-stat-row">
+                                    <span className="text-sm font-medium">{stat.label}</span>
+                                    <span className="text-lg font-semibold tabular-nums">{stat.value}</span>
+                                </div>
                             </div>
                         )}
                         <div className="card-body">{children}</div>

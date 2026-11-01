@@ -323,11 +323,18 @@ body {
   .key-stat { @apply shrink-0 text-right leading-tight; }
   .key-stat-value { @apply font-semibold tabular-nums; color: var(--accent); }
   .key-stat-label { @apply text-xs; color: var(--muted); }
-  .key-stat-row {
-    @apply flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 mb-2;
+  .key-stat-box {
+    @apply rounded-lg px-3 py-2.5 mb-2;
     background: var(--accent-soft);
     color: var(--accent);
   }
+  .key-stat-row { @apply flex items-center justify-between gap-4; }
+  /* Figures that add up to the key stat, with a total line under them */
+  .key-stat-lines {
+    @apply flex flex-col gap-1 pb-2 mb-2;
+    border-bottom: 1px solid currentColor;
+  }
+  .key-stat-line { @apply flex items-center justify-between gap-4 text-sm; }
 
   .card-body:empty::before {
     @apply block text-sm;
