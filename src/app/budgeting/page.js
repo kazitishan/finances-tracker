@@ -22,9 +22,19 @@ const CATEGORIES = [
   { key: "utilities", label: "Utilities", color: "var(--series-5)", href: "/expenses/utilities", group: "accounts" },
   { key: "annualFees", label: "Annual Fees", color: "var(--series-6)", href: "/expenses/credit-cards", group: "accounts" },
 ];
-// Additional expenses take the remaining chart colors in order. Past the last color, the rest share one
-// "Other Expenses" slice rather than getting a color that's too close to another.
-const ADDITIONAL_COLORS = ["var(--series-7)", "var(--series-8)"];
+// Additional expenses take the remaining chart colors in order, then paler versions of every chart color. Neighbors
+// alternate between strong and pale in this hue order, which keeps them easy to tell apart side by side, including
+// with color-vision deficiencies. Don't reorder it without re-checking that. Past the last color they start over.
+const TINT_ORDER = [5, 3, 2, 6, 8, 7, 4, 1];
+const tint = (series, strength) => `color-mix(in oklab, var(--series-${series}) ${strength}%, var(--surface))`;
+const ADDITIONAL_COLORS = [
+  "var(--series-7)",
+  "var(--series-8)",
+  ...TINT_ORDER.map((series, index) => tint(series, index % 2 === 0 ? 45 : 90)),
+  ...TINT_ORDER.map((series, index) => tint(series, index % 2 === 0 ? 90 : 45)),
+];
+// With more rows than this, the legend moves under the chart, where it has room for two columns.
+const MAX_LEGEND_ROWS_BESIDE_CHART = 8;
 const LEFT_OVER = { key: "left-over", label: "Net Cash Flow", color: "var(--border-strong)", group: "left-over" };
 const TONE_CLASSES = { danger: "text-[var(--danger)]", positive: "text-[var(--accent)]" };
 
@@ -35,26 +45,13 @@ const percentOf = (amount, total) => (total > 0 ? `${Math.round((amount / total)
 
 // One slice per additional expense.
 function additionalSlices(additionalExpenses) {
-  const entries = additionalExpenses.map(entryOf);
-  const ownColor = entries.length > ADDITIONAL_COLORS.length ? entries.slice(0, ADDITIONAL_COLORS.length - 1) : entries;
-  const slices = ownColor.map(([name, amount], index) => ({
+  return additionalExpenses.map(entryOf).map(([name, amount], index) => ({
     key: `additional-${index}`,
     label: name,
-    color: ADDITIONAL_COLORS[index],
+    color: ADDITIONAL_COLORS[index % ADDITIONAL_COLORS.length],
     amount,
     group: "additional",
   }));
-  const rest = entries.slice(ownColor.length);
-  if (rest.length > 0) {
-    slices.push({
-      key: "additional-other",
-      label: `Other Expenses (${rest.length})`,
-      color: ADDITIONAL_COLORS.at(-1),
-      amount: sum(rest.map(([, amount]) => amount)),
-      group: "additional",
-    });
-  }
-  return slices;
 }
 
 const RADIUS = 80;
@@ -63,16 +60,29 @@ const SLICE_GAP = 2;
 // Between groups and at the top, where the last slice meets the first, slices sit further apart. Any two
 // colors can meet there, and not every pair is easy to tell apart side by side.
 const GROUP_GAP = 8;
+// The least a slice is drawn at, so a tiny expense stays visible and can still be hovered.
+const MIN_SLICE = 2.5;
 
 // A donut of `slices` ({ key, label, color, amount, group }) as shares of `total`, with `children` in the middle.
 function Donut({ slices, total, hovered, onHover, children }) {
   const visible = slices.filter((slice) => slice.amount > 0);
+  const sized = visible.map((slice, index) => {
+    const next = visible[index + 1];
+    const gap = next && next.group === slice.group ? SLICE_GAP : GROUP_GAP;
+    const share = total > 0 ? (slice.amount / total) * CIRCUMFERENCE : 0;
+    return { ...slice, gap, share, smallest: MIN_SLICE + gap };
+  });
+  // Slices brought up to the minimum take their extra room evenly from the larger ones.
+  const isTiny = (slice) => slice.share < slice.smallest;
+  const tinyLength = sum(sized.filter(isTiny).map((slice) => slice.smallest));
+  const largeLength = sum(sized.filter((slice) => !isTiny(slice)).map((slice) => slice.share));
+  const scale = largeLength > 0 ? (sum(sized.map((slice) => slice.share)) - tinyLength) / largeLength : 1;
+
   const arcs = [];
   let start = 0;
-  for (const [index, slice] of visible.entries()) {
-    const next = visible[index + 1];
-    const length = total > 0 ? (slice.amount / total) * CIRCUMFERENCE : 0;
-    arcs.push({ ...slice, start, length, gap: next && next.group === slice.group ? SLICE_GAP : GROUP_GAP });
+  for (const slice of sized) {
+    const length = isTiny(slice) ? slice.smallest : slice.share * scale;
+    arcs.push({ ...slice, start, length });
     start += length;
   }
 
@@ -94,7 +104,7 @@ function Donut({ slices, total, hovered, onHover, children }) {
             fill="none"
             stroke={arc.color}
             strokeWidth={hovered === arc.key ? 30 : 24}
-            strokeDasharray={`${Math.max(arc.length - arc.gap, 0.5)} ${CIRCUMFERENCE}`}
+            strokeDasharray={`${arc.length - arc.gap} ${CIRCUMFERENCE}`}
             strokeDashoffset={-arc.start}
             opacity={hovered && hovered !== arc.key ? 0.35 : 1}
             className="cursor-pointer transition-[opacity,stroke-width] duration-150"
@@ -358,49 +368,58 @@ export default function BudgetingPage() {
     center = { label: "Net Cash Flow", ...netCashFlow };
   }
 
+  const legendBelowChart = slices.length > MAX_LEGEND_ROWS_BESIDE_CHART;
+  const legend = (
+    <ul className={legendBelowChart ? "mt-6 grid gap-x-6 sm:grid-cols-2" : "mt-4"}>
+      {slices.map((row) => {
+        const amount = row.amount;
+        return (
+          <li
+            key={row.key}
+            onMouseEnter={() => setHovered(row.key)}
+            onMouseLeave={() => setHovered(null)}
+            className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors duration-100 ${
+              hovered === row.key ? "bg-[var(--surface-hover)]" : ""
+            }`}
+          >
+            <Swatch color={row.color} />
+            <span className="min-w-0 flex-1 truncate">{row.label}</span>
+            <span className="tabular-nums">{formatCurrency(amount)}</span>
+            <span className="w-10 text-right tabular-nums text-muted">{percentOf(amount, shareBase)}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">
         {months[new Date().getMonth()].label} Budgeting
       </h1>
 
-      <section className="card mb-4 flex flex-col items-center gap-8 p-6 md:flex-row md:items-center">
-        <Donut slices={slices} total={chartTotal} hovered={hovered} onHover={setHovered}>
-          <div className="text-xs text-muted">{center.label}</div>
-          <div className={`text-2xl font-semibold tracking-tight ${TONE_CLASSES[center.tone] ?? ""}`}>
-            {center.value}
-          </div>
-          {center.note && <div className="text-xs text-muted">{center.note}</div>}
-        </Donut>
+      <section className="card mb-4 p-6">
+        <div className="flex flex-col items-center gap-8 md:flex-row md:items-center">
+          <Donut slices={slices} total={chartTotal} hovered={hovered} onHover={setHovered}>
+            <div className="text-xs text-muted">{center.label}</div>
+            <div className={`text-2xl font-semibold tracking-tight ${TONE_CLASSES[center.tone] ?? ""}`}>
+              {center.value}
+            </div>
+            {center.note && <div className="text-xs text-muted">{center.note}</div>}
+          </Donut>
 
-        <div className="w-full min-w-0 flex-1">
-          <div className="grid grid-cols-3 gap-2">
-            <StatTile label="Income" value={formatCurrency(income, { cents: false })} />
-            <StatTile label="Spending" value={formatCurrency(spending, { cents: false })} />
-            <StatTile label="Net Cash Flow" {...netCashFlow} />
-          </div>
+          <div className="w-full min-w-0 flex-1">
+            <div className="grid grid-cols-3 gap-2">
+              <StatTile label="Income" value={formatCurrency(income, { cents: false })} />
+              <StatTile label="Spending" value={formatCurrency(spending, { cents: false })} />
+              <StatTile label="Net Cash Flow" {...netCashFlow} />
+            </div>
 
-          <ul className="mt-4">
-            {slices.map((row) => {
-              const amount = row.amount;
-              return (
-                <li
-                  key={row.key}
-                  onMouseEnter={() => setHovered(row.key)}
-                  onMouseLeave={() => setHovered(null)}
-                  className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors duration-100 ${
-                    hovered === row.key ? "bg-[var(--surface-hover)]" : ""
-                  }`}
-                >
-                  <Swatch color={row.color} />
-                  <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                  <span className="tabular-nums">{formatCurrency(amount)}</span>
-                  <span className="w-10 text-right tabular-nums text-muted">{percentOf(amount, shareBase)}</span>
-                </li>
-              );
-            })}
-          </ul>
+            {!legendBelowChart && legend}
+          </div>
         </div>
+
+        {legendBelowChart && legend}
       </section>
 
       <div className="mb-4 flex flex-col gap-4">
