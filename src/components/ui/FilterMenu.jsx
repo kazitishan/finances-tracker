@@ -4,6 +4,33 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { CheckIcon, FilterIcon } from "@/components/ui/icons";
 
+function FilterOption({ option, checked, onToggle }) {
+    return (
+        <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={checked}
+            onClick={onToggle}
+            className="dropdown-item"
+        >
+            <span
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                    checked
+                        ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]"
+                        : "border-[var(--border-strong)]"
+                }`}
+            >
+                {checked && <CheckIcon size={12} />}
+            </span>
+            {option.image && (
+                <Image src={option.image} alt="" width={20} height={20} className="object-contain" />
+            )}
+            <span className="flex-1 truncate">{option.value}</span>
+            <span className="text-xs text-muted">{option.count}</span>
+        </button>
+    );
+}
+
 function FilterMenu({ filters }) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef(null);
@@ -55,29 +82,18 @@ function FilterMenu({ filters }) {
                             {group.options.map((option) => {
                                 const checked = group.selected.includes(option.value.toLowerCase());
                                 return (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        role="menuitemcheckbox"
-                                        aria-checked={checked}
-                                        onClick={() => toggle(group.key, option.value)}
-                                        className="dropdown-item"
-                                    >
-                                        <span
-                                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                                                checked
-                                                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]"
-                                                    : "border-[var(--border-strong)]"
-                                            }`}
-                                        >
-                                            {checked && <CheckIcon size={12} />}
-                                        </span>
-                                        {option.image && (
-                                            <Image src={option.image} alt="" width={20} height={20} className="object-contain" />
-                                        )}
-                                        <span className="flex-1 truncate">{option.value}</span>
-                                        <span className="text-xs text-muted">{option.count}</span>
-                                    </button>
+                                    <div key={option.value}>
+                                        <FilterOption option={option} checked={checked} onToggle={() => toggle(group.key, option.value)} />
+                                        {checked && option.sub?.options.map((subOption) => (
+                                            <div key={subOption.value} className="pl-5">
+                                                <FilterOption
+                                                    option={subOption}
+                                                    checked={option.sub.selected.includes(subOption.value.toLowerCase())}
+                                                    onToggle={() => toggle(option.sub.key, subOption.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 );
                             })}
                         </div>

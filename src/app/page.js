@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useUrlFilters } from "@/components/useUrlFilters";
+import FilterMenu from "@/components/ui/FilterMenu";
+import { NoMatches } from "@/components/ui/SearchInput";
 import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
@@ -11,10 +14,14 @@ import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/l
 import { utilityIcon } from "@/components/info/UtilityInfo";
 import { getUserInfo } from "@/util/getUserInfo";
 
+// Money coming in. Every other type is money going out, which the filter calls Expenses.
+const INCOMING_TYPES = ["Income Streams", "Interest Payments"];
+
 function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, incomeStreams) {
   const paychecks = incomeStreams.map((stream) => ({
     id: `paycheck-${stream.id}`,
     kind: "Paycheck",
+    type: "Income Streams",
     href: "/budgeting",
     name: stream.name,
     image: "/income/suitcase.svg",
@@ -26,6 +33,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     .map((card) => ({
       id: `card-${card.id}`,
       kind: "Credit card payment",
+      type: "Credit Cards",
       href: "/expenses/credit-cards",
       name: card.name || card.bank || "Unnamed Card",
       image: logoFor(banks, card.bank, card.customLogo),
@@ -37,6 +45,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     .map((card) => ({
       id: `annual-fee-${card.id}`,
       kind: "Annual fee",
+      type: "Annual Fees",
       href: "/expenses/credit-cards",
       name: card.name || card.bank || "Unnamed Card",
       image: logoFor(banks, card.bank, card.customLogo),
@@ -48,6 +57,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     .map((subscription) => ({
       id: `subscription-${subscription.id}`,
       kind: "Subscription payment",
+      type: "Subscriptions",
       href: "/expenses/subscriptions",
       name: subscription.name || subscription.subscription || "Unnamed Subscription",
       image: logoFor(subscriptionCompanies, subscription.subscription, subscription.customLogo),
@@ -60,6 +70,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
   const interestPayments = bankAccounts.map((account) => ({
     id: `interest-${account.id}`,
     kind: "Interest payment",
+    type: "Interest Payments",
     href: "/accounts/bank-accounts",
     name: account.name || account.bank || "Unnamed Account",
     image: logoFor(banks, account.bank, account.customLogo),
@@ -69,6 +80,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
   const loanPayments = loans.map((loan) => ({
     id: `loan-${loan.id}`,
     kind: "Loan payment",
+    type: "Loans",
     href: "/expenses/loans",
     name: loan.name || loan.provider || "Unnamed Loan",
     image: logoFor(loanProviders, loan.provider, loan.customLogo),
@@ -79,6 +91,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
   const insurancePayments = policies.map((policy) => ({
     id: `insurance-${policy.id}`,
     kind: "Insurance payment",
+    type: "Insurance",
     href: "/expenses/insurance",
     name: policy.name || policy.provider || "Unnamed Insurance",
     image: logoFor(allInsuranceProviders, policy.provider, policy.customLogo),
@@ -91,6 +104,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
   const utilityPayments = utilities.map((utility) => ({
     id: `utility-${utility.id}`,
     kind: "Utility payment",
+    type: "Utilities",
     href: "/expenses/utilities",
     name: utility.name || utility.provider || "Unnamed Utility",
     image: utilityIcon(utility.type),
@@ -103,6 +117,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
   const investmentPayments = allRecurringInvestments(investmentAccounts).map(({ investment, account }) => ({
     id: `investment-${investment.id}`,
     kind: "Recurring investment",
+    type: "Investments",
     href: "/accounts/investing",
     name: investmentName(investment, account),
     image: logoFor(brokers, account.broker, account.customLogo),
@@ -116,7 +131,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     .sort((a, b) => a.days - b.days);
 }
 
-export default function Home() {
+function Home() {
   const [payments, setPayments] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -136,11 +151,22 @@ export default function Home() {
     });
   }, []);
 
+  const filters = useUrlFilters(payments, [
+    {
+      key: "show",
+      label: "Show",
+      getValue: (payment) => (INCOMING_TYPES.includes(payment.type) ? "Payments" : "Expenses"),
+      sub: { key: "type", getValue: (payment) => payment.type },
+    },
+  ]);
+
+  const filteredPayments = payments.filter(filters.matches);
+
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
-        <p className="mt-1 text-sm text-muted">Bills, paychecks, investments and interest coming up, soonest first.</p>
+        {payments.length > 0 && <FilterMenu filters={filters} />}
       </div>
 
       {loaded && payments.length === 0 && (
@@ -151,9 +177,10 @@ export default function Home() {
           date to a <Link href="/accounts/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
         </div>
       )}
+      {payments.length > 0 && filteredPayments.length === 0 && <NoMatches query="" />}
 
       <div className="flex flex-col gap-3">
-        {payments.map((payment) => (
+        {filteredPayments.map((payment) => (
           <Link key={payment.id} href={payment.href} className="card flex items-center gap-3 p-4">
             <div className="logo-tile">
               {payment.image && (
@@ -181,5 +208,14 @@ export default function Home() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  // useUrlFilters reads the URL's search params, which needs a Suspense boundary.
+  return (
+    <Suspense>
+      <Home />
+    </Suspense>
   );
 }

@@ -774,9 +774,10 @@ Patterns worth knowing:
 ### [useUrlFilters](src/components/useUrlFilters.jsx)
 
 - Filters live in the URL query, e.g. `?bank=Chase&bank=SoFi&type=Checking`, so a filtered view can be bookmarked. It writes with `window.history.replaceState` (no navigation) and reads with `useSearchParams`.
-- Each definition is `{ key, label, getValue(item), getImage?(value, itemsWithValue) }`.
+- Each definition is `{ key, label, getValue(item), getImage?(value, itemsWithValue), sub? }`.
 - **Options come only from values present in your own items**, with counts, sorted alphabetically.
 - Matching is **case-insensitive** (`?bank=chase` works). Selections within a group are OR'd; groups are AND'd.
+- `sub` (`{ key, getValue(item) }`, used only by Home) adds narrower options under each option, shown once that option is selected, e.g. `/?show=Expenses&type=Loans`. Each selected option is narrowed separately, so `?show=Expenses&show=Payments&type=Loans` is loans plus all payments. Sub-values do nothing unless their option is selected, and unselecting the option removes them from the URL.
 - It returns `{ groups, toggle, clear, matches, activeCount }`, which [FilterMenu](src/components/ui/FilterMenu.jsx) renders as a checkbox menu with a count badge and a "Clear filters" button.
 
 Search (`matchesSearch` in formUtils) joins the given fields and does a case-insensitive substring match. An empty query matches everything.
@@ -787,7 +788,7 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 
 ### Home: [src/app/page.js](src/app/page.js)
 
-"Bills, paychecks, investments and interest coming up, soonest first." It fetches every category with dates, plus `user-info`, in parallel and builds one list:
+Everything coming up, soonest first. It fetches every category with dates, plus `user-info`, in parallel and builds one list:
 
 | Source | Kind label | Date rule | Amount shown |
 |---|---|---|---|
@@ -802,6 +803,8 @@ Search (`matchesSearch` in formUtils) joins the given fields and does a case-ins
 | Income stream with a payday | Paycheck (suitcase picture, links to Budgeting) | `nextPayday()` | `paycheckAmount`; — for estimated income, since a monthly estimate says nothing about one payout |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
+
+The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
 
 ### Bank Accounts: `/accounts/bank-accounts`
 
@@ -985,7 +988,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `InfoCard` | Logo tile, title, subtitle (or "—"), chips (strings, or `{label, tone:"danger"}`), optional key `stat` `{label, value, caption, lines}` shown in the header and again in the expanded body, where optional `lines` (`[{label, value}]`, the figures that add up to it) sit above it with a total line between, **Open** link (`target=_blank`, `noopener`), Edit pencil, chevron. Clicking the header toggles it. The collapsed body is `inert`. If no detail rows render, CSS shows "No other details" |
 | `Modal` | Backdrop + panel; X, backdrop click and **Escape** close it. A module-level **stack** makes Escape close only the innermost modal. Locks body scroll while open |
 | `PageHeader` | Title, "N total", non-empty stats, Rearrange + Add buttons, search + filter row (only when count > 0) |
-| `FilterMenu` | Renders `useUrlFilters` groups |
+| `FilterMenu` | Renders `useUrlFilters` groups, with an option's `sub` options indented under it once it's selected |
 | `SearchInput` / `NoMatches` | Escape or X clears; "No matches for “…”." or "No matches for these filters." |
 | `EmptyState` | "No *noun* yet." + "Add your first" |
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
