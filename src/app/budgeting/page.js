@@ -25,7 +25,8 @@ const CATEGORIES = [
 // Additional expenses take the remaining chart colors in order. Past the last color, the rest share one
 // "Other Expenses" slice rather than getting a color that's too close to another.
 const ADDITIONAL_COLORS = ["var(--series-7)", "var(--series-8)"];
-const LEFT_OVER = { key: "left-over", label: "Left Over", color: "var(--border-strong)", group: "left-over" };
+const LEFT_OVER = { key: "left-over", label: "Net Cash Flow", color: "var(--border-strong)", group: "left-over" };
+const TONE_CLASSES = { danger: "text-[var(--danger)]", positive: "text-[var(--accent)]" };
 
 // Additional expenses are stored as one-key objects: { "<name>": <monthly amount> }.
 const entryOf = (entry) => Object.entries(entry)[0];
@@ -117,7 +118,7 @@ function StatTile({ label, value, tone }) {
   return (
     <div className="rounded-xl bg-[var(--surface-hover)] px-3 py-2.5">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`mt-0.5 text-lg font-semibold tabular-nums ${tone === "danger" ? "text-[var(--danger)]" : ""}`}>
+      <div className={`mt-0.5 text-lg font-semibold tabular-nums ${TONE_CLASSES[tone] ?? ""}`}>
         {value}
       </div>
     </div>
@@ -337,16 +338,24 @@ export default function BudgetingPage() {
   const chartTotal = Math.max(income, spending);
   const shareBase = income > 0 ? income : spending;
   const hoveredSlice = slices.find((slice) => slice.key === hovered);
+  // Green when income is more than spending, red and negative when it's less.
+  const netCashFlow = {
+    value: `${leftOver < 0 ? "-" : ""}${formatCurrency(Math.abs(leftOver), { cents: false })}`,
+    tone: leftOver < 0 ? "danger" : leftOver > 0 ? "positive" : undefined,
+  };
 
   let center;
   if (hoveredSlice) {
-    center = { label: hoveredSlice.label, value: formatCurrency(hoveredSlice.amount), note: `${percentOf(hoveredSlice.amount, shareBase)} of ${income > 0 ? "income" : "spending"}` };
+    center = {
+      label: hoveredSlice.label,
+      value: formatCurrency(hoveredSlice.amount),
+      note: `${percentOf(hoveredSlice.amount, shareBase)} of ${income > 0 ? "income" : "spending"}`,
+      tone: hoveredSlice.key === LEFT_OVER.key ? netCashFlow.tone : undefined,
+    };
   } else if (income === 0) {
-    center = { label: "Spending", value: formatCurrency(spending, { cents: false }), note: "per month" };
-  } else if (leftOver >= 0) {
-    center = { label: "Left Over", value: formatCurrency(leftOver, { cents: false }), note: "per month" };
+    center = { label: "Spending", value: formatCurrency(spending, { cents: false }) };
   } else {
-    center = { label: "Over Budget", value: formatCurrency(-leftOver, { cents: false }), note: "per month", tone: "danger" };
+    center = { label: "Net Cash Flow", ...netCashFlow };
   }
 
   return (
@@ -358,21 +367,17 @@ export default function BudgetingPage() {
       <section className="card mb-4 flex flex-col items-center gap-8 p-6 md:flex-row md:items-center">
         <Donut slices={slices} total={chartTotal} hovered={hovered} onHover={setHovered}>
           <div className="text-xs text-muted">{center.label}</div>
-          <div className={`text-2xl font-semibold tracking-tight ${center.tone === "danger" ? "text-[var(--danger)]" : ""}`}>
+          <div className={`text-2xl font-semibold tracking-tight ${TONE_CLASSES[center.tone] ?? ""}`}>
             {center.value}
           </div>
-          <div className="text-xs text-muted">{center.note}</div>
+          {center.note && <div className="text-xs text-muted">{center.note}</div>}
         </Donut>
 
         <div className="w-full min-w-0 flex-1">
           <div className="grid grid-cols-3 gap-2">
-            <StatTile label="Monthly Income" value={formatCurrency(income, { cents: false })} />
-            <StatTile label="Monthly Spending" value={formatCurrency(spending, { cents: false })} />
-            {leftOver >= 0 ? (
-              <StatTile label="Left Over" value={formatCurrency(leftOver, { cents: false })} />
-            ) : (
-              <StatTile label="Over Budget" value={formatCurrency(-leftOver, { cents: false })} tone="danger" />
-            )}
+            <StatTile label="This Month's Income" value={formatCurrency(income, { cents: false })} />
+            <StatTile label="This Month's Spending" value={formatCurrency(spending, { cents: false })} />
+            <StatTile label="Net Cash Flow" {...netCashFlow} />
           </div>
 
           <ul className="mt-4">

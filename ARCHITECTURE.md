@@ -845,7 +845,7 @@ The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthly
 
 - **Income Streams** and **Additional Expenses** cards, stacked with Income Streams on top. Income streams are added, edited and deleted through [AddIncomeStreamModal](src/components/modals/AddIncomeStreamModal.jsx). Each stream is a bordered row (same `--border-strong` as `.field`, no picture) showing its type, "Biweekly · Next Paycheck: Wed, Nov 11" (or "No set schedule"), its paycheck or monthly estimate, how it's paid, and what it pays this month. Additional expenses are `name + $amount` rows added and removed inline. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
 - **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments, Utilities and Annual Fees, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
-- **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Monthly Income, Monthly Spending, Left Over or Over Budget).
+- **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (This Month's Income, This Month's Spending, Net Cash Flow, which is green when positive and red and negative when spending is more than income).
 
 Calculation:
 
@@ -853,12 +853,12 @@ Calculation:
 income    = Σ paidInMonth(income stream)        // monthly estimate, or paycheck × paydays this month
 spending  = Σ subscriptions + loans + insurance + investments + utilities + annual fees (this month)  +  Σ additional expenses
 leftOver  = income − spending
-slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, Annual Fees, …additional, Left Over (if > 0)]  (zero slices hidden)
+slices    = [Subscriptions, Loans, Insurance, Investments, Utilities, Annual Fees, …additional, Net Cash Flow (if > 0)]  (zero slices hidden)
 ring size = max(income, spending)          // so over-budget fills the ring with spending
 share %   = amount / (income > 0 ? income : spending)
 ```
 
-Colors: the account categories use the fixed `--series-1..6` (newer categories took the next color, so older ones kept theirs: Utilities is `--series-5`, Annual Fees is `--series-6`). Additional expenses take `--series-7..8` in order. With **more than 2** additional expenses, the first gets its own color and the rest merge into one "Other Expenses (n)" slice in `--series-8`. Left Over is neutral (`--border-strong`). Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Left Over, Over Budget (red), or Spending when there's no income.
+Colors: the account categories use the fixed `--series-1..6` (newer categories took the next color, so older ones kept theirs: Utilities is `--series-5`, Annual Fees is `--series-6`). Additional expenses take `--series-7..8` in order. With **more than 2** additional expenses, the first gets its own color and the rest merge into one "Other Expenses (n)" slice in `--series-8`. The Net Cash Flow slice is neutral (`--border-strong`), though its text is colored. Slices in the same group are separated by a 2-unit gap and different groups by an 8-unit gap. Hovering a slice or legend row highlights it (thicker stroke, others dimmed) and shows it in the center. Otherwise the center shows Net Cash Flow (`--accent` green when positive, `--danger` red and negative when over budget), or Spending when there's no income.
 
 ---
 
