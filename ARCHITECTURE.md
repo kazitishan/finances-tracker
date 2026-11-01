@@ -863,7 +863,7 @@ The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthly
 
 - **Income Streams** and **Additional Expenses** cards, stacked with Income Streams on top. Income streams are added, edited and deleted through [AddIncomeStreamModal](src/components/modals/AddIncomeStreamModal.jsx). Each stream is a bordered row (same `--border-strong` as `.field`, no picture) showing its type, "Biweekly · Next Paycheck: Wed, Nov 11" (or "No set schedule"), its paycheck or monthly estimate, how it's paid, and what it pays this month. Additional expenses are `name + $amount` rows added and removed inline. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
 - **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments, Utilities and Annual Fees, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
-- **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (This Month's Income, This Month's Spending, Net Cash Flow, which is green when positive and red and negative when spending is more than income).
+- **Donut chart** (hand-rolled SVG, `Donut` component) plus legend and stat tiles (Income, Spending, Net Cash Flow, which is green when positive and red and negative when spending is more than income).
 
 Calculation:
 

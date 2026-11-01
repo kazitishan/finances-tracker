@@ -375,8 +375,8 @@ export default function BudgetingPage() {
 
         <div className="w-full min-w-0 flex-1">
           <div className="grid grid-cols-3 gap-2">
-            <StatTile label="This Month's Income" value={formatCurrency(income, { cents: false })} />
-            <StatTile label="This Month's Spending" value={formatCurrency(spending, { cents: false })} />
+            <StatTile label="Income" value={formatCurrency(income, { cents: false })} />
+            <StatTile label="Spending" value={formatCurrency(spending, { cents: false })} />
             <StatTile label="Net Cash Flow" {...netCashFlow} />
           </div>
 
