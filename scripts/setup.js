@@ -30,6 +30,7 @@ if (fs.existsSync(infoPath)) {
     "investment accounts": [],
     "insurance": [],
     "utilities": [],
+    "other expenses": [],
     "passwords": [],
   };
 

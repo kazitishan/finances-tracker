@@ -21,6 +21,7 @@ const DEFAULT_INFO = {
     "investment accounts": [],
     insurance: [],
     utilities: [],
+    "other expenses": [],
     passwords: [],
 };
 
@@ -32,10 +33,12 @@ const CATEGORY_KEYS = {
     "investment-accounts": "investment accounts",
     insurance: "insurance",
     utilities: "utilities",
+    "other-expenses": "other expenses",
 };
 
 // The field that names each category's platform; saved logins are grouped by it, so a Chase
 // login entered on a bank account is offered again on a Chase credit card.
+// Other expenses have none: they have no login.
 const PLATFORM_FIELDS = {
     "bank accounts": "bank",
     "credit cards": "bank",

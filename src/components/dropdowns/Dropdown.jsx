@@ -28,6 +28,10 @@ const typesByType = {
     "utility-type": ["Water", "Energy", "Gas", "Internet", "Phone", "Cable TV", "Trash", "Other"],
     "income-type": ["Full-time Job", "Part-time Job", "Contract", "Freelancing", "Gig Work", "Other"],
     "payment-type": ["Direct Deposit", "Check", "Cash", "Other"],
+    "expense-category": [
+        "Self-care", "Health", "Supplements", "Home-care", "Food",
+        "Clothing", "Electronics", "Entertainment", "Gifts", "Hobbies", "Pets", "Travel", "Other",
+    ],
 };
 
 const optionsByType = {
@@ -66,6 +70,7 @@ function placeholders(type) {
 // "utility-type": Dropdown of the utility types (Water, Energy, Gas, Internet, Phone, Cable TV, Trash, Other).
 // "income-type": Dropdown of the income types (Full-time Job, Part-time Job, Contract, Freelancing, Gig Work, Other).
 // "payment-type": Dropdown of how income is paid (Direct Deposit, Check, Cash, Other).
+// "expense-category": Dropdown of what an other expense is for (Self-care, Health, Food, ..., Other).
 //     Picking "Other" on any of these asks for the type; that's `otherValue`.
 function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, otherValue, onOtherChange }) {
     const [bankAccounts, setBankAccounts] = useState([]);

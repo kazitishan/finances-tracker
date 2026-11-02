@@ -35,7 +35,7 @@ This document explains how Finances Tracker works: what runs where, how data is 
 A **single-user, local-only** personal finance organizer. You run it on your own machine with `npm run dev` and open it at `http://localhost:3000`. It stores:
 
 - **Accounts:** bank accounts (with debit cards) and investment accounts (with recurring investments).
-- **Expenses:** credit cards, subscriptions, loans, insurance policies and utilities.
+- **Expenses:** credit cards, subscriptions, loans, insurance policies, utilities and other expenses.
 - **Logins:** usernames and passwords for each platform, deduplicated into a password manager.
 - **Budget:** income streams and extra monthly expenses.
 
@@ -140,7 +140,7 @@ Consequences:
     │   ├── passwords/page.js   Password Manager
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
-    │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities}/page.js
+    │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
     │   └── api/
     │       ├── [category]/route.js        GET list, POST add, PUT reorder
     │       ├── [category]/[id]/route.js   PUT update, DELETE
@@ -222,6 +222,7 @@ Key properties:
   "investment accounts": [],
   "insurance": [],
   "utilities": [],
+  "other expenses": [],
   "passwords": []
 }
 ```
@@ -239,8 +240,9 @@ Key properties:
 | `loans` | `loans` | `/expenses/loans` |
 | `insurance` | `insurance` | `/expenses/insurance` |
 | `utilities` | `utilities` | `/expenses/utilities` |
+| `other-expenses` | `other expenses` | `/expenses/other` |
 
-Files created before utilities existed have no `"utilities"` key. That's fine: every store function reads a category with `info[key] || []`, and the key is written the first time a utility is added.
+Files created before utilities or other expenses existed have no key for them. That's fine: every store function reads a category with `info[key] || []`, and the key is written the first time a utility is added.
 
 `passwords` and `user-info` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
 
@@ -277,6 +279,8 @@ The **platform field** per category (`PLATFORM_FIELDS` in infoStore):
 | investment accounts | `broker` | `platforms.broker` |
 | insurance | `provider` | `platforms.healthInsurance` if type is Health, else `platforms.insurance` |
 | utilities | `provider` | **none**: a plain text field. Utilities have no `customLogo`; their picture comes from their type |
+
+Other expenses have no platform field, logo or login, so they aren't in `PLATFORM_FIELDS` or `UPLOAD_FOLDERS`, and none of the shared fields above except `id`, `name` and `link` apply. Nothing about them reaches the Password Manager.
 
 **Bank account** ([AddBankAccountModal.jsx](src/components/modals/AddBankAccountModal.jsx))
 
@@ -405,6 +409,16 @@ There's no `customLogo` and no payment method. The card's picture is `utilityIco
 | Other, or none | `/utilities/utility.svg` (a plug) |
 
 The icons are full-tile SVGs: a colored 48×48 square with a white line glyph, so they fill the rounded `.logo-tile` the same way the brand PNGs do. `next/image` serves `.svg` sources unoptimized automatically, so no `dangerouslyAllowSVG` config is needed.
+
+**Other expense** ([AddOtherExpenseModal.jsx](src/components/modals/AddOtherExpenseModal.jsx))
+
+| Field | Values |
+|---|---|
+| `name` | required; the form can't be saved without one |
+| `category` | `Self-care`, `Health`, `Supplements`, `Home-care`, `Food`, `Clothing`, `Electronics`, `Entertainment`, `Gifts`, `Hobbies`, `Pets`, `Travel`, `Other`, or `""` (`typesByType["expense-category"]` in [Dropdown.jsx](src/components/dropdowns/Dropdown.jsx)) |
+| `otherCategory` | free text, used when `category === "Other"` |
+| `price` | decimal string (dollars), at most two decimal places (`onlyPrice` in formUtils) |
+| `link` | URL; the table adds `https://` if it has no scheme |
 
 ### Saved login (`passwords[]`)
 
@@ -687,7 +701,7 @@ Sticky header with a translucent blurred background. Items:
 
 - **Home** → `/`
 - **Accounts ▾** → Bank Accounts, Investing
-- **Expenses ▾** → Credit Cards, Subscriptions, Loans, Insurance, Utilities
+- **Expenses ▾** → Credit Cards, Subscriptions, Loans, Insurance, Utilities, Other
 - **Budgeting** → `/budgeting`
 - **⚙ Settings** (right side)
 
@@ -847,6 +861,14 @@ The **Filter** button (shown once there's something in the list) uses `useUrlFil
 - Filters: Type, Provider. Search: name, provider, type label.
 - Form: switching between Health and non-Health **clears a listed provider** that doesn't fit the new type. A provider entered through Other is kept.
 
+### Other Expenses: `/expenses/other` (API slug `other-expenses`)
+
+The nav label is "Other"; the page title is "Other Expenses". It follows the [§13](#13-anatomy-of-a-category-page) template, except that it renders one [OtherExpensesTable](src/components/info/OtherExpensesTable.jsx) instead of a list of `InfoCard`s.
+
+- Header stat: **Total**, the sum of `price`. Filter: Category. Search: name, category.
+- Table columns: Name, Category, Price, Link (an **Open** button), and an edit pen. Below Tailwind's `sm` width the category moves under the name and the link shrinks to its icon, so nothing needs sideways scrolling.
+- Prices are plain amounts with no date or billing cycle, so they **don't** count toward Budgeting or appear on Home.
+
 ### Utilities: `/expenses/utilities`
 
 - Stats: same Monthly and Yearly Total rules as subscriptions, using `cost`.
@@ -962,7 +984,7 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 | `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
-| `insurance-type`, `loan-type`, `utility-type`, `income-type`, `payment-type` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
+| `insurance-type`, `loan-type`, `utility-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
 
 Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". "An" is used before a/e/i/o only, so the result reads "Select a utility type". An unknown type throws.
 
@@ -992,6 +1014,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `SearchInput` / `NoMatches` | Escape or X clears; "No matches for “…”." or "No matches for these filters." |
 | `EmptyState` | "No *noun* yet." + "Add your first" |
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
+| `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
 | `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash |
 
@@ -1112,7 +1135,7 @@ Add it to `typesByType["loan-type"]` in Dropdown.jsx.
 
 ### Add a whole new category
 
-1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO`, `CATEGORY_KEYS`, `PLATFORM_FIELDS` and `UPLOAD_FOLDERS`.
+1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has logins and `UPLOAD_FOLDERS` if it has uploaded logos (Other Expenses has neither).
 2. **Uploads**: if it has a new logo folder, create `public/<folder>/` and `public/<folder>/uploads/README.md`, and add the folder to `UPLOAD_PATH` in [uploads.js](src/lib/uploads.js).
 3. **Setup**: add it to `defaultInfo` in [scripts/setup.js](scripts/setup.js).
 4. **Platforms**: add a group to `platforms.json`, export it from `Dropdown.jsx`, and add an `optionsByType` entry.

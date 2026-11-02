@@ -24,6 +24,7 @@ const menus = [
             { href: "/expenses/loans", label: "Loans" },
             { href: "/expenses/insurance", label: "Insurance" },
             { href: "/expenses/utilities", label: "Utilities" },
+            { href: "/expenses/other", label: "Other" },
         ],
     },
 ];

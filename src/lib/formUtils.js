@@ -104,6 +104,12 @@ export function onlyDecimal(value) {
     return `${parts[0]}.${parts.slice(1).join("")}`;
 }
 
+// onlyDecimal, with at most two decimal places. A leading "." becomes "0." so the value is always a number.
+export function onlyPrice(value) {
+    const [whole, cents] = onlyDecimal(value).split(".");
+    return cents === undefined ? whole : `${whole || "0"}.${cents.slice(0, 2)}`;
+}
+
 export function maskLast4(value) {
     if (!value) return "";
     if (value.length <= 4) return value;
