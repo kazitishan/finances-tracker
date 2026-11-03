@@ -6,12 +6,15 @@ import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import AddIncomeStreamModal from "@/components/modals/AddIncomeStreamModal";
 import { useToast } from "@/components/ToastProvider";
 import { ArrowUpRightIcon, CheckIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import AffixInput from "@/components/ui/AffixInput";
+import PageHeader from "@/components/ui/PageHeader";
 import { formatCurrency, inputClasses, months, onlyDecimal } from "@/lib/formUtils";
 import { incomeFrequencies, isEstimated, nextPayday, paidInMonth } from "@/lib/incomeStreams";
 import { getBankAccounts } from "@/util/getBankAccounts";
 import { getUserInfo } from "@/util/getUserInfo";
 import { saveUserInfo } from "@/util/saveUserInfo";
 import { getMonthlyExpenses } from "@/util/getMonthlyExpenses";
+import { itemName } from "@/lib/itemNames";
 
 // Spending from the user's accounts. Each keeps its color no matter which others are on the chart.
 const CATEGORIES = [
@@ -153,7 +156,7 @@ function amountLabel(stream) {
 function paymentLabel(stream, bankAccounts) {
   const type = typeLabel(stream.paymentType, stream.otherPaymentType);
   const account = stream.paymentType === "Direct Deposit" && bankAccounts.find((account) => account.id === stream.bankAccount);
-  return account ? `${type} to ${account.name || "Unnamed Account"}` : type;
+  return account ? `${type} to ${itemName("bank-accounts", account)}` : type;
 }
 
 // The income streams, each with what it pays this month. Adding and editing happen in AddIncomeStreamModal.
@@ -205,18 +208,15 @@ const isValidEntry = (name, amount) => name.trim() !== "" && Number(amount) > 0;
 
 function AmountInput({ value, onChange }) {
   return (
-    <div className="relative w-28 shrink-0">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
-      <input
-        type="text"
-        inputMode="decimal"
-        className={`${inputClasses} pl-6`}
-        placeholder="0.00"
-        aria-label="Monthly amount"
-        value={value}
-        onChange={(e) => onChange(onlyDecimal(e.target.value))}
-      />
-    </div>
+    <AffixInput
+      prefix="$"
+      className="w-28 shrink-0"
+      inputMode="decimal"
+      placeholder="0.00"
+      aria-label="Monthly amount"
+      value={value}
+      onChange={(e) => onChange(onlyDecimal(e.target.value))}
+    />
   );
 }
 
@@ -279,7 +279,7 @@ function AmountList({ title, entries, emptyText, namePlaceholder, onAdd, onEdit,
                       onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                     />
                     <AmountInput value={editing.amount} onChange={(value) => setEditing({ ...editing, amount: value })} />
-                    <button type="submit" disabled={!canSaveEdit} className="icon-btn disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Save ${entryName}`}>
+                    <button type="submit" disabled={!canSaveEdit} className="icon-btn" aria-label={`Save ${entryName}`}>
                       <CheckIcon size={14} />
                     </button>
                     <button type="button" onClick={() => setEditing(null)} className="icon-btn" aria-label="Cancel editing">
@@ -350,7 +350,8 @@ export default function BudgetingPage() {
     getBankAccounts().then(setBankAccounts).catch(() => showToast("Couldn't load your bank accounts"));
   }, [showToast]);
 
-  if (!userInfo || !expenses) return null;
+  const header = <PageHeader title={`${months[new Date().getMonth()].label} Budgeting`} />;
+  if (!userInfo || !expenses) return header;
 
   const incomeStreams = userInfo["income-streams"];
   const additionalExpenses = userInfo["additional-expenses"];
@@ -455,9 +456,7 @@ export default function BudgetingPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-        {months[new Date().getMonth()].label} Budgeting
-      </h1>
+      {header}
 
       <section className="card mb-4 p-6">
         <div className="flex flex-col items-center gap-8 md:flex-row md:items-center">

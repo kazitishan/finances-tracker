@@ -12,6 +12,7 @@ import { subscriptions as subscriptionServices } from "@/components/dropdowns/Dr
 import { findPaymentAccount } from "@/util/findPaymentAccount";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { itemName } from "@/lib/itemNames";
 
 const subscriptionLogo = (name, subscriptions) =>
   logoFor(subscriptionServices, name, subscriptions.find((subscription) => subscription.customLogo)?.customLogo);
@@ -163,7 +164,7 @@ function Subscriptions() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={subscriptions}
-        getLabel={(subscription) => subscription.name || subscription.subscription || "Unnamed Subscription"}
+        getLabel={(subscription) => itemName("subscriptions", subscription)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

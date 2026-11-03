@@ -4,15 +4,17 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUrlFilters } from "@/components/useUrlFilters";
-import FilterMenu from "@/components/ui/FilterMenu";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
-import { daysUntil, formatCurrency, formatDaysUntil, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
+import { daysUntil, formatCurrency, formatDaysUntil, matchesSearch, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { isEstimated, nextPayday } from "@/lib/incomeStreams";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
 import { utilityIcon } from "@/components/info/UtilityInfo";
 import { getUserInfo } from "@/util/getUserInfo";
+import { itemName } from "@/lib/itemNames";
 
 // Money coming in. Every other type is money going out, which the filter calls Expenses.
 const INCOMING_TYPES = ["Income Streams", "Interest Payments"];
@@ -35,7 +37,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       kind: "Credit card payment",
       type: "Credit Cards",
       href: "/expenses/credit-cards",
-      name: card.name || card.bank || "Unnamed Card",
+      name: itemName("credit-cards", card),
       image: logoFor(banks, card.bank, card.customLogo),
       date: nextOccurrence(card.dueDate),
     }));
@@ -47,7 +49,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       kind: "Annual fee",
       type: "Annual Fees",
       href: "/expenses/credit-cards",
-      name: card.name || card.bank || "Unnamed Card",
+      name: itemName("credit-cards", card),
       image: logoFor(banks, card.bank, card.customLogo),
       amount: formatCurrency(card.annualFee),
       date: nextOccurrence(card.renewalDay, card.renewalMonth),
@@ -59,7 +61,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       kind: "Subscription payment",
       type: "Subscriptions",
       href: "/expenses/subscriptions",
-      name: subscription.name || subscription.subscription || "Unnamed Subscription",
+      name: itemName("subscriptions", subscription),
       image: logoFor(subscriptionCompanies, subscription.subscription, subscription.customLogo),
       amount: subscription.cost ? formatCurrency(subscription.cost) : null,
       date: subscription.billingCycle === "year"
@@ -72,7 +74,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     kind: "Interest payment",
     type: "Interest Payments",
     href: "/accounts/bank-accounts",
-    name: account.name || account.bank || "Unnamed Account",
+    name: itemName("bank-accounts", account),
     image: logoFor(banks, account.bank, account.customLogo),
     date: nextInterestDate(account.interestPaymentDate),
   }));
@@ -82,7 +84,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     kind: "Loan payment",
     type: "Loans",
     href: "/expenses/loans",
-    name: loan.name || loan.provider || "Unnamed Loan",
+    name: itemName("loans", loan),
     image: logoFor(loanProviders, loan.provider, loan.customLogo),
     amount: loan.monthlyPayment ? formatCurrency(loan.monthlyPayment) : null,
     date: nextOccurrence(loan.paymentDay),
@@ -93,7 +95,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     kind: "Insurance payment",
     type: "Insurance",
     href: "/expenses/insurance",
-    name: policy.name || policy.provider || "Unnamed Insurance",
+    name: itemName("insurance", policy),
     image: logoFor(allInsuranceProviders, policy.provider, policy.customLogo),
     amount: policy.premium ? formatCurrency(policy.premium) : null,
     date: policy.billingCycle === "year"
@@ -106,7 +108,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     kind: "Utility payment",
     type: "Utilities",
     href: "/expenses/utilities",
-    name: utility.name || utility.provider || "Unnamed Utility",
+    name: itemName("utilities", utility),
     image: utilityIcon(utility.type),
     amount: utility.cost ? formatCurrency(utility.cost) : null,
     date: utility.billingCycle === "year"
@@ -133,6 +135,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
 
 function Home() {
   const [payments, setPayments] = useState([]);
+  const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -160,24 +163,30 @@ function Home() {
     },
   ]);
 
-  const filteredPayments = payments.filter(filters.matches);
+  const filteredPayments = payments.filter((payment) =>
+    filters.matches(payment) && matchesSearch([payment.name, payment.kind], search)
+  );
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
-        {payments.length > 0 && <FilterMenu filters={filters} />}
-      </div>
+      <PageHeader
+        title="Home"
+        count={loaded ? payments.length : null}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search upcoming payments..."
+        filters={filters}
+      />
 
       {loaded && payments.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-16 text-center text-sm text-muted">
+        <EmptyState>
           Nothing coming up. Add a due date to a{" "}
           <Link href="/expenses/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link>,{" "}
           <Link href="/expenses/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>, or an interest
           date to a <Link href="/accounts/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
-        </div>
+        </EmptyState>
       )}
-      {payments.length > 0 && filteredPayments.length === 0 && <NoMatches query="" />}
+      {payments.length > 0 && filteredPayments.length === 0 && <NoMatches query={search} />}
 
       <div className="flex flex-col gap-3">
         {filteredPayments.map((payment) => (

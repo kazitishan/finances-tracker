@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { inputClasses } from "@/lib/formUtils";
+import { ChevronDownIcon } from "@/components/ui/icons";
 
 // The name to show for a type: what the user typed in when they picked "Other", otherwise the type itself.
 export function typeLabel(type, otherType) {
@@ -34,7 +35,7 @@ function TypeDropdown({ types, value, otherValue, onChange, onOtherChange, place
                     className="field flex items-center justify-between gap-2 cursor-pointer text-left"
                 >
                     <span className={value ? "" : "text-muted"}>{value || placeholder}</span>
-                    <span className="text-muted text-xs">▾</span>
+                    <span className="shrink-0 text-muted"><ChevronDownIcon /></span>
                 </button>
 
                 {open && (

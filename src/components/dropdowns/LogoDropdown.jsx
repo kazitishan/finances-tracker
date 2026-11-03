@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import ImageUploadButton from "@/components/ui/ImageUploadButton";
-import { PlusIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, PlusIcon } from "@/components/ui/icons";
 
 // Options are { name, image?, value?, detail?, keywords? }: `value` is what's selected (the name if left out),
 // `detail` is shown muted after the name, and `keywords` are extra text the search matches.
@@ -96,7 +96,7 @@ function LogoDropdown({
                             {isOther ? "Other" : selectedOption ? optionLabel(selectedOption) : placeholder}
                         </span>
                     </span>
-                    <span className="text-muted text-xs shrink-0">▾</span>
+                    <span className="shrink-0 text-muted"><ChevronDownIcon /></span>
                 </button>
 
                 {open && (

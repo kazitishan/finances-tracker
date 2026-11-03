@@ -7,8 +7,7 @@ import { formatCurrency } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { describeSchedule } from "@/lib/recurringInvestments";
 import { brokers } from "@/components/dropdowns/Dropdown";
-
-export const investmentAccountTypes = ["Brokerage", "Roth IRA", "401K"];
+import { itemName } from "@/lib/itemNames";
 
 function RecurringInvestmentsSection({ investments, bankAccounts }) {
     if (investments.length === 0) return null;
@@ -18,7 +17,7 @@ function RecurringInvestmentsSection({ investments, bankAccounts }) {
             <ul>
                 {investments.map((investment) => {
                     const bankAccount = bankAccounts.find((account) => account.id === investment.bankAccount);
-                    const details = [describeSchedule(investment), bankAccount && `from ${bankAccount.name || "Unnamed Account"}`];
+                    const details = [describeSchedule(investment), bankAccount && `from ${itemName("bank-accounts", bankAccount)}`];
                     return (
                         <li key={investment.id} className="flex items-center gap-3 border-b border-[var(--border)] py-1.5 text-sm last:border-b-0">
                             <div className="min-w-0 flex-1">
@@ -39,7 +38,7 @@ function InvestmentAccountInfo({ account, bankAccounts = [], onEdit }) {
         <InfoCard
             image={logoFor(brokers, account.broker, account.customLogo)}
             imageAlt={account.broker}
-            title={account.name || "Unnamed Account"}
+            title={itemName("investment-accounts", account)}
             subtitle={account.broker}
             tags={[account.type].filter(Boolean)}
             link={account.link}

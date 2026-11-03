@@ -9,6 +9,7 @@ import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { logoFor } from "@/lib/logos";
 import { banks } from "@/components/dropdowns/Dropdown";
+import { itemName } from "@/lib/itemNames";
 
 function splitLines(text) {
     return (text || "")
@@ -29,7 +30,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
         <InfoCard
             image={logoFor(banks, card.bank, card.customLogo)}
             imageAlt={card.bank}
-            title={card.name || "Unnamed Card"}
+            title={itemName("credit-cards", card)}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
             tags={[
                 ...(expiry ? [{ label: expiry === "expired" ? "Expired" : "Expires soon", tone: "danger" }] : []),
@@ -76,7 +77,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
                 <PaymentMethodCard
                     image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
                     imageAlt={paymentAccount.bank}
-                    name={paymentAccount.name}
+                    name={itemName("bank-accounts", paymentAccount)}
                     detail={paymentAccount.accountNumber ? maskLast4(paymentAccount.accountNumber) : null}
                 />
             )}

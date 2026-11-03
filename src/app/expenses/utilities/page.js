@@ -10,6 +10,7 @@ import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
+import { itemName } from "@/lib/itemNames";
 
 function Utilities() {
   const [utilities, setUtilities] = useState([]);
@@ -134,7 +135,7 @@ function Utilities() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={utilities}
-        getLabel={(utility) => utility.name || utility.provider || "Unnamed Utility"}
+        getLabel={(utility) => itemName("utilities", utility)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

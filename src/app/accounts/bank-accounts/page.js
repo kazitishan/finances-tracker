@@ -11,6 +11,7 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { banks } from "@/components/dropdowns/Dropdown";
+import { itemName } from "@/lib/itemNames";
 
 const bankLogo = (name, accounts) => logoFor(banks, name, accounts.find((account) => account.customLogo)?.customLogo);
 
@@ -117,7 +118,7 @@ function BankAccounts() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={accounts}
-        getLabel={(account) => account.name || account.bank || "Unnamed Account"}
+        getLabel={(account) => itemName("bank-accounts", account)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

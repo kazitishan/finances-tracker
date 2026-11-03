@@ -1,5 +1,6 @@
 "use client";
 
+import AffixInput from "@/components/ui/AffixInput";
 import { PlusIcon, XIcon } from "@/components/ui/icons";
 import { inputClasses, onlyDecimal } from "@/lib/formUtils";
 
@@ -23,17 +24,13 @@ function Disbursement({ disbursement, onChange, onRemove }) {
             </label>
             <label className="flex w-32 shrink-0 flex-col gap-1">
                 <span className="field-label">Amount</span>
-                <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
-                    <input
-                        type="text"
-                        inputMode="decimal"
-                        className={`${inputClasses} pl-6`}
-                        placeholder="0.00"
-                        value={disbursement.amount}
-                        onChange={(e) => updateField("amount", onlyDecimal(e.target.value))}
-                    />
-                </div>
+                <AffixInput
+                    prefix="$"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={disbursement.amount}
+                    onChange={(e) => updateField("amount", onlyDecimal(e.target.value))}
+                />
             </label>
             <button type="button" onClick={onRemove} className="icon-btn mb-1.5 shrink-0" aria-label="Remove disbursement">
                 <XIcon size={14} />

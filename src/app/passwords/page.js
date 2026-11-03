@@ -7,8 +7,9 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import EditLoginModal from "@/components/modals/EditLoginModal";
-import SearchInput, { NoMatches } from "@/components/ui/SearchInput";
-import FilterMenu from "@/components/ui/FilterMenu";
+import { NoMatches } from "@/components/ui/SearchInput";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
@@ -76,24 +77,18 @@ function Passwords() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Password Manager</h1>
-        <div className="mt-1 text-sm text-muted">
-          {loaded && <span>{logins.length} total · </span>}
-          Editing a login updates every item that uses it.
-        </div>
-        {logins.length > 0 && (
-          <div className="mt-4 flex gap-2">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search logins..." className="flex-1 min-w-0" />
-            <FilterMenu filters={filters} />
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Password Manager"
+        count={loaded ? logins.length : null}
+        description="Editing a login updates every item that uses it."
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search logins..."
+        filters={filters}
+      />
 
       {loaded && logins.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-16 text-center text-sm text-muted">
-          No saved logins yet. They&apos;re saved when you add a user name or password to an item.
-        </div>
+        <EmptyState>No saved logins yet. They&apos;re saved when you add a username or password to an item.</EmptyState>
       )}
 
       {logins.length > 0 && sortedLogins.length === 0 && <NoMatches query={search} />}
@@ -107,7 +102,7 @@ function Passwords() {
               imageAlt={login.platform}
               title={login.platform}
               subtitle={[
-                login.username || "No user name",
+                login.username || "No username",
                 `Used by ${login.usedBy.length} ${login.usedBy.length === 1 ? "item" : "items"}`,
               ].join(" · ")}
               onEdit={() => handleEdit(login)}
@@ -117,7 +112,7 @@ function Passwords() {
                 {login.usedBy.length > 0 ? (
                   login.usedBy.map((item) => (
                     <Link key={item.id} href={categoryPaths[item.category]} className="detail-row rounded-md px-2 -mx-2 hover:bg-[var(--surface-hover)]">
-                      <span className="font-medium truncate">{item.name || "Unnamed item"}</span>
+                      <span className="font-medium truncate">{item.name}</span>
                       <span className="detail-label shrink-0">{categoryLabels[item.category]}</span>
                     </Link>
                   ))

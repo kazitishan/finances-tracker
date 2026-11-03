@@ -12,6 +12,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { itemName } from "@/lib/itemNames";
 
 const providerLogo = (name, loans) => logoFor(loanProviders, name, loans.find((loan) => loan.customLogo)?.customLogo);
 
@@ -135,7 +136,7 @@ function Loans() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={loans}
-        getLabel={(loan) => loan.name || "Unnamed Loan"}
+        getLabel={(loan) => itemName("loans", loan)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

@@ -12,6 +12,7 @@ import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
+import { itemName } from "@/lib/itemNames";
 
 const providerLogo = (name, policies) => logoFor(allInsuranceProviders, name, policies.find((policy) => policy.customLogo)?.customLogo);
 
@@ -145,7 +146,7 @@ function Insurance() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={policies}
-        getLabel={(policy) => policy.name || policy.provider || "Unnamed Insurance"}
+        getLabel={(policy) => itemName("insurance", policy)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { maskAll } from "@/lib/formUtils";
 import { useCopyToClipboard } from "@/components/ToastProvider";
-import { EyeIcon, EyeOffIcon } from "@/components/info/RevealableDetailRow";
+import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 
 function LoginValue({ label, value }) {
     const [revealed, setRevealed] = useState(false);
@@ -38,7 +38,7 @@ function LoginDetailRow({ username, password }) {
 
     return (
         <div className="flex gap-4">
-            {username && <LoginValue label="User Name" value={username} />}
+            {username && <LoginValue label="Username" value={username} />}
             {password && <LoginValue label="Password" value={password} />}
         </div>
     );

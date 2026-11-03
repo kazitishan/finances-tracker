@@ -5,6 +5,7 @@ import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ToastProvider";
 import { formatNames } from "@/lib/formUtils";
+import FormActions from "@/components/ui/FormActions";
 
 function EditLoginModal({ isOpen, onClose, login, onChanged }) {
     const [username, setUsername] = useState(login?.username ?? "");
@@ -14,7 +15,7 @@ function EditLoginModal({ isOpen, onClose, login, onChanged }) {
 
     if (!isOpen || !login) return null;
 
-    const usedByNames = login.usedBy.map((item) => item.name || "Unnamed item");
+    const usedByNames = login.usedBy.map((item) => item.name);
 
     async function handleSave() {
         setSubmitting(true);
@@ -75,14 +76,7 @@ function EditLoginModal({ isOpen, onClose, login, onChanged }) {
                     onPasswordChange={setPassword}
                 />
 
-                <div className="flex gap-2 mt-2">
-                    <button type="button" onClick={handleDelete} disabled={submitting} className="btn btn-danger py-2.5">
-                        Delete
-                    </button>
-                    <button type="button" onClick={handleSave} disabled={submitting} className="btn btn-primary flex-1 py-2.5">
-                        Save Changes
-                    </button>
-                </div>
+                <FormActions isEditing onSave={handleSave} onDelete={handleDelete} submitting={submitting} />
             </div>
         </Modal>
     );

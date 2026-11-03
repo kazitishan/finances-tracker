@@ -7,6 +7,8 @@ import Modal from "@/components/ui/Modal";
 import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import { emptyIncomeStream, incomeFrequencies, isEstimated, isPayday } from "@/lib/incomeStreams";
 import { marketWeekdays, nextWeekdays, toDateString, withStartDate } from "@/lib/recurringInvestments";
+import AffixInput from "@/components/ui/AffixInput";
+import FormActions from "@/components/ui/FormActions";
 
 function PayDaySelect({ label, value, onChange }) {
     return (
@@ -200,16 +202,12 @@ function AddIncomeStreamModal({ isOpen, onClose, initialData, onSave, onDelete }
 
                 <label className="flex flex-col gap-1">
                     <span className="field-label">{estimated ? "Estimated Monthly Income" : "Paycheck Amount"}</span>
-                    <div className="flex items-center gap-2">
-                        <span>$</span>
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            className={inputClasses}
-                            value={amount}
-                            onChange={(e) => updateField(estimated ? "monthlyEstimate" : "paycheckAmount", onlyDecimal(e.target.value))}
-                        />
-                    </div>
+                    <AffixInput
+                        prefix="$"
+                        inputMode="decimal"
+                        value={amount}
+                        onChange={(e) => updateField(estimated ? "monthlyEstimate" : "paycheckAmount", onlyDecimal(e.target.value))}
+                    />
                     {estimated && <span className="field-hint">What you expect to make in a month. Update it whenever your estimate changes.</span>}
                     {!estimated && !form.frequency && <span className="field-hint">With no set schedule, this counts once a month.</span>}
                 </label>
@@ -236,19 +234,14 @@ function AddIncomeStreamModal({ isOpen, onClose, initialData, onSave, onDelete }
                     </div>
                 )}
 
-                <div className="flex flex-col gap-2 mt-2">
-                    <div className="flex gap-2">
-                        {initialData && (
-                            <button type="button" onClick={remove} disabled={submitting} className="btn btn-danger py-2.5">
-                                Delete
-                            </button>
-                        )}
-                        <button type="button" onClick={save} disabled={submitting || !canSave} className="btn btn-primary flex-1 py-2.5">
-                            {initialData ? "Save Changes" : "Add"}
-                        </button>
-                    </div>
-                    {!canSave && <span className="field-hint">Add a name and an amount to save.</span>}
-                </div>
+                <FormActions
+                    isEditing={Boolean(initialData)}
+                    onSave={save}
+                    onDelete={remove}
+                    submitting={submitting}
+                    disabled={!canSave}
+                    hint={canSave ? null : "Add a name and an amount to save."}
+                />
             </div>
         </Modal>
     );

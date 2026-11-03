@@ -1,4 +1,5 @@
 import { allRecurringInvestments, investedInMonth, investmentName } from "@/lib/recurringInvestments";
+import { itemName } from "@/lib/itemNames";
 
 // What a bill costs a month; yearly bills are spread over 12 months.
 function monthly(amount, billingCycle) {
@@ -31,22 +32,22 @@ export async function getMonthlyExpenses(date = new Date()) {
     return {
         subscriptions: withCost(subscriptions.map((subscription) => ({
             id: subscription.id,
-            name: subscription.name || subscription.subscription || "Unnamed Subscription",
+            name: itemName("subscriptions", subscription),
             amount: billedCost(subscription, month),
         }))),
         loans: withCost(loans.map((loan) => ({
             id: loan.id,
-            name: loan.name || loan.provider || "Unnamed Loan",
+            name: itemName("loans", loan),
             amount: Number(loan.monthlyPayment) || 0,
         }))),
         insurance: withCost(insurance.map((policy) => ({
             id: policy.id,
-            name: policy.name || policy.provider || "Unnamed Insurance",
+            name: itemName("insurance", policy),
             amount: monthly(policy.premium, policy.billingCycle),
         }))),
         utilities: withCost(utilities.map((utility) => ({
             id: utility.id,
-            name: utility.name || utility.provider || "Unnamed Utility",
+            name: itemName("utilities", utility),
             amount: billedCost(utility, month),
         }))),
         investments: withCost(allRecurringInvestments(investmentAccounts).map(({ investment, account }) => ({
@@ -56,7 +57,7 @@ export async function getMonthlyExpenses(date = new Date()) {
         }))),
         annualFees: withCost(creditCards.map((card) => ({
             id: card.id,
-            name: card.name || card.bank || "Unnamed Card",
+            name: itemName("credit-cards", card),
             amount: card.renewalMonth === month ? Number(card.annualFee) || 0 : 0,
         }))),
     };

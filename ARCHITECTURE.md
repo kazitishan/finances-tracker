@@ -160,7 +160,7 @@ Consequences:
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
     │   ├── info/                         Read-only cards for each category + detail rows
     │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload
-    │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, icons, ...
+    │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, FormActions, AffixInput, icons, ...
     ├── data/platforms.json     Built-in platform names → logo paths
     ├── lib/                    Server store (infoStore, uploads) + pure helpers
     │   ├── infoStore.js        THE data layer (server-only, uses fs)
@@ -168,6 +168,7 @@ Consequences:
     │   ├── formUtils.js        Formatting, masking, input sanitizing, date helpers
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
+    │   ├── itemNames.js        itemName(): what an item is called on every screen
     │   └── logos.js            logoFor()
     └── util/                   Client-side fetch helpers + pure lookups
         ├── getBankAccounts.js, getPaymentMethods.js, getUserInfo.js, saveUserInfo.js
@@ -261,7 +262,7 @@ Every category item shares these fields:
 | Field | Meaning |
 |---|---|
 | `id` | UUID, set by the server |
-| `name` | User's label for it (optional; UI falls back to platform name or "Unnamed …") |
+| `name` | User's label for it (optional; [`itemName()`](src/lib/itemNames.js) falls back to the platform name, then "Unnamed …", everywhere the item is shown) |
 | *platform field* | `bank` / `broker` / `subscription` / `provider` (see table below) |
 | `customLogo` | `""`, a saved upload path like `/banks/uploads/my-bank-1a2b3c4d.png`, or (only in transit) a `data:` URL |
 | `link` | URL opened by the card's **Open** button |
@@ -344,7 +345,7 @@ Payments have no dates, so the `/ 2` treats `amountPaid` as coming off the balan
 
 | Field | Values |
 |---|---|
-| `type` | `"Brokerage"` \| `"Roth IRA"` \| `"401K"` (`investmentAccountTypes` in [InvestmentAccountInfo.jsx](src/components/info/InvestmentAccountInfo.jsx)) |
+| `type` | `"Brokerage"` \| `"Roth IRA"` \| `"401K"` (`typesByType["investment-type"]` in [Dropdown.jsx](src/components/dropdowns/Dropdown.jsx)) |
 | `recurringInvestments` | array of recurring investments, below |
 
 Recurring investment (documented in [recurringInvestments.js](src/lib/recurringInvestments.js)):
@@ -672,7 +673,7 @@ Items point at each other **by id**, in three different formats:
 | Recurring investment | `bankAccount` | `<bank account id>` | the account it's funded from | `Dropdown type="bank-account"` |
 | Subscription, Insurance | `paymentMethod` | `credit:<card id>` or `debit:<bank account id>` | the card that's charged | `Dropdown type="payment-method"` |
 
-- **Payment methods** ([getPaymentMethods.js](src/util/getPaymentMethods.js)) are credit cards **that have a `cardNumber`** plus bank accounts **that have a `cardNumber`** (their debit card), each with a "Credit" or "Debit" badge. `findPaymentAccount()` resolves the prefixed value back to the item and adds a `displayName`.
+- **Payment methods** ([getPaymentMethods.js](src/util/getPaymentMethods.js)) are credit cards **that have a `cardNumber`** plus bank accounts **that have a `cardNumber`** (their debit card), each with a "Credit" or "Debit" badge. `findPaymentAccount()` resolves the prefixed value back to the item and adds a `displayName` (its `itemName()`), which every Payment Method box shows.
 - **No referential integrity:** deleting a bank account or card leaves dangling ids behind. The UI just omits the payment-method box, filter value or "from …" text when the lookup fails.
 - The `bank-account` and `payment-method` dropdowns fetch their own data on mount, so each instance makes its own request.
 
@@ -777,6 +778,7 @@ Patterns worth knowing:
 - **Delete** asks "Delete this item? This cannot be undone." Both the Edit modal and the Rearrange modal offer it.
 - **Rearrange modal:** up/down arrows reorder a local copy; **Done** sends the full order. Deleting from inside it happens **immediately**. Closing without Done discards the reorder, with no prompt.
 - **The search box and Filter button appear only when count > 0.**
+- **Forms are built from shared pieces** so they look the same everywhere: fields in the order Name → Type → Platform → Link → Login → the rest; `AffixInput` for any amount or rate (`$` / `%` inside the field); `NotesField` last; then `FormActions` (Delete + Add/Save Changes), rendered as `{prompt || <FormActions/>}`. A custom `Dropdown` goes in a `div`, not a `label`, since it's a group of buttons.
 
 ### [useSaveItem](src/components/useSaveItem.jsx)
 
@@ -818,7 +820,7 @@ Everything coming up, soonest first. It fetches every category with dates, plus 
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
 
-The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
+It uses the standard `PageHeader` (title, "N total", search over name and kind) and `EmptyState`. The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
 
 ### Bank Accounts: `/accounts/bank-accounts`
 
@@ -836,7 +838,7 @@ The **Filter** button (shown once there's something in the list) uses `useUrlFil
 ### Credit Cards: `/expenses/credit-cards`
 
 - Also loads bank accounts (for the payment method).
-- Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; **Total Monthly Credit Line**, the sum of `creditLine`; and **Total Annual Fees**, the sum of `annualFee`.
+- Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; **Total Credit Line**, the sum of `creditLine`; and **Total Annual Fees**, the sum of `annualFee`.
 - Filters: Bank, Payment Method (bank account name). Search: name, bank, usage.
 - Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", Annual Fee, "Annual Fee Renews: March 15th, every year" (both hidden when there's no fee), the Payment Method box, Rewards & Benefits bullets, notes.
 
@@ -881,7 +883,7 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 
 ### Budgeting: [src/app/budgeting/page.js](src/app/budgeting/page.js)
 
-The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders nothing until both arrive. It also loads bank accounts, to name where direct deposits go.
+The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders only its `PageHeader` title until both arrive. It also loads bank accounts, to name where direct deposits go.
 
 - **Income Streams** and **Additional Expenses** cards, stacked with Income Streams on top. Income streams are added, edited and deleted through [AddIncomeStreamModal](src/components/modals/AddIncomeStreamModal.jsx). Each stream is a bordered row (same `--border-strong` as `.field`, no picture) showing its type, "Biweekly · Next Paycheck: Wed, Nov 11" (or "No set schedule"), its paycheck or monthly estimate, how it's paid, and what it pays this month. Additional expenses are `name + $amount` rows added, removed and edited inline: the pencil turns a row into inputs, where Enter or the check saves and Escape or the X cancels. A row needs a name and an amount above 0, the same as adding one. Changes save immediately, **optimistically**, and roll back with a "Couldn't save" toast on failure.
 - **From Your Accounts**: this month's per-item costs, grouped by Subscriptions, Loans, Insurance, Investments, Utilities and Annual Fees, each with a link to its page. A category only appears if it has at least one item costing something this month, and the whole card is hidden when none do.
@@ -984,7 +986,7 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 | `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
-| `insurance-type`, `loan-type`, `utility-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
+| `insurance-type`, `investment-type`, `loan-type`, `utility-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
 
 Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". "An" is used before a/e/i/o only, so the result reads "Select a utility type". An unknown type throws.
 
@@ -999,7 +1001,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | Component | Behavior |
 |---|---|
 | `DetailRow` | label/value row; **renders nothing if the value is empty**; optional click-to-copy |
-| `RevealableDetailRow` | masked value + eye toggle; revealed values are grouped in 4s; click copies the raw value; manual copy strips spaces. Also exports `EyeIcon`/`EyeOffIcon` |
+| `RevealableDetailRow` | masked value + eye toggle; revealed values are grouped in 4s; click copies the raw value; manual copy strips spaces |
 | `LoginDetailRow` | username and password side by side, **both masked**, each revealable and copyable |
 | `PaymentMethodCard` | the "Payment Method" box with logo, name and masked number |
 
@@ -1009,14 +1011,17 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 |---|---|
 | `InfoCard` | Logo tile, title, subtitle (or "—"), chips (strings, or `{label, tone:"danger"}`), optional key `stat` `{label, value, caption, lines}` shown in the header and again in the expanded body, where optional `lines` (`[{label, value}]`, the figures that add up to it) sit above it with a total line between, **Open** link (`target=_blank`, `noopener`), Edit pencil, chevron. Clicking the header toggles it. The collapsed body is `inert`. If no detail rows render, CSS shows "No other details" |
 | `Modal` | Backdrop + panel; X, backdrop click and **Escape** close it. A module-level **stack** makes Escape close only the innermost modal. Locks body scroll while open |
-| `PageHeader` | Title, "N total", non-empty stats, Rearrange + Add buttons, search + filter row (only when count > 0) |
+| `PageHeader` | Title, "N total", non-empty stats, optional `description`, Rearrange + Add buttons (each only when its handler is passed), search + filter row (only when count > 0; `searchPlaceholder` defaults to "Search *title*...") |
+| `FormActions` | Form footer: Delete (when `isEditing` and `onDelete` is passed) + primary "Add" / "Save Changes"; optional `disabled` and a `hint` under them |
+| `AffixInput` | A `.field` input with `prefix` (e.g. `$`) or `suffix` (e.g. `%`) drawn inside it; other props go to the `<input>`, `className` to the wrapper |
+| `NotesField` | The Notes textarea `form-section` at the bottom of a form |
 | `FilterMenu` | Renders `useUrlFilters` groups, with an option's `sub` options indented under it once it's selected |
 | `SearchInput` / `NoMatches` | Escape or X clears; "No matches for “…”." or "No matches for these filters." |
-| `EmptyState` | "No *noun* yet." + "Add your first" |
+| `EmptyState` | "No *noun* yet." + "Add your first" (only with `onAdd`), or `children` as the message (Home, Password Manager) |
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
 | `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
-| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash |
+| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff. Every dropdown trigger uses ChevronDown |
 
 ### Other modals: [src/components/modals/](src/components/modals/)
 
@@ -1034,14 +1039,14 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 
 Everything is in [globals.css](src/app/globals.css): design tokens, then a `@layer components` block of semantic classes. Components use those classes plus Tailwind utilities, often with arbitrary values such as `bg-[var(--surface-hover)]`.
 
-**Tokens**: `--background`, `--surface`, `--surface-hover`, `--border`, `--border-strong`, `--foreground`, `--muted`, `--accent` (green), `--accent-hover`, `--accent-soft`, `--accent-contrast`, `--danger`, `--danger-soft`, `--ring`, `--overlay`, `--shadow`, `--shadow-lg`, and chart colors `--series-1..8` (fixed order, chosen to be distinguishable with color-vision deficiencies). `@theme inline` exposes some as Tailwind colors (`text-muted`, `bg-surface`, `text-accent`, …) and fonts (`font-sans`, `font-mono`).
+**Tokens**: `--background`, `--surface`, `--surface-hover`, `--border`, `--border-strong`, `--foreground`, `--muted`, `--accent` (green), `--accent-hover`, `--accent-soft`, `--accent-contrast`, `--danger`, `--danger-soft`, `--ring`, `--overlay`, `--shadow`, `--shadow-lg`, `--select-chevron` (the native `<select>` arrow, an SVG data URI stroked in `--muted`, so it's redefined in each theme block), and chart colors `--series-1..8` (fixed order, chosen to be distinguishable with color-vision deficiencies). `@theme inline` exposes some as Tailwind colors (`text-muted`, `bg-surface`, `text-accent`, …) and fonts (`font-sans`, `font-mono`).
 
 **Component classes**:
 
 | Group | Classes |
 |---|---|
 | Buttons | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.icon-btn`, `.link-btn` |
-| Forms | `.field` (inputs, selects, textareas, and dropdown triggers), `.field-label` (small uppercase), `.field-error`, `.field-hint`, `.form-section` (top border, used for groups like "Debit Card Info" and "Notes") |
+| Forms | `.field` (inputs, selects, textareas, and dropdown triggers; `select.field` hides the browser arrow and draws `--select-chevron` so it matches the custom dropdowns), `.field-label` (small uppercase), `.field-error`, `.field-hint`, `.form-section` (top border, used for groups like "Debit Card Info" and "Notes") |
 | Surfaces | `.card` (with a `rise-in` entry animation), `.logo-tile` (40×40), `.upload-tile`, `.drop-zone`, `.chip`, `.chip-danger`, `.tooltip` (shown on `.group:hover`) |
 | Overlays | `.modal-backdrop`, `.modal-panel`, `.dropdown-panel`, `.dropdown-item`, `.toast` |
 | Cards | `.expand` (grid-rows 0fr→1fr animation via `data-open`), `.detail-row`, `.detail-label`, `.key-stat*`, `.copyable`, `.card-body:empty::before` |
@@ -1090,8 +1095,6 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - Budgeting counts **yearly subscriptions and utilities in full in their billing month**, but **spreads yearly insurance premiums evenly (÷ 12)**.
 - Monthly recurring investments on a weekend move to the following Monday, while paydays never move.
 - Saved logins for utilities show no logo in the Password Manager, because the provider is free text and the type icon isn't looked up there.
-- `SubscriptionInfo` passes `paymentAccount.name` to the payment box, while `InsuranceInfo` passes `displayName` (which has the "Unnamed …" fallback).
-- The credit card stat is labeled "Total **Monthly** Credit Line", but it's simply the sum of credit lines.
 - The Investing page lives at `/accounts/investing`, but its API slug is `investment-accounts`.
 - Indentation: 2 spaces in `src/app/*` pages, 4 spaces in components, lib and api routes.
 
@@ -1121,7 +1124,7 @@ Existing items whose platform name equals the new name start showing the built-i
 ### Add a field to an existing category
 
 1. Add it to `initialFormState` in that category's `Add*Modal` (old items pick up the default when edited).
-2. Add the input. Use `inputClasses`, `.field-label`, and `onlyDigits` / `onlyDecimal` as needed.
+2. Add the input. Use `inputClasses`, `.field-label`, `AffixInput` for amounts and rates, and `onlyDigits` / `onlyDecimal` as needed.
 3. Show it in the matching `*Info` component (`DetailRow` hides empty values for free).
 4. If it affects totals, dates or the budget, update the page stats, Home's `buildPayments`, or `getMonthlyExpenses`.
 
@@ -1135,11 +1138,11 @@ Add it to `typesByType["loan-type"]` in Dropdown.jsx.
 
 ### Add a whole new category
 
-1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has logins and `UPLOAD_FOLDERS` if it has uploaded logos (Other Expenses has neither).
+1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has logins and `UPLOAD_FOLDERS` if it has uploaded logos (Other Expenses has neither). Add its name rule to [itemNames.js](src/lib/itemNames.js), keyed by the API slug.
 2. **Uploads**: if it has a new logo folder, create `public/<folder>/` and `public/<folder>/uploads/README.md`, and add the folder to `UPLOAD_PATH` in [uploads.js](src/lib/uploads.js).
 3. **Setup**: add it to `defaultInfo` in [scripts/setup.js](scripts/setup.js).
 4. **Platforms**: add a group to `platforms.json`, export it from `Dropdown.jsx`, and add an `optionsByType` entry.
-5. **UI**: create `AddXModal` (copy one; use `useSaveItem`, `LoginFields`, `Dropdown`), `XInfo` (use `InfoCard`), and `src/app/<group>/<slug>/page.js` (copy one; follow [§13](#13-anatomy-of-a-category-page)).
+5. **UI**: create `AddXModal` (copy one; use `useSaveItem`, `LoginFields`, `Dropdown`, `AffixInput`, `NotesField`, `FormActions`), `XInfo` (use `InfoCard`, with `itemName()` as the title), and `src/app/<group>/<slug>/page.js` (copy one; follow [§13](#13-anatomy-of-a-category-page)).
 6. **Nav**: add a link in `menus` in [NavBar.jsx](src/components/NavBar.jsx).
 7. **Password Manager**: add it to `categoryLabels`, `categoryPaths` and the `platforms` list in [passwords/page.js](src/app/passwords/page.js).
 8. **Home / Budgeting**, if it has dates or costs: extend `buildPayments` in [page.js](src/app/page.js) and `getMonthlyExpenses` plus `CATEGORIES` in budgeting.
@@ -1155,7 +1158,7 @@ Add it to `optionsByType` for platform lists, to `typesByType` for simple type l
 
 - **Client components by default.** Pages are `"use client"` and fetch from `/api` in `useEffect`. Server-only code (anything that imports `fs`) stays in `src/lib/infoStore.js` and `src/lib/uploads.js`, and is imported only by route handlers.
 - **`src/lib`** holds the store plus pure helpers usable anywhere. **`src/util`** holds small client fetch wrappers and lookups.
-- **Platforms are referenced by name; items are referenced by id.**
+- **Platforms are referenced by name; items are referenced by id.** Show an item's name with `itemName(category, item)`, never a hand-written `name || "Unnamed …"`, so it's called the same on every screen.
 - **Store strings from forms**; convert with `Number()` where needed.
 - **Every form field gets a default** in `initialFormState`.
 - **Comments explain *why* or describe a data shape**, in plain sentences, above the function or constant. Match that density; don't narrate obvious code.

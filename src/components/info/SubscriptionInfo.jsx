@@ -9,6 +9,7 @@ import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { logoFor } from "@/lib/logos";
+import { itemName } from "@/lib/itemNames";
 
 function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
     const paymentAccount = findPaymentAccount(subscription.paymentMethod, { creditCards, bankAccounts });
@@ -28,7 +29,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
         <InfoCard
             image={logoFor(subscriptions, subscription.subscription, subscription.customLogo)}
             imageAlt={subscription.subscription}
-            title={subscription.name || "Unnamed Subscription"}
+            title={itemName("subscriptions", subscription)}
             subtitle={subscription.subscription}
             stat={costStat}
             link={subscription.link}
@@ -41,7 +42,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
                 <PaymentMethodCard
                     image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
                     imageAlt={paymentAccount.bank}
-                    name={paymentAccount.name}
+                    name={paymentAccount.displayName}
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}
                 />
             )}

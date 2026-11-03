@@ -9,6 +9,7 @@ import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { logoFor } from "@/lib/logos";
 import { parseDateString } from "@/lib/recurringInvestments";
+import { itemName } from "@/lib/itemNames";
 
 export function amountRemaining(loan) {
     if (!loan.amountLoaned) return null;
@@ -86,7 +87,7 @@ function LoanInfo({ loan, onEdit }) {
         <InfoCard
             image={logoFor(loanProviders, loan.provider, loan.customLogo)}
             imageAlt={loan.provider}
-            title={loan.name || "Unnamed Loan"}
+            title={itemName("loans", loan)}
             subtitle={loan.provider}
             tags={[typeName].filter(Boolean)}
             stat={remainingStat}

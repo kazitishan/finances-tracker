@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { inputClasses, maskAll } from "@/lib/formUtils";
-import { CheckIcon, KeyIcon } from "@/components/ui/icons";
-import { EyeIcon, EyeOffIcon } from "@/components/info/RevealableDetailRow";
+import { CheckIcon, ChevronDownIcon, EyeIcon, EyeOffIcon, KeyIcon } from "@/components/ui/icons";
 
 function useSavedLogins(platform) {
     const [passwords, setPasswords] = useState([]);
@@ -69,7 +68,7 @@ function SavedLoginPicker({ platform, logins, selectedId, onSelect }) {
                             : `Use a saved ${platform} login (${logins.length})`}
                     </span>
                 </span>
-                <span className="text-muted text-xs shrink-0">▾</span>
+                <span className="shrink-0 text-muted"><ChevronDownIcon /></span>
             </button>
 
             {open && (
@@ -139,7 +138,7 @@ function LoginFields({ platform, username, password, onUsernameChange, onPasswor
             )}
             <div className="flex gap-2">
                 <label className="flex flex-col gap-1 flex-1 min-w-0">
-                    <span className="field-label">User Name</span>
+                    <span className="field-label">Username</span>
                     <input
                         type="text"
                         autoComplete="off"

@@ -10,6 +10,7 @@ import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
+import { itemName } from "@/lib/itemNames";
 
 function OtherExpenses() {
   const [expenses, setExpenses] = useState([]);
@@ -113,7 +114,7 @@ function OtherExpenses() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={expenses}
-        getLabel={(expense) => expense.name}
+        getLabel={(expense) => itemName("other-expenses", expense)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

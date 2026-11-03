@@ -11,6 +11,7 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { banks } from "@/components/dropdowns/Dropdown";
+import { itemName } from "@/lib/itemNames";
 
 const bankLogo = (name, cards) => logoFor(banks, name, cards.find((card) => card.customLogo)?.customLogo);
 
@@ -86,7 +87,7 @@ function CreditCards() {
 
   function paymentMethodName(card) {
     const account = bankAccounts.find((account) => account.id === card.paymentMethod);
-    return account ? account.name || "Unnamed Account" : null;
+    return account ? itemName("bank-accounts", account) : null;
   }
 
   const filters = useUrlFilters(cards, [
@@ -108,7 +109,7 @@ function CreditCards() {
         filters={filters}
         stats={[
           { label: "Average Age", value: averageAgeLabel },
-          { label: "Total Monthly Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
+          { label: "Total Credit Line", value: totalCreditLine > 0 ? formatCurrency(totalCreditLine, { cents: false }) : null },
           { label: "Total Annual Fees", value: totalAnnualFees > 0 ? formatCurrency(totalAnnualFees) : null },
         ]}
         onRearrange={() => {
@@ -143,7 +144,7 @@ function CreditCards() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={cards}
-        getLabel={(card) => card.name || card.bank || "Unnamed Card"}
+        getLabel={(card) => itemName("credit-cards", card)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

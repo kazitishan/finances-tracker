@@ -1,4 +1,5 @@
 import { ordinal } from "@/lib/formUtils";
+import { itemName } from "@/lib/itemNames";
 
 // A recurring investment is saved on its investment account as
 // { id, stock, amount, frequency, dayOfWeek, dayOfMonth, startDate, bankAccount }:
@@ -146,5 +147,5 @@ export function allRecurringInvestments(accounts) {
 }
 
 export function investmentName(investment, account) {
-    return `${investment.stock || "Unnamed Stock"} · ${account.name || "Unnamed Account"}`;
+    return `${investment.stock || "Unnamed Stock"} · ${itemName("investment-accounts", account)}`;
 }

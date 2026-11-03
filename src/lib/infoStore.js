@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { emptyIncomeStream } from "@/lib/incomeStreams";
+import { itemName } from "@/lib/itemNames";
 import { deleteUpload, isPendingUpload, saveUpload } from "@/lib/uploads";
 
 const INFO_PATH = path.join(process.cwd(), "private", "info.json");
@@ -35,6 +36,7 @@ const CATEGORY_KEYS = {
     utilities: "utilities",
     "other-expenses": "other expenses",
 };
+const CATEGORY_SLUGS = Object.fromEntries(Object.entries(CATEGORY_KEYS).map(([slug, key]) => [key, slug]));
 
 // The field that names each category's platform; saved logins are grouped by it, so a Chase
 // login entered on a bank account is offered again on a Chase credit card.
@@ -232,7 +234,7 @@ export function updateItem(category, id, updates, loginMode = null) {
     const sharing = passwordChanged ? itemsUsingLogin(info, oldLogin, id) : [];
 
     if (sharing.length > 0 && !loginMode) {
-        return { sharedWith: sharing.map(({ item }) => item.name || "Unnamed item") };
+        return { sharedWith: sharing.map(({ key, item }) => itemName(CATEGORY_SLUGS[key], item)) };
     }
 
     const saved = withSavedLogo(key, updated);
@@ -297,13 +299,12 @@ export function exportInfo() {
 // uploaded for its platform if it was added through "Other".
 export function listLogins() {
     const info = readInfo();
-    const slugs = Object.fromEntries(Object.entries(CATEGORY_KEYS).map(([slug, key]) => [key, slug]));
     return (info.passwords || []).map((login) => {
         const usedBy = itemsUsingLogin(info, login);
         return {
             ...login,
             customLogo: usedBy.find(({ item }) => item.customLogo)?.item.customLogo || "",
-            usedBy: usedBy.map(({ key, item }) => ({ id: item.id, name: item.name, category: slugs[key] })),
+            usedBy: usedBy.map(({ key, item }) => ({ id: item.id, name: itemName(CATEGORY_SLUGS[key], item), category: CATEGORY_SLUGS[key] })),
         };
     });
 }

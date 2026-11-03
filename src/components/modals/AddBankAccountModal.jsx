@@ -6,6 +6,9 @@ import LoginFields from "@/components/LoginFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
 import Dropdown from "@/components/dropdowns/Dropdown";
+import FormActions from "@/components/ui/FormActions";
+import NotesField from "@/components/ui/NotesField";
+import AffixInput from "@/components/ui/AffixInput";
 
 const initialFormState = {
     name: "",
@@ -54,243 +57,228 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved, on
 
     return (
         <Modal title={itemId ? "Edit Bank Account" : "Add Bank Account"} onClose={requestClose}>
-                <div className="flex flex-col gap-4">
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">Name</span>
-                        <input
-                            type="text"
-                            className={inputClasses}
-                            value={form.name}
-                            onChange={(e) => updateField("name", e.target.value)}
-                        />
-                    </label>
-
-                    <div className="flex flex-col gap-1">
-                        <span className="field-label">Bank</span>
-                        <Dropdown
-                            type="bank"
-                            value={form.bank}
-                            onChange={(bank) => updateField("bank", bank)}
-                            customLogo={form.customLogo}
-                            onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
-                        />
-                    </div>
-
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">Link</span>
-                        <input
-                            type="url"
-                            className={inputClasses}
-                            value={form.link}
-                            onChange={(e) => updateField("link", e.target.value)}
-                        />
-                    </label>
-
-                    <LoginFields
-
-                        platform={form.bank}
-                        username={form.loginUsername}
-                        password={form.loginPassword}
-                        onUsernameChange={(value) => updateField("loginUsername", value)}
-                        onPasswordChange={(value) => updateField("loginPassword", value)}
+            <div className="flex flex-col gap-4">
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">Name</span>
+                    <input
+                        type="text"
+                        className={inputClasses}
+                        value={form.name}
+                        onChange={(e) => updateField("name", e.target.value)}
                     />
+                </label>
 
-                    <div className="flex flex-col gap-1">
-                        <span className="field-label">Type</span>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    checked={form.type === "Checking"}
-                                    onChange={() => updateField("type", "Checking")}
-                                />
-                                Checking
-                            </label>
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="radio"
-                                    name="type"
-                                    checked={form.type === "Savings"}
-                                    onChange={() => updateField("type", "Savings")}
-                                />
-                                Savings
-                            </label>
-                        </div>
+                <div className="flex flex-col gap-1">
+                    <span className="field-label">Type</span>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                name="type"
+                                checked={form.type === "Checking"}
+                                onChange={() => updateField("type", "Checking")}
+                            />
+                            Checking
+                        </label>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                name="type"
+                                checked={form.type === "Savings"}
+                                onChange={() => updateField("type", "Savings")}
+                            />
+                            Savings
+                        </label>
                     </div>
-
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">Routing Number</span>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            className={inputClasses}
-                            value={form.routingNumber}
-                            onChange={(e) => updateField("routingNumber", onlyDigits(e.target.value))}
-                        />
-                    </label>
-
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">Account Number</span>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            className={inputClasses}
-                            value={groupFromRight(form.accountNumber)}
-                            onChange={(e) => updateField("accountNumber", onlyDigits(e.target.value))}
-                            onCopy={stripSpacesOnCopy}
-                        />
-                    </label>
-
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">APY</span>
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            className={inputClasses}
-                            value={form.apy}
-                            onChange={(e) => updateField("apy", onlyDecimal(e.target.value))}
-                        />
-                    </label>
-
-                    <label className="flex flex-col gap-1">
-                        <span className="field-label">Interest Payment Date</span>
-                        <select
-                            className={inputClasses}
-                            value={form.interestPaymentDate}
-                            onChange={(e) => updateField("interestPaymentDate", e.target.value)}
-                        >
-                            <option value="">--</option>
-                            {interestPaymentOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-
-                    {form.type === "Checking" && (
-                        <div className="form-section">
-                            <span className="field-label">Debit Card Info</span>
-
-                            <label className="flex flex-col gap-1">
-                                <span className="field-label">Cardholder</span>
-                                <input
-                                    type="text"
-                                    className={inputClasses}
-                                    value={form.cardholder}
-                                    onChange={(e) => updateField("cardholder", e.target.value)}
-                                />
-                            </label>
-
-                            <label className="flex flex-col gap-1">
-                                <span className="field-label">Card Number</span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    className={inputClasses}
-                                    value={groupFromRight(form.cardNumber)}
-                                    onChange={(e) => updateField("cardNumber", onlyDigits(e.target.value).slice(0, 16))}
-                                    onBlur={() => markTouched("cardNumber")}
-                                    onCopy={stripSpacesOnCopy}
-                                />
-                                {cardNumberError && (
-                                    <span className="field-error">Card number must be 16 digits</span>
-                                )}
-                            </label>
-
-                            <label className="flex flex-col gap-1">
-                                <span className="field-label">CVC</span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={3}
-                                    className={inputClasses}
-                                    value={form.cvc}
-                                    onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
-                                    onBlur={() => markTouched("cvc")}
-                                />
-                                {cvcError && (
-                                    <span className="field-error">CVC must be 3 digits</span>
-                                )}
-                            </label>
-
-                            <label className="flex flex-col gap-1">
-                                <span className="field-label">PIN</span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={4}
-                                    className={inputClasses}
-                                    value={form.pin}
-                                    onChange={(e) => updateField("pin", onlyDigits(e.target.value).slice(0, 4))}
-                                    onBlur={() => markTouched("pin")}
-                                />
-                                {pinError && (
-                                    <span className="field-error">PIN must be 4 digits</span>
-                                )}
-                            </label>
-
-                            <div className="flex gap-4">
-                                <label className="flex flex-col gap-1 flex-1">
-                                    <span className="field-label">Expiration Month</span>
-                                    <select
-                                        className={inputClasses}
-                                        value={form.expMonth}
-                                        onChange={(e) => updateField("expMonth", e.target.value)}
-                                    >
-                                        <option value="">--</option>
-                                        {months.map((month) => (
-                                            <option key={month.value} value={month.value}>
-                                                {month.value} - {month.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="flex flex-col gap-1 flex-1">
-                                    <span className="field-label">Expiration Year</span>
-                                    <select
-                                        className={inputClasses}
-                                        value={form.expYear}
-                                        onChange={(e) => updateField("expYear", e.target.value)}
-                                    >
-                                        <option value="">--</option>
-                                        {years.map((year) => (
-                                            <option key={year} value={year}>
-                                                {year}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="form-section">
-                        <span className="field-label">Notes</span>
-
-                        <textarea
-                            rows={4}
-                            className={inputClasses}
-                            value={form.notes}
-                            onChange={(e) => updateField("notes", e.target.value)}
-                        />
-                    </div>
-
-                    {prompt || (
-                        <div className="flex gap-2 mt-2">
-                            {itemId && (
-                                <button type="button" onClick={remove} disabled={submitting} className="btn btn-danger py-2.5">
-                                    Delete
-                                </button>
-                            )}
-                            <button type="button" onClick={() => save()} disabled={submitting} className="btn btn-primary flex-1 py-2.5">
-                                {itemId ? "Save Changes" : "Add"}
-                            </button>
-                        </div>
-                    )}
                 </div>
+
+                <div className="flex flex-col gap-1">
+                    <span className="field-label">Bank</span>
+                    <Dropdown
+                        type="bank"
+                        value={form.bank}
+                        onChange={(bank) => updateField("bank", bank)}
+                        customLogo={form.customLogo}
+                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                    />
+                </div>
+
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">Link</span>
+                    <input
+                        type="url"
+                        className={inputClasses}
+                        value={form.link}
+                        onChange={(e) => updateField("link", e.target.value)}
+                    />
+                </label>
+
+                <LoginFields
+                    platform={form.bank}
+                    username={form.loginUsername}
+                    password={form.loginPassword}
+                    onUsernameChange={(value) => updateField("loginUsername", value)}
+                    onPasswordChange={(value) => updateField("loginPassword", value)}
+                />
+
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">Routing Number</span>
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        className={inputClasses}
+                        value={form.routingNumber}
+                        onChange={(e) => updateField("routingNumber", onlyDigits(e.target.value))}
+                    />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">Account Number</span>
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        className={inputClasses}
+                        value={groupFromRight(form.accountNumber)}
+                        onChange={(e) => updateField("accountNumber", onlyDigits(e.target.value))}
+                        onCopy={stripSpacesOnCopy}
+                    />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">APY</span>
+                    <AffixInput
+                        suffix="%"
+                        inputMode="decimal"
+                        value={form.apy}
+                        onChange={(e) => updateField("apy", onlyDecimal(e.target.value))}
+                    />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                    <span className="field-label">Interest Payment Date</span>
+                    <select
+                        className={inputClasses}
+                        value={form.interestPaymentDate}
+                        onChange={(e) => updateField("interestPaymentDate", e.target.value)}
+                    >
+                        <option value="">--</option>
+                        {interestPaymentOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                {form.type === "Checking" && (
+                    <div className="form-section">
+                        <span className="field-label">Debit Card Info</span>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="field-label">Cardholder</span>
+                            <input
+                                type="text"
+                                className={inputClasses}
+                                value={form.cardholder}
+                                onChange={(e) => updateField("cardholder", e.target.value)}
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="field-label">Card Number</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                className={inputClasses}
+                                value={groupFromRight(form.cardNumber)}
+                                onChange={(e) => updateField("cardNumber", onlyDigits(e.target.value).slice(0, 16))}
+                                onBlur={() => markTouched("cardNumber")}
+                                onCopy={stripSpacesOnCopy}
+                            />
+                            {cardNumberError && (
+                                <span className="field-error">Card number must be 16 digits</span>
+                            )}
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="field-label">CVC</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={3}
+                                className={inputClasses}
+                                value={form.cvc}
+                                onChange={(e) => updateField("cvc", onlyDigits(e.target.value).slice(0, 3))}
+                                onBlur={() => markTouched("cvc")}
+                            />
+                            {cvcError && (
+                                <span className="field-error">CVC must be 3 digits</span>
+                            )}
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="field-label">PIN</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={4}
+                                className={inputClasses}
+                                value={form.pin}
+                                onChange={(e) => updateField("pin", onlyDigits(e.target.value).slice(0, 4))}
+                                onBlur={() => markTouched("pin")}
+                            />
+                            {pinError && (
+                                <span className="field-error">PIN must be 4 digits</span>
+                            )}
+                        </label>
+
+                        <div className="flex gap-4">
+                            <label className="flex flex-col gap-1 flex-1">
+                                <span className="field-label">Expiration Month</span>
+                                <select
+                                    className={inputClasses}
+                                    value={form.expMonth}
+                                    onChange={(e) => updateField("expMonth", e.target.value)}
+                                >
+                                    <option value="">--</option>
+                                    {months.map((month) => (
+                                        <option key={month.value} value={month.value}>
+                                            {month.value} - {month.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1 flex-1">
+                                <span className="field-label">Expiration Year</span>
+                                <select
+                                    className={inputClasses}
+                                    value={form.expYear}
+                                    onChange={(e) => updateField("expYear", e.target.value)}
+                                >
+                                    <option value="">--</option>
+                                    {years.map((year) => (
+                                        <option key={year} value={year}>
+                                            {year}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                )}
+
+                <NotesField value={form.notes} onChange={(notes) => updateField("notes", notes)} />
+
+                {prompt || (
+                    <FormActions
+                        isEditing={Boolean(itemId)}
+                        onSave={save}
+                        onDelete={remove}
+                        submitting={submitting}
+                    />
+                )}
+            </div>
         </Modal>
     );
 }

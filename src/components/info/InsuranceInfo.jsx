@@ -12,6 +12,7 @@ import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { logoFor } from "@/lib/logos";
+import { itemName } from "@/lib/itemNames";
 
 function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit }) {
     const typeName = typeLabel(insurance.type, insurance.otherType);
@@ -34,7 +35,7 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
         <InfoCard
             image={logoFor(allInsuranceProviders, insurance.provider, insurance.customLogo)}
             imageAlt={insurance.provider}
-            title={insurance.name || "Unnamed Insurance"}
+            title={itemName("insurance", insurance)}
             subtitle={insurance.provider}
             tags={[typeName].filter(Boolean)}
             stat={premiumStat}

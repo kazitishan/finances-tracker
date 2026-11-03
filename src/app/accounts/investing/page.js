@@ -12,6 +12,7 @@ import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { logoFor } from "@/lib/logos";
 import { allRecurringInvestments, investedInMonth } from "@/lib/recurringInvestments";
 import { brokers } from "@/components/dropdowns/Dropdown";
+import { itemName } from "@/lib/itemNames";
 
 const brokerLogo = (name, accounts) => logoFor(brokers, name, accounts.find((account) => account.customLogo)?.customLogo);
 
@@ -135,7 +136,7 @@ function InvestmentAccounts() {
         isOpen={isRearrangeOpen}
         onClose={() => setIsRearrangeOpen(false)}
         items={accounts}
-        getLabel={(account) => account.name || "Unnamed Account"}
+        getLabel={(account) => itemName("investment-accounts", account)}
         onReorder={handleReorder}
         onDelete={handleDelete}
       />

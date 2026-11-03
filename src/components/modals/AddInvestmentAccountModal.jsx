@@ -5,9 +5,10 @@ import LoginFields from "@/components/LoginFields";
 import RecurringInvestmentFields from "@/components/RecurringInvestmentFields";
 import Modal from "@/components/ui/Modal";
 import { useSaveItem } from "@/components/useSaveItem";
-import { investmentAccountTypes } from "@/components/info/InvestmentAccountInfo";
 import { inputClasses } from "@/lib/formUtils";
 import Dropdown from "@/components/dropdowns/Dropdown";
+import FormActions from "@/components/ui/FormActions";
+import NotesField from "@/components/ui/NotesField";
 
 const initialFormState = {
     name: "",
@@ -47,21 +48,10 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                     />
                 </label>
 
-                <label className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                     <span className="field-label">Type</span>
-                    <select
-                        className={inputClasses}
-                        value={form.type}
-                        onChange={(e) => updateField("type", e.target.value)}
-                    >
-                        <option value="">--</option>
-                        {investmentAccountTypes.map((type) => (
-                            <option key={type} value={type}>
-                                {type}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                    <Dropdown type="investment-type" value={form.type} onChange={(type) => updateField("type", type)} />
+                </div>
 
                 <div className="flex flex-col gap-1">
                     <span className="field-label">Broker</span>
@@ -85,7 +75,6 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                 </label>
 
                 <LoginFields
-
                     platform={form.broker}
                     username={form.loginUsername}
                     password={form.loginPassword}
@@ -98,28 +87,15 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                     onChange={(investments) => updateField("recurringInvestments", investments)}
                 />
 
-                <div className="form-section">
-                    <span className="field-label">Notes</span>
-
-                    <textarea
-                        rows={4}
-                        className={inputClasses}
-                        value={form.notes}
-                        onChange={(e) => updateField("notes", e.target.value)}
-                    />
-                </div>
+                <NotesField value={form.notes} onChange={(notes) => updateField("notes", notes)} />
 
                 {prompt || (
-                    <div className="flex gap-2 mt-2">
-                        {itemId && (
-                            <button type="button" onClick={remove} disabled={submitting} className="btn btn-danger py-2.5">
-                                Delete
-                            </button>
-                        )}
-                        <button type="button" onClick={() => save()} disabled={submitting} className="btn btn-primary flex-1 py-2.5">
-                            {itemId ? "Save Changes" : "Add"}
-                        </button>
-                    </div>
+                    <FormActions
+                        isEditing={Boolean(itemId)}
+                        onSave={save}
+                        onDelete={remove}
+                        submitting={submitting}
+                    />
                 )}
             </div>
         </Modal>

@@ -6,6 +6,7 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
+import { itemName } from "@/lib/itemNames";
 
 const utilityIcons = {
     Water: "/utilities/water.svg",
@@ -40,7 +41,7 @@ function UtilityInfo({ utility, onEdit }) {
         <InfoCard
             image={utilityIcon(utility.type)}
             imageAlt={typeName}
-            title={utility.name || "Unnamed Utility"}
+            title={itemName("utilities", utility)}
             subtitle={utility.provider}
             tags={[typeName].filter(Boolean)}
             stat={costStat}

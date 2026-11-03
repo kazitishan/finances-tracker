@@ -8,6 +8,7 @@ import { logoFor } from "@/lib/logos";
 import { maskLast4 } from "@/lib/formUtils";
 import { getBankAccounts } from "@/util/getBankAccounts";
 import { getPaymentMethods } from "@/util/getPaymentMethods";
+import { itemName } from "@/lib/itemNames";
 
 export const banks = platforms.bank;
 export const brokers = platforms.broker;
@@ -24,6 +25,7 @@ export function insuranceProvidersFor(insuranceType) {
 
 const typesByType = {
     "insurance-type": ["Health", "Auto", "Life", "Home", "Other"],
+    "investment-type": ["Brokerage", "Roth IRA", "401K"],
     "loan-type": ["Mortgage", "Student Loans", "Personal Loans", "Business Loans", "Auto Loan", "Other"],
     "utility-type": ["Water", "Energy", "Gas", "Internet", "Phone", "Cable TV", "Trash", "Other"],
     "income-type": ["Full-time Job", "Part-time Job", "Contract", "Freelancing", "Gig Work", "Other"],
@@ -66,6 +68,7 @@ function placeholders(type) {
 // "bank-account": Dropdown of the user's bank accounts.
 // "payment-method": Dropdown of the user's credit and debit cards.
 // "insurance-type": Dropdown of the insurance types (Health, Auto, Life, Home, Other).
+// "investment-type": Dropdown of the investment account types (Brokerage, Roth IRA, 401K).
 // "loan-type": Dropdown of the loan types (Mortgage, Student Loans, Personal Loans, Business Loans, Auto Loan, Other).
 // "utility-type": Dropdown of the utility types (Water, Energy, Gas, Internet, Phone, Cable TV, Trash, Other).
 // "income-type": Dropdown of the income types (Full-time Job, Part-time Job, Contract, Freelancing, Gig Work, Other).
@@ -120,7 +123,7 @@ function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, other
     if (type === "bank-account") {
         const options = bankAccounts.map((account) => ({
             value: account.id,
-            name: account.name,
+            name: itemName("bank-accounts", account),
             detail: account.accountNumber ? maskLast4(account.accountNumber) : null,
             image: logoFor(banks, account.bank, account.customLogo),
             keywords: account.bank,

@@ -1,6 +1,7 @@
 "use client";
 
 import Dropdown from "@/components/dropdowns/Dropdown";
+import AffixInput from "@/components/ui/AffixInput";
 import { PlusIcon } from "@/components/ui/icons";
 import { dueDates, inputClasses, onlyDecimal } from "@/lib/formUtils";
 import {
@@ -46,17 +47,13 @@ function RecurringInvestment({ investment, onChange, onRemove }) {
                 </label>
                 <label className="flex w-32 shrink-0 flex-col gap-1">
                     <span className="field-label">Amount</span>
-                    <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
-                        <input
-                            type="text"
-                            inputMode="decimal"
-                            className={`${inputClasses} pl-6`}
-                            placeholder="0.00"
-                            value={investment.amount}
-                            onChange={(e) => updateField("amount", onlyDecimal(e.target.value))}
-                        />
-                    </div>
+                    <AffixInput
+                        prefix="$"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={investment.amount}
+                        onChange={(e) => updateField("amount", onlyDecimal(e.target.value))}
+                    />
                 </label>
             </div>
 

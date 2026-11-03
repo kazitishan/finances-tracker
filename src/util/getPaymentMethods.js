@@ -1,4 +1,5 @@
 import { getBankAccounts } from "@/util/getBankAccounts";
+import { itemName } from "@/lib/itemNames";
 
 // Every card the user can pay with: their credit cards and the debit cards on their bank accounts.
 // A payment method's `value` is `credit:<card id>` or `debit:<bank account id>`.
@@ -7,7 +8,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
         .filter((card) => card.cardNumber)
         .map((card) => ({
             value: `credit:${card.id}`,
-            name: card.name || "Unnamed Card",
+            name: itemName("credit-cards", card),
             bank: card.bank,
             customLogo: card.customLogo,
             last4: card.cardNumber,
@@ -18,7 +19,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
         .filter((account) => account.cardNumber)
         .map((account) => ({
             value: `debit:${account.id}`,
-            name: account.name || "Unnamed Account",
+            name: itemName("bank-accounts", account),
             bank: account.bank,
             customLogo: account.customLogo,
             last4: account.cardNumber,
