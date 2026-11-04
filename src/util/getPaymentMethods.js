@@ -10,7 +10,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
             value: `credit:${card.id}`,
             name: itemName("credit-cards", card),
             bank: card.bank,
-            customLogo: card.customLogo,
+            img: card.img,
             last4: card.cardNumber,
             badge: "Credit",
         }));
@@ -21,7 +21,7 @@ export function buildPaymentMethods({ creditCards = [], bankAccounts = [] }) {
             value: `debit:${account.id}`,
             name: itemName("bank-accounts", account),
             bank: account.bank,
-            customLogo: account.customLogo,
+            img: account.img,
             last4: account.cardNumber,
             badge: "Debit",
         }));

@@ -121,15 +121,16 @@ Consequences:
 ├── scripts/setup.js            Creates / migrates private/info.json
 ├── private/
 │   ├── README.md               (tracked)
-│   └── info.json               ALL USER DATA (git-ignored)
-├── public/                     Logos, served from "/"
-│   ├── banks/*.png             + uploads/
-│   ├── investment/*.png        + uploads/
-│   ├── loans/*.png             + uploads/
-│   ├── subscriptions/*.png     + uploads/
-│   ├── insurance/*.png         + uploads/, health/*.png, health/uploads/
-│   │   (each uploads/ keeps only its README.md in git; uploaded logos are git-ignored)
-│   ├── utilities/*.svg         One icon per utility type (no uploads)
+│   ├── info.json               ALL USER DATA (git-ignored)
+│   └── uploads/                Images uploaded through "Other", served at /uploads/<file>
+│                               (only its README.md is in git; uploads are git-ignored)
+├── public/                     Built-in logos, served from "/"
+│   ├── banks/*.png
+│   ├── investment/*.png
+│   ├── loans/*.png
+│   ├── subscriptions/*.png
+│   ├── insurance/*.png         + health/*.png
+│   ├── utilities/*.svg         One icon per utility type
 │   └── income/suitcase.svg     Paycheck picture on Home
 └── src/
     ├── app/                    Routes (App Router)
@@ -142,6 +143,7 @@ Consequences:
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
     │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
+    │   ├── uploads/[file]/route.js   GET an uploaded image from private/uploads
     │   └── api/
     │       ├── [category]/route.js        GET list, POST add, PUT reorder
     │       ├── [category]/[id]/route.js   PUT update, DELETE
@@ -167,12 +169,12 @@ Consequences:
     ├── data/platforms.json     Built-in platform names → logo paths
     ├── lib/                    Server store (infoStore, uploads) + pure helpers
     │   ├── infoStore.js        THE data layer (server-only, uses fs)
-    │   ├── uploads.js          Logo file writes/deletes (server-only, uses fs)
+    │   ├── uploads.js          Uploaded image writes/reads/deletes in private/uploads (server-only, uses fs)
     │   ├── formUtils.js        Formatting, masking, input sanitizing, date helpers
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
     │   ├── itemNames.js        itemName(): what an item is called on every screen
-    │   └── logos.js            logoFor()
+    │   └── logos.js            builtInLogo(), utilityIcon(), imageOf()
     └── util/                   Client-side fetch helpers + pure lookups
         ├── getBankAccounts.js, getPaymentMethods.js, getUserInfo.js, saveUserInfo.js
         ├── getMonthlyExpenses.js   This month's costs per category (for Budgeting)
@@ -199,8 +201,8 @@ Consequences:
  │        Budgeting ──────────────────┼── /user-info ─▶│        └─────────┬──────────┘    │
  │        Profile ────────────────────┼── /profile ───▶│                  │               │
  └────────────────────────────────────┘                │                  ▼               │
-                                                       │        lib/uploads.js ──────────▶ public/**/uploads/*.png|jpg
- next/image ◀──────────── static files ────────────────┤                                  │
+                                                       │        lib/uploads.js ──────────▶ private/uploads/*.png|jpg
+ next/image ◀──── public/ files, /uploads/<file> ──────┤                                  │
                                                        └──────────────────────────────────┘
 ```
 
@@ -269,7 +271,7 @@ Every category item shares these fields:
 | `id` | UUID, set by the server |
 | `name` | User's label for it (optional; [`itemName()`](src/lib/itemNames.js) falls back to the platform name, then "Unnamed …", everywhere the item is shown) |
 | *platform field* | `bank` / `broker` / `subscription` / `provider` (see table below) |
-| `customLogo` | `""`, a saved upload path like `/banks/uploads/my-bank-1a2b3c4d.png`, or (only in transit) a `data:` URL |
+| `img` | The item's picture, **set by the server on every save** (see [§10](#10-logos-built-in-platforms-and-other-uploads)): the platform's built-in logo like `/banks/sofi.png`, an upload like `/uploads/my-bank-1a2b3c4d.png`, `""` for an Other platform with no upload, or for utilities the type icon. Only in transit from a form can it be a `data:` URL |
 | `link` | URL opened by the card's **Open** button |
 | `loginUsername`, `loginPassword` | Login for the platform (feeds the password manager) |
 | `notes` | Free text, shown with `whitespace-pre-wrap` |
@@ -284,9 +286,9 @@ The **platform field** per category (`PLATFORM_FIELDS` in infoStore):
 | loans | `provider` | banks + `platforms["loan-provider"]`, sorted |
 | investment accounts | `broker` | `platforms.broker` |
 | insurance | `provider` | `platforms.healthInsurance` if type is Health, else `platforms.insurance` |
-| utilities | `provider` | **none**: a plain text field. Utilities have no `customLogo`; their picture comes from their type |
+| utilities | `provider` | **none**: a plain text field. Utilities can't upload a picture; their `img` is their type's icon |
 
-Other expenses have no platform field, logo or login, so they aren't in `PLATFORM_FIELDS` or `UPLOAD_FOLDERS`, and none of the shared fields above except `id`, `name` and `link` apply. Nothing about them reaches the Password Manager.
+Other expenses have no platform field, picture or login, so they aren't in `PLATFORM_FIELDS`, and none of the shared fields above except `id`, `name` and `link` apply. Nothing about them reaches the Password Manager.
 
 **Bank account** ([AddBankAccountModal.jsx](src/components/modals/AddBankAccountModal.jsx))
 
@@ -401,7 +403,7 @@ $ = `money` (decimal input with a `$` prefix, shown as whole dollars). † = `co
 | `otherType` | free text, used when `type === "Other"` |
 | `cost`, `billingCycle`, `billingMonth`, `billingDay` | same meaning as the subscription billing fields ("Payment Month" / "Payment Day" in the form) |
 
-There's no `customLogo` and no payment method. The card's picture is `utilityIcon(type)` from [UtilityInfo.jsx](src/components/info/UtilityInfo.jsx):
+There's no upload and no payment method. The server sets `img` to `utilityIcon(type)` from [logos.js](src/lib/logos.js):
 
 | Type | Icon |
 |---|---|
@@ -483,6 +485,7 @@ The form can't be saved without a name and an amount above 0 (or with the same d
 | No `"user-info"` | `withUserInfoFirst()` (and `setup.js`) | Adds an empty one, placed first |
 | No `"passwords"` key | `addPasswordsKey()` | Builds `passwords` from every item's login, then writes the file |
 | An income stream shaped `{ "<name>": <monthly amount> }` | `migrateIncomeStreams()` | Replaces it with a full stream with `frequency: "monthly"` and that amount as `paycheckAmount`, then writes the file. It has no `dayOfMonth` until it's next edited, so it counts in the budget but isn't on Home |
+| An item in a `PLATFORM_FIELDS` category with no `img` | `migrateImages()` | Adds `img` right after its platform field (after `type` for utilities): the built-in logo, the type icon, or for an Other platform its old `customLogo` upload, moved from `public/<folder>/uploads/` to `private/uploads/` (`""` if there was none). Drops `customLogo`, then writes the file |
 
 ---
 
@@ -501,15 +504,16 @@ Internal tables:
 | `DEFAULT_USER_INFO`, `DEFAULT_INFO` | Empty document shapes |
 | `CATEGORY_KEYS` | URL slug → storage key |
 | `PLATFORM_FIELDS` | storage key → the field naming the platform |
-| `UPLOAD_FOLDERS` | storage key → `public/` subfolder for uploaded logos (insurance picks `insurance/health` when `type === "Health"`). Utilities have no entry because they never carry a `customLogo` |
 
 Internal helpers:
 
 | Function | What it does |
 |---|---|
-| `readInfo()` | Creates the file if missing; parses it; puts user-info first; adds `passwords` if missing; migrates old income streams |
+| `readInfo()` | Creates the file if missing; parses it; puts user-info first; adds `passwords` if missing; migrates old income streams and adds missing `img`s |
 | `writeInfo(info)` | `mkdir -p private/`, writes JSON with user-info first |
-| `withSavedLogo(key, item)` | If `item.customLogo` is a `data:` URL, saves it via `saveUpload` and replaces it with the public path |
+| `imageFor(key, item)` / `withImage(key, item)` | Work out `img` (see [§10](#10-logos-built-in-platforms-and-other-uploads)), saving a `data:` URL via `saveUpload`. `withImage` leaves categories outside `PLATFORM_FIELDS` (other expenses) alone |
+| `insertAfter(object, afterKey, key, value)` | Copy of `object` with `key` placed right after `afterKey`, so migrated items keep a readable key order |
+| `migrateImages(info)` | See [Migrations](#migrations-automatic-on-read) |
 | `loginOf(key, item)` | `{ platform: item[platformField], username: item.loginUsername, password: item.loginPassword }` |
 | `sameLogin(a, b)` | All three of platform, username and password are equal |
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
@@ -523,15 +527,15 @@ Exports:
 |---|---|---|
 | `getCategoryKey(slug)` | internal | Throws `Unknown category: <slug>` for anything not in `CATEGORY_KEYS` |
 | `listItems(slug)` | `GET /api/[category]` | The array, in stored order |
-| `addItem(slug, item)` | `POST /api/[category]` | Assigns an id, saves the logo, appends, saves the login |
+| `addItem(slug, item)` | `POST /api/[category]` | Assigns an id, sets `img` (saving an upload), appends, saves the login |
 | `updateItem(slug, id, updates, loginMode)` | `PUT /api/[category]/[id]` | Full replace, plus the shared-password flow; returns `{ item }`, `{ item: null }` or `{ sharedWith }` |
-| `deleteItem(slug, id)` | `DELETE /api/[category]/[id]` | Deletes its uploaded logo file, removes the item. **Doesn't** touch saved logins |
+| `deleteItem(slug, id)` | `DELETE /api/[category]/[id]` | Deletes its uploaded image, removes the item. **Doesn't** touch saved logins |
 | `reorderItems(slug, ids)` | `PUT /api/[category]` | Rebuilds the array in `ids` order. **Items not listed in `ids` are dropped** |
 | `getUserInfo()` / `updateUserInfo(v)` | `/api/user-info` | Update validates the shape, returns `null` if invalid |
 | `getProfile()` / `updateProfile(v)` | `/api/profile` | Get falls back to `{ name: "" }`; update validates, trims the name, returns `null` if invalid or the name is blank |
 | `importInfo(data)` | `POST /api/import` | Validates, then replaces everything (see [§8](#8-api-reference)) |
 | `exportInfo()` | `GET /api/download` | Pretty JSON string of the whole file |
-| `listLogins()` | `GET /api/passwords` | Saved logins, each with `customLogo` and `usedBy` attached |
+| `listLogins()` | `GET /api/passwords` | Saved logins, each with `img` (from the first item using it that has one) and `usedBy` attached |
 | `updateLogin(id, {username, password})` | `PUT /api/passwords/[id]` | Rewrites the login on every item using it; merges duplicates |
 | `deleteLogin(id)` | `DELETE /api/passwords/[id]` | Clears the login fields on every item using it, removes the saved login |
 
@@ -539,11 +543,16 @@ Exports:
 
 | Export | Behavior |
 |---|---|
-| `isPendingUpload(v)` | `true` if `v` is a string starting with `data:` |
-| `saveUpload(folder, name, dataUrl)` | Accepts only `data:image/(png\|jpeg);base64,…`. Decodes it, rejects anything over **5 MB**, checks the **magic bytes** (PNG signature or JPEG `FF D8 FF`, not just the MIME label), and builds `/<folder>/uploads/<slug(name) or "logo">-<8 hex>.<png\|jpg>`. That path must match the `UPLOAD_PATH` allow-list regex. Writes under `public/` and returns the public path |
-| `deleteUpload(path)` | Deletes only paths matching `UPLOAD_PATH`, so built-in logos and empty values are never touched |
+Uploads live in `private/uploads/`, which Next doesn't serve, so [src/app/uploads/[file]/route.js](src/app/uploads/[file]/route.js) serves them at `/uploads/<file>`: `readUpload`, then the bytes with their content type and `Cache-Control: private, max-age=31536000, immutable` (file names are never reused), or `404`. That URL is what items store in `img`, and `next/image` optimizes it like any local image.
 
-`UPLOAD_PATH` = `^/(banks|investment|loans|subscriptions|insurance|insurance/health)/uploads/[a-z0-9-]+\.(png|jpg)$`. Adding an upload folder means updating this regex.
+| Export | Behavior |
+|---|---|
+| `isPendingUpload(v)` | `true` if `v` is a string starting with `data:` |
+| `isUpload(v)` | `true` if `v` matches `UPLOAD_PATH`, `^/uploads/[a-z0-9-]+\.(png\|jpg)$` |
+| `saveUpload(name, dataUrl)` | Accepts only `data:image/(png\|jpeg);base64,…`. Decodes it, rejects anything over **5 MB**, checks the **magic bytes** (PNG signature or JPEG `FF D8 FF`, not just the MIME label), writes `private/uploads/<slug(name) or "logo">-<8 hex>.<png\|jpg>` and returns `/uploads/<that file>` |
+| `deleteUpload(img)` | Deletes only paths matching `UPLOAD_PATH`, so built-in logos and empty values are never touched |
+| `readUpload(file)` | `{ bytes, contentType }`, or `null` if `file` isn't a bare `[a-z0-9-]+.(png\|jpg)` name (no slashes, so no path traversal) or doesn't exist |
+| `moveLegacyUpload(publicPath)` | For the migration: moves an old `public/<folder>/uploads/<file>` into `private/uploads/` and returns `/uploads/<file>`, or `""` if it isn't one or the file is gone |
 
 ---
 
@@ -554,11 +563,11 @@ All routes live under `src/app/api`. Bodies are JSON. In Next 16, `params` is a 
 | Method & path | Body / query | Success | Errors |
 |---|---|---|---|
 | `GET /api/:category` | | `200` array of items | unknown category → thrown → **500** |
-| `POST /api/:category` | item fields (no id) | `201` saved item (with `id`, saved `customLogo` path) | bad upload → **500** |
+| `POST /api/:category` | item fields (no id) | `201` saved item (with `id` and its `img`) | bad upload → **500** |
 | `PUT /api/:category` | `{ "order": [id, …] }` | `200` reordered array | |
 | `PUT /api/:category/:id` | full item; optional `?login=update-all\|new` | `200` saved item | `404` not found; **`409 { sharedWith: [names] }`** when a shared password changed and no `login` mode was given |
 | `DELETE /api/:category/:id` | | `200 { ok: true }` (even if the id didn't exist) | |
-| `GET /api/passwords` | | `200` `[{ id, platform, username, password, customLogo, usedBy: [{ id, name, category }] }]` (`category` is the URL slug) | |
+| `GET /api/passwords` | | `200` `[{ id, platform, username, password, img, usedBy: [{ id, name, category }] }]` (`category` is the URL slug) | |
 | `PUT /api/passwords/:id` | `{ username, password }` | `200` updated login | `404` |
 | `DELETE /api/passwords/:id` | | `200 { ok: true }` | |
 | `GET /api/user-info` | | `200` user-info object | |
@@ -568,6 +577,7 @@ All routes live under `src/app/api`. Bodies are JSON. In Next 16, `params` is a 
 | `GET /api/download` | | `200` file attachment `info.json`, `Cache-Control: no-store` | |
 | `POST /api/import` | an entire info.json | `200 { ok: true }` | `400 Invalid JSON` / `400 Not an info.json file` |
 | `GET /api/keep-alive` | | `text/event-stream` that never ends | |
+| `GET /uploads/:file` | | `200` the uploaded image (not under `/api`; see [§7](#srclibuploadsjs)) | `404` |
 
 Static routes (`passwords`, `user-info`, `profile`, `download`, `import`, `keep-alive`) take precedence over the dynamic `[category]` segment.
 
@@ -656,27 +666,40 @@ allInsuranceProviders    // health + other
 insuranceProvidersFor(type)  // Health → health list, else the other list
 ```
 
-### Resolving a logo: [logos.js](src/lib/logos.js)
+### An item's picture: `img`
+
+Every item in a category with a platform stores its picture in `img`, and **the server always sets it** (`imageFor` in infoStore), whatever the form sent:
+
+1. Utilities → `utilityIcon(type)`.
+2. A built-in platform → its logo from `builtInLogo(key, name)`, e.g. `"SoFi"` → `/banks/sofi.png`.
+3. Otherwise (added through Other): a `data:` URL from the form is saved as an upload; an existing `/uploads/…` path is kept; anything else becomes `""`.
+
+On update, if `img` changed, the previous upload is deleted (built-in paths are never deleted). Deleting an item deletes its upload. Other expenses have no `img`.
+
+[logos.js](src/lib/logos.js) is shared by the server and the browser:
 
 ```js
-logoFor(options, name, customLogo)
-// → the built-in image if `name` is in `options`, else `customLogo`, else undefined
+builtInLogo(storageKey, name)  // PLATFORM_OPTIONS[storageKey] lookup; loans check banks + loan-provider,
+                               // insurance checks both insurance lists so a type change keeps the logo
+utilityIcon(type)              // the utility type icons
+imageOf(items)                 // first item's img that has one; filter menus use it for an option's image
 ```
 
-A platform's **name is its key**. Items store the name string (e.g. `"Chase"`), not an id. Renaming a platform in `platforms.json` will orphan existing items' logos.
+Pages and cards just show `item.img` (and `paymentAccount.img`, `method.img` for payment methods). Dropdown option lists still come from `platforms.json` through Dropdown.jsx.
+
+A platform's **name is its key**. Items store the name string (e.g. `"Chase"`), not an id. Because `img` is stored, changing `platforms.json` (renaming a platform, moving its image, or adding a platform someone already added through Other) only reaches an existing item the next time it's saved.
 
 ### The "Other" flow
 
 1. [LogoDropdown](src/components/dropdowns/LogoDropdown.jsx) always ends its list with **Other**, unless `allowOther={false}`. If your search found nothing, the search text carries over as the new platform's name, and the dropdown shows *Other · "search text"*.
 2. In Other mode it shows an [ImageUploadButton](src/components/ui/ImageUploadButton.jsx) next to a name input.
-3. The button opens [ImageUploadDialog](src/components/modals/ImageUploadDialog.jsx), which accepts drag-and-drop anywhere on the overlay or a file picker. It allows PNG/JPEG up to 5 MB, checked on the client, and reads the file into a **data URL**, stored in the form's `customLogo`.
-4. On save, the server's `withSavedLogo` validates the data URL and writes it to `public/<folder>/uploads/`. The item stores the path.
-5. Picking a listed platform again sets `customLogo` to `""`.
-6. On update, if `customLogo` changed, the previous upload file is deleted. On item delete, its upload file is deleted.
+3. The button opens [ImageUploadDialog](src/components/modals/ImageUploadDialog.jsx), which accepts drag-and-drop anywhere on the overlay or a file picker. It allows PNG/JPEG up to 5 MB, checked on the client, and reads the file into a **data URL**, stored in the form's `img` (the modals pass `customLogo={form.img}` to `Dropdown`).
+4. On save, the server validates the data URL and writes it to `private/uploads/`. The item stores `/uploads/<file>`.
+5. Picking a listed platform sets the form's `img` to `""` (the server then fills in the built-in logo). Switching from a listed platform to Other also clears it, so the old logo isn't shown as the upload.
 
 Whether a saved item is in Other mode is inferred on open: if `value` is set but isn't one of the options, the dropdown starts in Other mode.
 
-Filter menus and the Password Manager show an uploaded logo by finding **any** item with that platform that has a `customLogo`.
+Filter menus show an option's image with `imageOf(items)`, and the Password Manager uses the `img` of the first item signed in with the login.
 
 ---
 
@@ -1014,7 +1037,7 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 
 | `type` | Renders | Value stored |
 |---|---|---|
-| `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`) | platform name |
+| `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`: the form's `img`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
 | `insurance-type`, `investment-type`, `loan-type`, `utility-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
@@ -1099,8 +1122,8 @@ The data model is "it's my own machine." Be aware of what that means:
 - **No authentication on the API.** Anything that can reach the server's port can read all data (`GET /api/download`), overwrite it (`POST /api/import`), or stop the server.
 - **Download Info exports everything**, including passwords, as a plain file.
 - **Masking is cosmetic.** Values are masked in the UI, but the full values are in the API responses and in browser memory.
-- `private/info.json` and uploaded logos are **git-ignored**. Keep it that way, and never commit a real `info.json`.
-- Uploads are restricted: PNG/JPEG only, verified by magic bytes, ≤ 5 MB, and written only to allow-listed folders with server-generated filenames, so there's no path traversal from user input.
+- `private/info.json` and `private/uploads/*` are **git-ignored**. Keep it that way, and never commit a real `info.json`.
+- Uploads are restricted: PNG/JPEG only, verified by magic bytes, ≤ 5 MB, and written only to `private/uploads/` with server-generated filenames. `/uploads/:file` only serves bare `[a-z0-9-]+.(png|jpg)` names from that folder, so there's no path traversal from user input.
 - External links open with `rel="noopener noreferrer"`.
 - `next/font/google` self-hosts the fonts, so the browser makes no third-party requests at runtime.
 
@@ -1115,7 +1138,8 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - **Unknown categories cause a 500, not a 404**, because `getCategoryKey` throws and route handlers don't catch it. The same goes for a rejected upload (the client shows "Couldn't save").
 - **`PUT /api/:category` with an incomplete `order` deletes the missing items.**
 - `DELETE` returns `ok` even for ids that don't exist.
-- Imported items aren't validated. The upload files themselves aren't part of Download/Import, so an import on another machine can reference logos that don't exist there.
+- Imported items aren't validated. The upload files themselves aren't part of Download/Import, so an import on another machine can reference uploads that don't exist there.
+- `img` is stored, not derived, so edits to `platforms.json` only reach an item when it's next saved (see [§10](#10-logos-built-in-platforms-and-other-uploads)).
 - `process.cwd()` decides where data lives, so the server must start from the project root.
 
 **Hidden stale fields**
@@ -1126,7 +1150,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - Credit card `paymentMethod` is a **bare bank account id**, while subscription and insurance `paymentMethod` is **`credit:`/`debit:`-prefixed**. They're different dropdown types under the same field name.
 - Budgeting counts **yearly subscriptions and utilities in full in their billing month**, but **spreads yearly insurance premiums evenly (÷ 12)**.
 - Monthly recurring investments on a weekend move to the following Monday, while paydays never move.
-- Saved logins for utilities show no logo in the Password Manager, because the provider is free text and the type icon isn't looked up there.
+- Saved logins for utilities show the utility's **type icon** in the Password Manager, because the login takes its picture from an item's `img`.
 - The Investing page lives at `/accounts/investing`, but its API slug is `investment-accounts`.
 - Indentation: 2 spaces in `src/app/*` pages, 4 spaces in components, lib and api routes.
 
@@ -1151,7 +1175,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 1. Add the logo PNG to the right `public/` folder (e.g. `public/subscriptions/notion.png`).
 2. Add `{ "name": "Notion", "image": "/subscriptions/notion.png" }` to the matching group in [platforms.json](src/data/platforms.json).
 
-Existing items whose platform name equals the new name start showing the built-in logo automatically, because `logoFor` prefers built-ins over `customLogo`.
+New items get the logo in `img` when saved. Existing items with that name (added through Other) keep their old `img` until they're edited and saved; their upload is deleted then.
 
 ### Add a field to an existing category
 
@@ -1170,13 +1194,13 @@ Add it to `typesByType["loan-type"]` in Dropdown.jsx.
 
 ### Add a whole new category
 
-1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has logins and `UPLOAD_FOLDERS` if it has uploaded logos (Other Expenses has neither). Add its name rule to [itemNames.js](src/lib/itemNames.js), keyed by the API slug.
-2. **Uploads**: if it has a new logo folder, create `public/<folder>/` and `public/<folder>/uploads/README.md`, and add the folder to `UPLOAD_PATH` in [uploads.js](src/lib/uploads.js).
+1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has a platform (that also gives its items an `img`; Other Expenses has none). Add its name rule to [itemNames.js](src/lib/itemNames.js), keyed by the API slug.
+2. **Logos**: put its built-in logos in a new `public/<folder>/`, and add its storage key to `PLATFORM_OPTIONS` in [logos.js](src/lib/logos.js). Uploads need nothing: they all go to `private/uploads/`.
 3. **Setup**: add it to `defaultInfo` in [scripts/setup.js](scripts/setup.js).
 4. **Platforms**: add a group to `platforms.json`, export it from `Dropdown.jsx`, and add an `optionsByType` entry.
 5. **UI**: create `AddXModal` (copy one; use `useSaveItem`, `LoginFields`, `Dropdown`, `AffixInput`, `NotesField`, `FormActions`), `XInfo` (use `InfoCard`, with `itemName()` as the title), and `src/app/<group>/<slug>/page.js` (copy one; follow [§13](#13-anatomy-of-a-category-page)).
 6. **Nav**: add a link in `menus` in [NavBar.jsx](src/components/NavBar.jsx).
-7. **Password Manager**: add it to `categoryLabels`, `categoryPaths` and the `platforms` list in [passwords/page.js](src/app/passwords/page.js).
+7. **Password Manager**: add it to `categoryLabels` and `categoryPaths` in [passwords/page.js](src/app/passwords/page.js).
 8. **Home / Budgeting**, if it has dates or costs: extend `buildPayments` in [page.js](src/app/page.js) and `getMonthlyExpenses` plus `CATEGORIES` in budgeting.
 9. **Import**: nothing to do. `importInfo` reads list keys from `DEFAULT_INFO` and `CATEGORY_KEYS`.
 

@@ -7,12 +7,9 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
-import { banks, brokers, loanProviders, subscriptions as subscriptionCompanies, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { daysUntil, formatCurrency, formatDaysUntil, matchesSearch, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
 import { isEstimated, nextPayday } from "@/lib/incomeStreams";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
-import { utilityIcon } from "@/components/info/UtilityInfo";
 import { getUserInfo } from "@/util/getUserInfo";
 import { itemName } from "@/lib/itemNames";
 
@@ -38,7 +35,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       type: "Credit Cards",
       href: "/expenses/credit-cards",
       name: itemName("credit-cards", card),
-      image: logoFor(banks, card.bank, card.customLogo),
+      image: card.img,
       date: nextOccurrence(card.dueDate),
     }));
 
@@ -50,7 +47,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       type: "Annual Fees",
       href: "/expenses/credit-cards",
       name: itemName("credit-cards", card),
-      image: logoFor(banks, card.bank, card.customLogo),
+      image: card.img,
       amount: formatCurrency(card.annualFee),
       date: nextOccurrence(card.renewalDay, card.renewalMonth),
     }));
@@ -62,7 +59,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       type: "Subscriptions",
       href: "/expenses/subscriptions",
       name: itemName("subscriptions", subscription),
-      image: logoFor(subscriptionCompanies, subscription.subscription, subscription.customLogo),
+      image: subscription.img,
       amount: subscription.cost ? formatCurrency(subscription.cost) : null,
       date: subscription.billingCycle === "year"
         ? nextOccurrence(subscription.billingDay, subscription.billingMonth)
@@ -75,7 +72,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     type: "Interest Payments",
     href: "/accounts/bank-accounts",
     name: itemName("bank-accounts", account),
-    image: logoFor(banks, account.bank, account.customLogo),
+    image: account.img,
     date: nextInterestDate(account.interestPaymentDate),
   }));
 
@@ -85,7 +82,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     type: "Loans",
     href: "/expenses/loans",
     name: itemName("loans", loan),
-    image: logoFor(loanProviders, loan.provider, loan.customLogo),
+    image: loan.img,
     amount: loan.monthlyPayment ? formatCurrency(loan.monthlyPayment) : null,
     date: nextOccurrence(loan.paymentDay),
   }));
@@ -96,7 +93,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     type: "Insurance",
     href: "/expenses/insurance",
     name: itemName("insurance", policy),
-    image: logoFor(allInsuranceProviders, policy.provider, policy.customLogo),
+    image: policy.img,
     amount: policy.premium ? formatCurrency(policy.premium) : null,
     date: policy.billingCycle === "year"
       ? nextOccurrence(policy.billingDay, policy.billingMonth)
@@ -109,7 +106,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     type: "Utilities",
     href: "/expenses/utilities",
     name: itemName("utilities", utility),
-    image: utilityIcon(utility.type),
+    image: utility.img,
     amount: utility.cost ? formatCurrency(utility.cost) : null,
     date: utility.billingCycle === "year"
       ? nextOccurrence(utility.billingDay, utility.billingMonth)
@@ -122,7 +119,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     type: "Investments",
     href: "/accounts/investing",
     name: investmentName(investment, account),
-    image: logoFor(brokers, account.broker, account.customLogo),
+    image: account.img,
     amount: investment.amount ? formatCurrency(investment.amount) : null,
     date: nextInvestmentDate(investment),
   }));

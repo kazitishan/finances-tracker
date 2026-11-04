@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { banks, brokers, loanProviders, subscriptions, allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailSection from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
@@ -12,7 +11,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
+import { imageOf } from "@/lib/logos";
 
 const categoryLabels = {
   "bank-accounts": "Bank Account",
@@ -33,9 +32,6 @@ const categoryPaths = {
   insurance: "/expenses/insurance",
   utilities: "/expenses/utilities",
 };
-
-const platforms = [...banks, ...brokers, ...loanProviders, ...subscriptions, ...allInsuranceProviders];
-const platformLogo = (name, logins) => logoFor(platforms, name, logins.find((login) => login.customLogo)?.customLogo);
 
 function Passwords() {
   const [logins, setLogins] = useState([]);
@@ -68,7 +64,7 @@ function Passwords() {
   }
 
   const filters = useUrlFilters(logins, [
-    { key: "platform", label: "Platform", getValue: (login) => login.platform, getImage: platformLogo },
+    { key: "platform", label: "Platform", getValue: (login) => login.platform, getImage: (name, items) => imageOf(items) },
   ]);
 
   const sortedLogins = logins
@@ -98,7 +94,7 @@ function Passwords() {
           return (
             <InfoCard
               key={login.id}
-              image={logoFor(platforms, login.platform, login.customLogo)}
+              image={login.img}
               imageAlt={login.platform}
               title={login.platform}
               subtitle={[

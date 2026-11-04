@@ -9,11 +9,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
-import { banks } from "@/components/dropdowns/Dropdown";
+import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
-
-const bankLogo = (name, accounts) => logoFor(banks, name, accounts.find((account) => account.customLogo)?.customLogo);
 
 function BankAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -70,7 +67,7 @@ function BankAccounts() {
 
   const filters = useUrlFilters(accounts, [
     { key: "type", label: "Account Type", getValue: (account) => account.type },
-    { key: "bank", label: "Bank", getValue: (account) => account.bank, getImage: bankLogo },
+    { key: "bank", label: "Bank", getValue: (account) => account.bank, getImage: (name, items) => imageOf(items) },
   ]);
 
   const filteredAccounts = accounts.filter((account) =>

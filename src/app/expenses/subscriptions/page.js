@@ -8,14 +8,10 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
-import { subscriptions as subscriptionServices } from "@/components/dropdowns/Dropdown";
 import { findPaymentAccount } from "@/util/findPaymentAccount";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
+import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
-
-const subscriptionLogo = (name, subscriptions) =>
-  logoFor(subscriptionServices, name, subscriptions.find((subscription) => subscription.customLogo)?.customLogo);
 
 function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -94,7 +90,7 @@ function Subscriptions() {
       key: "subscription",
       label: "Subscription",
       getValue: (subscription) => subscription.subscription,
-      getImage: subscriptionLogo,
+      getImage: (name, items) => imageOf(items),
     },
     {
       key: "paymentMethod",

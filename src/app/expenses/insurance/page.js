@@ -9,12 +9,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
-import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
+import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
-
-const providerLogo = (name, policies) => logoFor(allInsuranceProviders, name, policies.find((policy) => policy.customLogo)?.customLogo);
 
 function Insurance() {
   const [policies, setPolicies] = useState([]);
@@ -88,7 +85,7 @@ function Insurance() {
 
   const filters = useUrlFilters(policies, [
     { key: "type", label: "Type", getValue: (policy) => typeLabel(policy.type, policy.otherType) },
-    { key: "provider", label: "Provider", getValue: (policy) => policy.provider, getImage: providerLogo },
+    { key: "provider", label: "Provider", getValue: (policy) => policy.provider, getImage: (name, items) => imageOf(items) },
   ]);
 
   const filteredPolicies = policies.filter((policy) =>

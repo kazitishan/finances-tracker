@@ -5,16 +5,13 @@ import AddLoanModal from "@/components/modals/AddLoanModal";
 import LoanInfo, { amountRemaining } from "@/components/info/LoanInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
-import { loanProviders } from "@/components/dropdowns/Dropdown";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
+import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
-
-const providerLogo = (name, loans) => logoFor(loanProviders, name, loans.find((loan) => loan.customLogo)?.customLogo);
 
 function Loans() {
   const [loans, setLoans] = useState([]);
@@ -79,7 +76,7 @@ function Loans() {
   const formatMoney = (amount) => (amount > 0 ? formatCurrency(amount) : null);
 
   const filters = useUrlFilters(loans, [
-    { key: "provider", label: "Provider", getValue: (loan) => loan.provider, getImage: providerLogo },
+    { key: "provider", label: "Provider", getValue: (loan) => loan.provider, getImage: (name, items) => imageOf(items) },
     { key: "type", label: "Type", getValue: (loan) => typeLabel(loan.type, loan.otherType) },
   ]);
 

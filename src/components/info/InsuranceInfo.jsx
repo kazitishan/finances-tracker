@@ -1,7 +1,5 @@
 "use client";
 
-import { banks } from "@/components/dropdowns/Dropdown";
-import { allInsuranceProviders } from "@/components/dropdowns/Dropdown";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { insuranceTypeFields } from "@/components/modals/AddInsuranceModal";
 import { findPaymentAccount } from "@/util/findPaymentAccount";
@@ -11,7 +9,6 @@ import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
-import { logoFor } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
 
 function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit }) {
@@ -33,7 +30,7 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
 
     return (
         <InfoCard
-            image={logoFor(allInsuranceProviders, insurance.provider, insurance.customLogo)}
+            image={insurance.img}
             imageAlt={insurance.provider}
             title={itemName("insurance", insurance)}
             subtitle={insurance.provider}
@@ -57,7 +54,7 @@ function InsuranceInfo({ insurance, creditCards = [], bankAccounts = [], onEdit 
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    image={paymentAccount.img}
                     imageAlt={paymentAccount.bank}
                     name={paymentAccount.displayName}
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}

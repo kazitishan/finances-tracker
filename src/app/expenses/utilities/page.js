@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import AddUtilityModal from "@/components/modals/AddUtilityModal";
-import UtilityInfo, { utilityIcon } from "@/components/info/UtilityInfo";
+import UtilityInfo from "@/components/info/UtilityInfo";
+import { imageOf } from "@/lib/logos";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -81,7 +82,7 @@ function Utilities() {
       key: "type",
       label: "Type",
       getValue: (utility) => typeLabel(utility.type, utility.otherType),
-      getImage: (value, items) => utilityIcon(items[0].type),
+      getImage: (value, items) => imageOf(items),
     },
     { key: "provider", label: "Provider", getValue: (utility) => utility.provider },
   ]);

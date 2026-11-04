@@ -4,9 +4,7 @@ import InfoCard from "@/components/ui/InfoCard";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { formatCurrency } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
 import { describeSchedule } from "@/lib/recurringInvestments";
-import { brokers } from "@/components/dropdowns/Dropdown";
 import { itemName } from "@/lib/itemNames";
 
 function RecurringInvestmentsSection({ investments, bankAccounts }) {
@@ -36,7 +34,7 @@ function RecurringInvestmentsSection({ investments, bankAccounts }) {
 function InvestmentAccountInfo({ account, bankAccounts = [], onEdit }) {
     return (
         <InfoCard
-            image={logoFor(brokers, account.broker, account.customLogo)}
+            image={account.img}
             imageAlt={account.broker}
             title={itemName("investment-accounts", account)}
             subtitle={account.broker}

@@ -61,7 +61,7 @@ const initialFormState = {
     type: "",
     otherType: "",
     provider: "",
-    customLogo: "",
+    img: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -167,8 +167,8 @@ function AddInsuranceModal({ isOpen, onClose, itemId, initialData, onSaved, onDe
                         type={form.type === "Health" ? "health-insurance-provider" : "insurance-provider"}
                         value={form.provider}
                         onChange={(provider) => updateField("provider", provider)}
-                        customLogo={form.customLogo}
-                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                        customLogo={form.img}
+                        onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
 

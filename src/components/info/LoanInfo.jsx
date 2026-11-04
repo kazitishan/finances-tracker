@@ -1,13 +1,11 @@
 "use client";
 
-import { loanProviders } from "@/components/dropdowns/Dropdown";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import { daysUntil, formatCurrency, ordinal } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
 import DetailRow from "@/components/ui/DetailRow";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
-import { logoFor } from "@/lib/logos";
 import { parseDateString } from "@/lib/recurringInvestments";
 import { itemName } from "@/lib/itemNames";
 
@@ -85,7 +83,7 @@ function LoanInfo({ loan, onEdit }) {
 
     return (
         <InfoCard
-            image={logoFor(loanProviders, loan.provider, loan.customLogo)}
+            image={loan.img}
             imageAlt={loan.provider}
             title={itemName("loans", loan)}
             subtitle={loan.provider}

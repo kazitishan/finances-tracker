@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import { emptyIncomeStream } from "@/lib/incomeStreams";
 import { itemName } from "@/lib/itemNames";
-import { deleteUpload, isPendingUpload, saveUpload } from "@/lib/uploads";
+import { builtInLogo, utilityIcon } from "@/lib/logos";
+import { deleteUpload, isPendingUpload, isUpload, moveLegacyUpload, saveUpload } from "@/lib/uploads";
 
 const INFO_PATH = path.join(process.cwd(), "private", "info.json");
 
@@ -58,23 +59,27 @@ const PLATFORM_FIELDS = {
     utilities: "provider",
 };
 
-// The public folder whose uploads/ holds the logo of a platform added through "Other".
-// Utilities have none: their picture comes from their type.
-const UPLOAD_FOLDERS = {
-    "bank accounts": () => "banks",
-    "credit cards": () => "banks",
-    subscriptions: () => "subscriptions",
-    loans: () => "loans",
-    "investment accounts": () => "investment",
-    insurance: (item) => (item.type === "Health" ? "insurance/health" : "insurance"),
-};
+// Every category with a platform also stores a picture in `img`: the platform's built-in logo, or the image
+// uploaded for a platform added through "Other" ("" if none was). Utilities are pictured by their type instead.
+// Other expenses have no picture. The server always works it out, so whatever `img` the form sent is only used
+// as the upload: a data URL picked in the form, written to private/uploads, or the item's existing upload.
+function imageFor(key, item) {
+    if (key === "utilities") return utilityIcon(item.type);
+    const platform = item[PLATFORM_FIELDS[key]];
+    const builtIn = builtInLogo(key, platform);
+    if (builtIn) return builtIn;
+    if (isPendingUpload(item.img)) return saveUpload(platform, item.img);
+    return isUpload(item.img) ? item.img : "";
+}
 
-// A logo picked in the form arrives as a data URL; this writes it to its uploads folder and
-// stores the file's path on the item instead.
-function withSavedLogo(key, item) {
-    if (!isPendingUpload(item.customLogo)) return item;
-    const folder = UPLOAD_FOLDERS[key](item);
-    return { ...item, customLogo: saveUpload(folder, item[PLATFORM_FIELDS[key]], item.customLogo) };
+function withImage(key, item) {
+    return key in PLATFORM_FIELDS ? { ...item, img: imageFor(key, item) } : item;
+}
+
+// A copy of `object` with `key` added right after `afterKey` (or at the end, if it has no `afterKey`).
+function insertAfter(object, afterKey, key, value) {
+    if (!(afterKey in object)) return { ...object, [key]: value };
+    return Object.fromEntries(Object.entries(object).flatMap((entry) => (entry[0] === afterKey ? [entry, [key, value]] : [entry])));
 }
 
 function loginOf(key, item) {
@@ -160,6 +165,24 @@ function migrateIncomeStreams(info) {
     writeInfo(info);
 }
 
+// Items saved before `img` existed get one, right after the field it comes from. A platform added through "Other"
+// had its upload's path in `customLogo`, under public/<folder>/uploads; that file moves to private/uploads.
+function migrateImages(info) {
+    let changed = false;
+    for (const key of Object.keys(PLATFORM_FIELDS)) {
+        if (!info[key]?.some((item) => !("img" in item))) continue;
+        changed = true;
+        info[key] = info[key].map((item) => {
+            if ("img" in item) return item;
+            const { customLogo, ...rest } = item;
+            if (key === "utilities") return insertAfter(rest, "type", "img", utilityIcon(item.type));
+            const field = PLATFORM_FIELDS[key];
+            return insertAfter(rest, field, "img", builtInLogo(key, item[field]) || moveLegacyUpload(customLogo));
+        });
+    }
+    if (changed) writeInfo(info);
+}
+
 function readInfo() {
     if (!fs.existsSync(INFO_PATH)) {
         fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
@@ -169,6 +192,7 @@ function readInfo() {
     const info = withUserInfoFirst(JSON.parse(fs.readFileSync(INFO_PATH, "utf-8")));
     if (!info.passwords) addPasswordsKey(info);
     migrateIncomeStreams(info);
+    migrateImages(info);
     return info;
 }
 
@@ -236,7 +260,7 @@ export function listItems(category) {
 export function addItem(category, item) {
     const info = readInfo();
     const key = getCategoryKey(category);
-    const newItem = withSavedLogo(key, { ...item, id: crypto.randomUUID() });
+    const newItem = withImage(key, { ...item, id: crypto.randomUUID() });
     info[key] = [...(info[key] || []), newItem];
     saveLogin(info, loginOf(key, newItem));
     writeInfo(info);
@@ -263,8 +287,8 @@ export function updateItem(category, id, updates, loginMode = null) {
         return { sharedWith: sharing.map(({ key, item }) => itemName(CATEGORY_SLUGS[key], item)) };
     }
 
-    const saved = withSavedLogo(key, updated);
-    if (saved.customLogo !== previous.customLogo) deleteUpload(previous.customLogo);
+    const saved = withImage(key, updated);
+    if (saved.img !== previous.img) deleteUpload(previous.img);
     info[key] = info[key].map((item) => (item.id === id ? saved : item));
 
     if (sharing.length > 0 && loginMode === "update-all") {
@@ -284,7 +308,7 @@ export function updateItem(category, id, updates, loginMode = null) {
 export function deleteItem(category, id) {
     const info = readInfo();
     const key = getCategoryKey(category);
-    deleteUpload((info[key] || []).find((item) => item.id === id)?.customLogo);
+    deleteUpload((info[key] || []).find((item) => item.id === id)?.img);
     info[key] = (info[key] || []).filter((item) => item.id !== id);
     writeInfo(info);
 }
@@ -323,15 +347,15 @@ export function exportInfo() {
     return JSON.stringify(readInfo(), null, 2) + "\n";
 }
 
-// Saved logins, each with the items (`category` is the URL slug) signed in with it, and the logo
-// uploaded for its platform if it was added through "Other".
+// Saved logins, each with the items (`category` is the URL slug) signed in with it, and the `img` of the
+// first of those items that has one.
 export function listLogins() {
     const info = readInfo();
     return (info.passwords || []).map((login) => {
         const usedBy = itemsUsingLogin(info, login);
         return {
             ...login,
-            customLogo: usedBy.find(({ item }) => item.customLogo)?.item.customLogo || "",
+            img: usedBy.find(({ item }) => item.img)?.item.img || "",
             usedBy: usedBy.map(({ key, item }) => ({ id: item.id, name: itemName(CATEGORY_SLUGS[key], item), category: CATEGORY_SLUGS[key] })),
         };
     });

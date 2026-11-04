@@ -6,8 +6,6 @@ import DetailRow from "@/components/ui/DetailRow";
 import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
-import { logoFor } from "@/lib/logos";
-import { banks } from "@/components/dropdowns/Dropdown";
 import { itemName } from "@/lib/itemNames";
 
 function BankAccountInfo({ account, onEdit }) {
@@ -15,7 +13,7 @@ function BankAccountInfo({ account, onEdit }) {
 
     return (
         <InfoCard
-            image={logoFor(banks, account.bank, account.customLogo)}
+            image={account.img}
             imageAlt={account.bank}
             title={itemName("bank-accounts", account)}
             subtitle={[account.bank, account.accountNumber ? maskLast4(account.accountNumber) : null]

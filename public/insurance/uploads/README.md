@@ -1,1 +1,0 @@
-This folder holds the logos you upload for insurance providers that aren't in the provider list. They're added with "Other" on auto, life, home or other insurance. Health insurance logos go in health/uploads.

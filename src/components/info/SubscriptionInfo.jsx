@@ -1,6 +1,5 @@
 "use client";
 
-import { subscriptions, banks } from "@/components/dropdowns/Dropdown";
 import { findPaymentAccount } from "@/util/findPaymentAccount";
 import { months, ordinal, maskLast4, formatCurrency } from "@/lib/formUtils";
 import InfoCard from "@/components/ui/InfoCard";
@@ -8,7 +7,6 @@ import DetailRow from "@/components/ui/DetailRow";
 import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
-import { logoFor } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
 
 function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
@@ -27,7 +25,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
 
     return (
         <InfoCard
-            image={logoFor(subscriptions, subscription.subscription, subscription.customLogo)}
+            image={subscription.img}
             imageAlt={subscription.subscription}
             title={itemName("subscriptions", subscription)}
             subtitle={subscription.subscription}
@@ -40,7 +38,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    image={paymentAccount.img}
                     imageAlt={paymentAccount.bank}
                     name={paymentAccount.displayName}
                     detail={paymentAccount.cardNumber ? maskLast4(paymentAccount.cardNumber) : null}

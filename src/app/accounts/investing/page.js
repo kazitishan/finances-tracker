@@ -9,12 +9,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
+import { imageOf } from "@/lib/logos";
 import { allRecurringInvestments, investedInMonth } from "@/lib/recurringInvestments";
-import { brokers } from "@/components/dropdowns/Dropdown";
 import { itemName } from "@/lib/itemNames";
-
-const brokerLogo = (name, accounts) => logoFor(brokers, name, accounts.find((account) => account.customLogo)?.customLogo);
 
 function InvestmentAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -80,7 +77,7 @@ function InvestmentAccounts() {
     .reduce((sum, { investment }) => sum + investedInMonth(investment), 0);
 
   const filters = useUrlFilters(accounts, [
-    { key: "broker", label: "Broker", getValue: (account) => account.broker, getImage: brokerLogo },
+    { key: "broker", label: "Broker", getValue: (account) => account.broker, getImage: (name, items) => imageOf(items) },
     { key: "type", label: "Type", getValue: (account) => account.type },
   ]);
 

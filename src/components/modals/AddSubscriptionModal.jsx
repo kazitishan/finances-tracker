@@ -13,7 +13,7 @@ import AffixInput from "@/components/ui/AffixInput";
 const initialFormState = {
     name: "",
     subscription: "",
-    customLogo: "",
+    img: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -57,8 +57,8 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, o
                         type="subscription"
                         value={form.subscription}
                         onChange={(subscription) => updateField("subscription", subscription)}
-                        customLogo={form.customLogo}
-                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                        customLogo={form.img}
+                        onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
 

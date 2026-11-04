@@ -16,7 +16,7 @@ const initialFormState = {
     type: "",
     otherType: "",
     provider: "",
-    customLogo: "",
+    img: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -73,8 +73,8 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
                         type="loan-provider"
                         value={form.provider}
                         onChange={(provider) => updateField("provider", provider)}
-                        customLogo={form.customLogo}
-                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                        customLogo={form.img}
+                        onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
 

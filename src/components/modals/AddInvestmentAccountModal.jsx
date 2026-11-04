@@ -14,7 +14,7 @@ const initialFormState = {
     name: "",
     type: "",
     broker: "",
-    customLogo: "",
+    img: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -59,8 +59,8 @@ function AddInvestmentAccountModal({ isOpen, onClose, itemId, initialData, onSav
                         type="broker"
                         value={form.broker}
                         onChange={(broker) => updateField("broker", broker)}
-                        customLogo={form.customLogo}
-                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                        customLogo={form.img}
+                        onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
 

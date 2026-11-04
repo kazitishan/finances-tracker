@@ -13,7 +13,7 @@ import AffixInput from "@/components/ui/AffixInput";
 const initialFormState = {
     name: "",
     bank: "",
-    customLogo: "",
+    img: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -98,8 +98,8 @@ function AddBankAccountModal({ isOpen, onClose, itemId, initialData, onSaved, on
                         type="bank"
                         value={form.bank}
                         onChange={(bank) => updateField("bank", bank)}
-                        customLogo={form.customLogo}
-                        onCustomLogoChange={(customLogo) => updateField("customLogo", customLogo)}
+                        customLogo={form.img}
+                        onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
 

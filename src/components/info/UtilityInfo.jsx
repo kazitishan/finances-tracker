@@ -8,21 +8,6 @@ import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { itemName } from "@/lib/itemNames";
 
-const utilityIcons = {
-    Water: "/utilities/water.svg",
-    Energy: "/utilities/energy.svg",
-    Gas: "/utilities/gas.svg",
-    Internet: "/utilities/wifi.svg",
-    Phone: "/utilities/phone.svg",
-    "Cable TV": "/utilities/tv.svg",
-    Trash: "/utilities/trash.svg",
-};
-
-// Utilities are pictured by their type rather than a provider logo; "Other" (or no type) gets a general one.
-export function utilityIcon(type) {
-    return utilityIcons[type] || "/utilities/utility.svg";
-}
-
 function UtilityInfo({ utility, onEdit }) {
     const typeName = typeLabel(utility.type, utility.otherType);
 
@@ -39,7 +24,7 @@ function UtilityInfo({ utility, onEdit }) {
 
     return (
         <InfoCard
-            image={utilityIcon(utility.type)}
+            image={utility.img}
             imageAlt={typeName}
             title={itemName("utilities", utility)}
             subtitle={utility.provider}

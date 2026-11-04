@@ -39,9 +39,9 @@ yarn-error.log*
 # private data
 /private/info.json
 
-# logos uploaded through "Other" (the README keeps each uploads folder in the repo)
-/public/**/uploads/*
-!/public/**/uploads/README.md
+# images uploaded through "Other" (the README keeps the uploads folder in the repo)
+/private/uploads/*
+!/private/uploads/README.md
 
 # typescript
 *.tsbuildinfo

@@ -9,11 +9,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
 import { useUrlFilters } from "@/components/useUrlFilters";
 import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
-import { logoFor } from "@/lib/logos";
-import { banks } from "@/components/dropdowns/Dropdown";
+import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
-
-const bankLogo = (name, cards) => logoFor(banks, name, cards.find((card) => card.customLogo)?.customLogo);
 
 function CreditCards() {
   const [cards, setCards] = useState([]);
@@ -91,7 +88,7 @@ function CreditCards() {
   }
 
   const filters = useUrlFilters(cards, [
-    { key: "bank", label: "Bank", getValue: (card) => card.bank, getImage: bankLogo },
+    { key: "bank", label: "Bank", getValue: (card) => card.bank, getImage: (name, items) => imageOf(items) },
     { key: "paymentMethod", label: "Payment Method", getValue: paymentMethodName },
   ]);
 

@@ -11,8 +11,8 @@ const optionValue = (option) => option.value ?? option.name;
 const optionLabel = (option) => (option.detail ? `${option.name} · ${option.detail}` : option.name);
 
 // A searchable dropdown of options with logos. With `allowOther`, its last option, "Other", is for one that
-// isn't listed: the user types its name and uploads its logo. `customLogo` is that logo, the path of the
-// uploaded image or, until the form is saved, the picked image as a data URL.
+// isn't listed: the user types its name and uploads its logo. `customLogo` is that logo, the item's `img` (its
+// "/uploads/<file>" path) or, until the form is saved, the picked image as a data URL.
 function LogoDropdown({
     options,
     value,
@@ -61,7 +61,9 @@ function LogoDropdown({
     }
 
     // A search that found nothing is most likely the name of the platform being added, so it carries over.
+    // Coming from a listed platform, its logo is cleared so it isn't shown as the upload.
     function selectOther() {
+        if (!isOther) onCustomLogoChange?.("");
         setIsOther(true);
         onChange(search.trim() || (isOther ? value : ""));
         closeDropdown();

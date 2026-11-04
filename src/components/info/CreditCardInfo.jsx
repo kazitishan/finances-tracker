@@ -7,8 +7,6 @@ import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import RevealableDetailRow from "@/components/info/RevealableDetailRow";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
-import { logoFor } from "@/lib/logos";
-import { banks } from "@/components/dropdowns/Dropdown";
 import { itemName } from "@/lib/itemNames";
 
 function splitLines(text) {
@@ -28,7 +26,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
 
     return (
         <InfoCard
-            image={logoFor(banks, card.bank, card.customLogo)}
+            image={card.img}
             imageAlt={card.bank}
             title={itemName("credit-cards", card)}
             subtitle={[card.bank, card.cardNumber ? maskLast4(card.cardNumber) : null].filter(Boolean).join(" · ")}
@@ -75,7 +73,7 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
 
             {paymentAccount && (
                 <PaymentMethodCard
-                    image={logoFor(banks, paymentAccount.bank, paymentAccount.customLogo)}
+                    image={paymentAccount.img}
                     imageAlt={paymentAccount.bank}
                     name={itemName("bank-accounts", paymentAccount)}
                     detail={paymentAccount.accountNumber ? maskLast4(paymentAccount.accountNumber) : null}

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import LogoDropdown from "@/components/dropdowns/LogoDropdown";
 import TypeDropdown from "@/components/dropdowns/TypeDropdown";
 import platforms from "@/data/platforms.json";
-import { logoFor } from "@/lib/logos";
 import { maskLast4 } from "@/lib/formUtils";
 import { getBankAccounts } from "@/util/getBankAccounts";
 import { getPaymentMethods } from "@/util/getPaymentMethods";
@@ -104,7 +103,7 @@ function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, other
             value: method.value,
             name: method.name,
             detail: maskLast4(method.last4),
-            image: logoFor(banks, method.bank, method.customLogo),
+            image: method.img,
             keywords: method.bank,
         }));
 
@@ -125,7 +124,7 @@ function Dropdown({ type, value, onChange, customLogo, onCustomLogoChange, other
             value: account.id,
             name: itemName("bank-accounts", account),
             detail: account.accountNumber ? maskLast4(account.accountNumber) : null,
-            image: logoFor(banks, account.bank, account.customLogo),
+            image: account.img,
             keywords: account.bank,
         }));
 
