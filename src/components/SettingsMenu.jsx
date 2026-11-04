@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DownloadIcon, GearIcon, KeyIcon, UploadIcon } from "@/components/ui/icons";
+import { DownloadIcon, GearIcon, KeyIcon, UploadIcon, UserIcon } from "@/components/ui/icons";
 import { useToast } from "@/components/ToastProvider";
 
 const themes = [
@@ -118,6 +118,10 @@ function SettingsMenu() {
 
             {open && (
                 <div className="dropdown-panel right-0 w-56" role="menu">
+                    <Link href="/profile" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
+                        <UserIcon size={15} />
+                        Profile
+                    </Link>
                     <Link href="/passwords" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
                         <KeyIcon size={15} />
                         Password Manager

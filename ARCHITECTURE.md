@@ -138,6 +138,7 @@ Consequences:
     │   ├── page.js             Home: upcoming payments
     │   ├── budgeting/page.js
     │   ├── passwords/page.js   Password Manager
+    │   ├── profile/page.js     Profile (name)
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
     │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
@@ -147,11 +148,13 @@ Consequences:
     │       ├── passwords/route.js         GET saved logins
     │       ├── passwords/[id]/route.js    PUT, DELETE a saved login
     │       ├── user-info/route.js         GET/PUT budgeting info
+    │       ├── profile/route.js           GET/PUT the profile name
     │       ├── download/route.js          GET info.json as attachment
     │       ├── import/route.js            POST replace info.json
     │       └── keep-alive/route.js        SSE connection counter / auto-exit
     ├── components/
     │   ├── NavBar.jsx, SettingsMenu.jsx, ToastProvider.jsx, KeepAlive.jsx
+    │   ├── ProfileProvider.jsx           Loads the profile for every page; asks for a name until one is saved
     │   ├── LoginFields.jsx               Username/password inputs + saved-login picker
     │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
@@ -159,7 +162,7 @@ Consequences:
     │   ├── useUrlFilters.jsx             URL-backed filter state
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
     │   ├── info/                         Read-only cards for each category + detail rows
-    │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload
+    │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload, NamePrompt
     │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, FormActions, AffixInput, icons, ...
     ├── data/platforms.json     Built-in platform names → logo paths
     ├── lib/                    Server store (infoStore, uploads) + pure helpers
@@ -194,6 +197,7 @@ Consequences:
  │        modals → useSaveItem ───────┼── POST/PUT ───▶│        │  writeInfo()       │──▶ private/info.json
  │        LoginFields ────────────────┼── /passwords ─▶│        │  login dedupe      │    │
  │        Budgeting ──────────────────┼── /user-info ─▶│        └─────────┬──────────┘    │
+ │        Profile ────────────────────┼── /profile ───▶│                  │               │
  └────────────────────────────────────┘                │                  ▼               │
                                                        │        lib/uploads.js ──────────▶ public/**/uploads/*.png|jpg
  next/image ◀──────────── static files ────────────────┤                                  │
@@ -216,6 +220,7 @@ Key properties:
 ```json
 {
   "user-info": { "income-streams": [], "additional-expenses": [] },
+  "profile": { "name": "" },
   "bank accounts": [],
   "credit cards": [],
   "subscriptions": [],
@@ -245,7 +250,7 @@ Key properties:
 
 Files created before utilities or other expenses existed have no key for them. That's fine: every store function reads a category with `info[key] || []`, and the key is written the first time a utility is added.
 
-`passwords` and `user-info` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
+`passwords`, `user-info` and `profile` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
 
 ### Value conventions
 
@@ -462,6 +467,14 @@ Each additional expense is a **one-key object** `{ "<name>": <monthly amount> }`
 
 The form can't be saved without a name and an amount above 0 (or with the same day picked twice for `twice-monthly`). The frequency and paydays are optional.
 
+### Profile (`profile`)
+
+```json
+{ "name": "Alex" }
+```
+
+`name` is a string, trimmed on save. It's `""` only until the user first enters one: a blank name means "ask for it" (see [ProfileProvider](#profileproviderjsx)), and `updateProfile` refuses to save a blank name, so once set it can be changed but never cleared. Files from before profiles existed have no `profile` key; `getProfile()` returns `{ "name": "" }` for them, and the key is written the first time the profile is saved.
+
 ### Migrations (automatic, on read)
 
 | Situation | Handled by | Effect |
@@ -502,6 +515,7 @@ Internal helpers:
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
 | `itemsUsingLogin(info, login, excludeId?)` | Every item across all categories whose login equals `login` |
 | `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape. `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
+| `isProfile` | A plain object whose `name` is a string |
 
 Exports:
 
@@ -514,6 +528,7 @@ Exports:
 | `deleteItem(slug, id)` | `DELETE /api/[category]/[id]` | Deletes its uploaded logo file, removes the item. **Doesn't** touch saved logins |
 | `reorderItems(slug, ids)` | `PUT /api/[category]` | Rebuilds the array in `ids` order. **Items not listed in `ids` are dropped** |
 | `getUserInfo()` / `updateUserInfo(v)` | `/api/user-info` | Update validates the shape, returns `null` if invalid |
+| `getProfile()` / `updateProfile(v)` | `/api/profile` | Get falls back to `{ name: "" }`; update validates, trims the name, returns `null` if invalid or the name is blank |
 | `importInfo(data)` | `POST /api/import` | Validates, then replaces everything (see [§8](#8-api-reference)) |
 | `exportInfo()` | `GET /api/download` | Pretty JSON string of the whole file |
 | `listLogins()` | `GET /api/passwords` | Saved logins, each with `customLogo` and `usedBy` attached |
@@ -548,15 +563,17 @@ All routes live under `src/app/api`. Bodies are JSON. In Next 16, `params` is a 
 | `DELETE /api/passwords/:id` | | `200 { ok: true }` | |
 | `GET /api/user-info` | | `200` user-info object | |
 | `PUT /api/user-info` | full user-info | `200` saved user-info | `400` invalid JSON or shape |
+| `GET /api/profile` | | `200 { name }` | |
+| `PUT /api/profile` | `{ name }` | `200` saved profile (name trimmed) | `400` invalid JSON, shape, or blank name |
 | `GET /api/download` | | `200` file attachment `info.json`, `Cache-Control: no-store` | |
 | `POST /api/import` | an entire info.json | `200 { ok: true }` | `400 Invalid JSON` / `400 Not an info.json file` |
 | `GET /api/keep-alive` | | `text/event-stream` that never ends | |
 
-Static routes (`passwords`, `user-info`, `download`, `import`, `keep-alive`) take precedence over the dynamic `[category]` segment.
+Static routes (`passwords`, `user-info`, `profile`, `download`, `import`, `keep-alive`) take precedence over the dynamic `[category]` segment.
 
 `download`, `import` and `keep-alive` export `dynamic = "force-dynamic"`.
 
-**Import validation** (`importInfo`): the data must be a plain object, contain **at least one category storage key** (e.g. `"bank accounts"`), have an array for every known list key that's present, and have a valid `user-info` if it's present. Missing lists become `[]`. If the file has no `passwords`, they're rebuilt from the items. Individual items are **not** validated.
+**Import validation** (`importInfo`): the data must be a plain object, contain **at least one category storage key** (e.g. `"bank accounts"`), have an array for every known list key that's present, and have a valid `user-info` and `profile` if they're present. Missing lists become `[]`. If the file has no `passwords`, they're rebuilt from the items. Individual items are **not** validated.
 
 ---
 
@@ -689,8 +706,11 @@ Items point at each other **by id**, in three different formats:
   <body>
     <KeepAlive/>
     <ToastProvider>
-      <NavBar/>
-      <main max-w-4xl, centered, px-6 md:px-10>{page}</main>
+      <ProfileProvider>
+        <NavBar/>
+        <main max-w-4xl, centered, px-6 md:px-10>{page}</main>
+        <NamePromptModal/>   (only while the profile has no name)
+      </ProfileProvider>
     </ToastProvider>
 ```
 
@@ -710,6 +730,7 @@ Menus close on an outside click or Escape. The active item gets the accent style
 
 ### [SettingsMenu.jsx](src/components/SettingsMenu.jsx)
 
+- **Profile** → `/profile`
 - **Password Manager** → `/passwords`
 - **Download Info** → plain `<a href="/api/download" download>` plus a toast
 - **Import Info** → hidden file input. It parses the JSON on the client (an invalid file shows a toast), shows a `confirm()` warning that everything will be replaced, POSTs to `/api/import`, then **reloads the page after 800 ms**, because pages only fetch on mount.
@@ -726,6 +747,12 @@ Menus close on an outside click or Escape. The active item gets the accent style
 
 - `useToast()` → `showToast(text)`: shows a single pill at the top center for 1.8 s. A new toast replaces the current one; a `key` bump restarts the animation.
 - `useCopyToClipboard()` → `(text, label) => …`: writes to the clipboard and toasts "*label* copied" or "Couldn't copy *label*".
+
+### [ProfileProvider.jsx](src/components/ProfileProvider.jsx)
+
+- Fetches `GET /api/profile` once on mount (a failure toasts "Couldn't load your profile") and keeps it in context.
+- `useProfile()` → `{ profile, saveProfile }`. `profile` is `null` until it loads. `saveProfile(profile)` sends `PUT /api/profile`, stores the saved profile and returns it, or throws.
+- **First run:** while the loaded profile's `name` is `""`, it renders [NamePromptModal](src/components/modals/NamePromptModal.jsx) over every page. The popup can't be closed, so nothing else can be used until a name is saved. Nothing shows while the profile is loading or if it failed to load.
 
 ---
 
@@ -881,6 +908,10 @@ The nav label is "Other"; the page title is "Other Expenses". It follows the [§
 
 Reached from Settings, not the nav bar. Lists saved logins sorted by platform, then username. Each card shows the logo, username, "Used by N items", masked username and password, and a **Used By** list linking to each item's page. Edit and Delete work as described in [§9](#9-saved-logins-the-password-system). Filter: Platform. Search: platform, username, names of the items using it.
 
+### Profile: `/profile`
+
+Reached from Settings (its top item), not the nav bar. A card with one **Name** field. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
+
 ### Budgeting: [src/app/budgeting/page.js](src/app/budgeting/page.js)
 
 The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders only its `PageHeader` title until both arrive. It also loads bank accounts, to name where direct deposits go.
@@ -1010,7 +1041,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | Component | Notes |
 |---|---|
 | `InfoCard` | Logo tile, title, subtitle (or "—"), chips (strings, or `{label, tone:"danger"}`), optional key `stat` `{label, value, caption, lines}` shown in the header and again in the expanded body, where optional `lines` (`[{label, value}]`, the figures that add up to it) sit above it with a total line between, **Open** link (`target=_blank`, `noopener`), Edit pencil, chevron. Clicking the header toggles it. The collapsed body is `inert`. If no detail rows render, CSS shows "No other details" |
-| `Modal` | Backdrop + panel; X, backdrop click and **Escape** close it. A module-level **stack** makes Escape close only the innermost modal. Locks body scroll while open |
+| `Modal` | Backdrop + panel; X, backdrop click and **Escape** close it. Without `onClose` there's no X and neither backdrop nor Escape closes it (used by `NamePromptModal`). A module-level **stack** makes Escape close only the innermost modal. Locks body scroll while open |
 | `PageHeader` | Title, "N total", non-empty stats, optional `description`, Rearrange + Add buttons (each only when its handler is passed), search + filter row (only when count > 0; `searchPlaceholder` defaults to "Search *title*...") |
 | `FormActions` | Form footer: Delete (when `isEditing` and `onDelete` is passed) + primary "Add" / "Save Changes"; optional `disabled` and a `hint` under them |
 | `AffixInput` | A `.field` input with `prefix` (e.g. `$`) or `suffix` (e.g. `%`) drawn inside it; other props go to the `<input>`, `className` to the wrapper |
@@ -1021,7 +1052,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
 | `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
-| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff. Every dropdown trigger uses ChevronDown |
+| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item). Every dropdown trigger uses ChevronDown |
 
 ### Other modals: [src/components/modals/](src/components/modals/)
 
@@ -1032,6 +1063,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `RearrangeModal` | See [§13](#13-anatomy-of-a-category-page) |
 | `EditLoginModal` | Password Manager edit/delete; "Changes also apply to …" |
 | `ImageUploadDialog` | Rendered with `createPortal` into `document.body` so it sits above the form that opened it |
+| `NamePromptModal` | The first-run "Welcome!" popup, rendered by `ProfileProvider` while the profile has no name. It passes no `onClose`, so it can't be dismissed; **Continue** stays disabled until the name isn't blank, and on success the provider's new profile unmounts it |
 
 ---
 

@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { XIcon } from "@/components/ui/icons";
 
 // Open modals, innermost last. Escape closes only the innermost, so closing a dialog opened
-// from a form doesn't close the form too.
+// from a form doesn't close the form too. Without `onClose` the modal can't be dismissed: no X,
+// and the backdrop and Escape do nothing.
 const openModals = [];
 
 function Modal({ title, onClose, children }) {
@@ -18,7 +19,7 @@ function Modal({ title, onClose, children }) {
         const modal = {};
         openModals.push(modal);
         function handleKeyDown(event) {
-            if (event.key === "Escape" && openModals.at(-1) === modal) onCloseRef.current();
+            if (event.key === "Escape" && openModals.at(-1) === modal) onCloseRef.current?.();
         }
         document.addEventListener("keydown", handleKeyDown);
         const previousOverflow = document.body.style.overflow;
@@ -41,9 +42,11 @@ function Modal({ title, onClose, children }) {
             >
                 <div className="flex items-center justify-between mb-5">
                     <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-                    <button type="button" onClick={onClose} className="icon-btn -mr-1.5" aria-label="Close">
-                        <XIcon />
-                    </button>
+                    {onClose && (
+                        <button type="button" onClick={onClose} className="icon-btn -mr-1.5" aria-label="Close">
+                            <XIcon />
+                        </button>
+                    )}
                 </div>
                 {children}
             </div>

@@ -23,6 +23,7 @@ if (fs.existsSync(infoPath)) {
 } else {
   const defaultInfo = {
     "user-info": defaultUserInfo,
+    "profile": { "name": "" },
     "bank accounts": [],
     "credit cards": [],
     "subscriptions": [],

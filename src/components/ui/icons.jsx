@@ -116,3 +116,9 @@ export const EyeOffIcon = (props) => (
         <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><path d="m1 1 22 22" />
     </Icon>
 );
+
+export const UserIcon = (props) => (
+    <Icon {...props}>
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </Icon>
+);

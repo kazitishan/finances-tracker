@@ -13,8 +13,15 @@ const DEFAULT_USER_INFO = {
     "additional-expenses": [],
 };
 
+// The name shown on the Profile page. It's "" until the user first enters one, and ProfileProvider asks for it
+// on every page until they do.
+const DEFAULT_PROFILE = {
+    name: "",
+};
+
 const DEFAULT_INFO = {
     "user-info": DEFAULT_USER_INFO,
+    profile: DEFAULT_PROFILE,
     "bank accounts": [],
     "credit cards": [],
     subscriptions: [],
@@ -202,6 +209,25 @@ export function updateUserInfo(userInfo) {
     return info["user-info"];
 }
 
+function isProfile(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value) && typeof value.name === "string";
+}
+
+// Files from before profiles existed have no "profile"; it's written the first time it's saved.
+export function getProfile() {
+    return readInfo().profile ?? DEFAULT_PROFILE;
+}
+
+// Replaces the profile. Returns null, writing nothing, if `profile` isn't shaped like DEFAULT_PROFILE or its
+// name is blank: once set, a name can be changed but not cleared.
+export function updateProfile(profile) {
+    if (!isProfile(profile) || profile.name.trim() === "") return null;
+    const info = readInfo();
+    info.profile = { name: profile.name.trim() };
+    writeInfo(info);
+    return info.profile;
+}
+
 export function listItems(category) {
     const info = readInfo();
     return info[getCategoryKey(category)] || [];
@@ -273,17 +299,19 @@ export function reorderItems(category, orderedIds) {
 }
 
 // Replaces all info with an uploaded info.json. Returns false if `data` doesn't look like one:
-// it needs at least one category, every known list key it has must be a list, and its budgeting info
-// (optional, for files from before budgeting existed) must be well-formed.
+// it needs at least one category, every known list key it has must be a list, and its budgeting info and
+// profile (both optional, for files from before they existed) must be well-formed.
 export function importInfo(data) {
     if (!data || typeof data !== "object" || Array.isArray(data)) return false;
-    const listKeys = Object.keys(DEFAULT_INFO).filter((key) => key !== "user-info");
+    const listKeys = Object.keys(DEFAULT_INFO).filter((key) => key !== "user-info" && key !== "profile");
     if (!Object.values(CATEGORY_KEYS).some((key) => key in data)) return false;
     if (listKeys.some((key) => key in data && !Array.isArray(data[key]))) return false;
     if ("user-info" in data && !isUserInfo(data["user-info"])) return false;
+    if ("profile" in data && !isProfile(data.profile)) return false;
 
     const info = {
         "user-info": { ...DEFAULT_USER_INFO, ...data["user-info"] },
+        profile: { name: data.profile?.name.trim() ?? "" },
         ...Object.fromEntries(listKeys.map((key) => [key, data[key] || []])),
     };
     if ("passwords" in data) writeInfo(info);
