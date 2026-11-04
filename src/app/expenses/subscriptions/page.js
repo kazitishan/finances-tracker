@@ -12,6 +12,7 @@ import { findPaymentAccount } from "@/util/findPaymentAccount";
 import { formatCurrency, matchesSearch } from "@/lib/formUtils";
 import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 
 function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -93,6 +94,11 @@ function Subscriptions() {
       getImage: (name, items) => imageOf(items),
     },
     {
+      key: "type",
+      label: "Type",
+      getValue: (subscription) => typeLabel(subscription.type, subscription.otherType),
+    },
+    {
       key: "paymentMethod",
       label: "Payment Method",
       getValue: (subscription) =>
@@ -101,7 +107,7 @@ function Subscriptions() {
   ]);
 
   const filteredSubscriptions = subscriptions.filter((subscription) =>
-    filters.matches(subscription) && matchesSearch([subscription.name, subscription.subscription], search)
+    filters.matches(subscription) && matchesSearch([subscription.name, subscription.subscription, typeLabel(subscription.type, subscription.otherType)], search)
   );
 
   return (

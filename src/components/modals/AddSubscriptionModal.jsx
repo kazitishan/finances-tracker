@@ -14,6 +14,8 @@ const initialFormState = {
     name: "",
     subscription: "",
     img: "",
+    type: "",
+    otherType: "",
     link: "",
     loginUsername: "",
     loginPassword: "",
@@ -59,6 +61,17 @@ function AddSubscriptionModal({ isOpen, onClose, itemId, initialData, onSaved, o
                         onChange={(subscription) => updateField("subscription", subscription)}
                         customLogo={form.img}
                         onCustomLogoChange={(img) => updateField("img", img)}
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                    <span className="field-label">Type</span>
+                    <Dropdown
+                        type="subscription-type"
+                        value={form.type}
+                        otherValue={form.otherType}
+                        onChange={(type) => updateField("type", type)}
+                        onOtherChange={(otherType) => updateField("otherType", otherType)}
                     />
                 </div>
 

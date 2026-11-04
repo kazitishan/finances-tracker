@@ -318,6 +318,8 @@ Other expenses have no platform field, picture or login, so they aren't in `PLAT
 
 | Field | Values |
 |---|---|
+| `type` | `AI`, `Cloud Storage`, `Dating`, `Education`, `Entertainment`, `Food Delivery`, `Gaming`, `Gym`, `Health`, `Music`, `News`, `Productivity`, `Security`, `Shopping`, `Software`, `Streaming`, `Tech`, `Other` (`typesByType["subscription-type"]` in [Dropdown.jsx](src/components/dropdowns/Dropdown.jsx)); optional, and subscriptions saved before this field existed have none |
+| `otherType` | free text, used when `type === "Other"` |
 | `paymentMethod` | `"credit:<credit card id>"` \| `"debit:<bank account id>"` \| `""` |
 | `cost` | decimal string |
 | `billingCycle` | `"month"` (default) \| `"year"` |
@@ -896,8 +898,8 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind) 
 
 - Also loads credit cards and bank accounts.
 - Stats: **Monthly Total** = sum of monthly-billed costs; **Yearly Total** = monthly × 12 + sum of yearly-billed costs.
-- Filters: Subscription, Payment Method. Search: name, subscription.
-- Card: key stat "Monthly/Yearly Cost"; "Renews" row; Payment Method box.
+- Filters: Subscription, Type, Payment Method. Search: name, subscription, type label.
+- Card: type tag; key stat "Monthly/Yearly Cost"; "Renews" row; Payment Method box.
 
 ### Loans: `/expenses/loans`
 
@@ -1040,7 +1042,7 @@ Items costing 0 this month are left out. Note that yearly subscriptions and year
 | `bank`, `broker`, `subscription`, `loan-provider`, `health-insurance-provider`, `insurance-provider` | `LogoDropdown` of built-in platforms + **Other** (`customLogo`, `onCustomLogoChange`: the form's `img`) | platform name |
 | `bank-account` | `LogoDropdown` of *your* bank accounts, no Other | bank account id |
 | `payment-method` | `LogoDropdown` of your cards (credit + debit), no Other | `credit:<id>` / `debit:<id>` |
-| `insurance-type`, `investment-type`, `loan-type`, `utility-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
+| `insurance-type`, `investment-type`, `loan-type`, `utility-type`, `subscription-type`, `income-type`, `payment-type`, `expense-category` | `TypeDropdown`; choosing **Other** shows a text input (`otherValue`, `onOtherChange`) | type string |
 
 Placeholders are generated from the type: "Select a bank", "Search loan providers...", "Enter broker name", "No bank accounts found". "An" is used before a/e/i/o only, so the result reads "Select a utility type". An unknown type throws.
 

@@ -8,8 +8,10 @@ import { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import PaymentMethodCard from "@/components/info/PaymentMethodCard";
 import { itemName } from "@/lib/itemNames";
+import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 
 function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], onEdit }) {
+    const typeName = typeLabel(subscription.type, subscription.otherType);
     const paymentAccount = findPaymentAccount(subscription.paymentMethod, { creditCards, bankAccounts });
 
     const costStat = subscription.cost
@@ -29,6 +31,7 @@ function SubscriptionInfo({ subscription, creditCards = [], bankAccounts = [], o
             imageAlt={subscription.subscription}
             title={itemName("subscriptions", subscription)}
             subtitle={subscription.subscription}
+            tags={[typeName].filter(Boolean)}
             stat={costStat}
             link={subscription.link}
             onEdit={onEdit}

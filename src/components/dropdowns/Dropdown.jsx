@@ -27,6 +27,10 @@ const typesByType = {
     "investment-type": ["Brokerage", "Roth IRA", "401K"],
     "loan-type": ["Mortgage", "Student Loans", "Personal Loans", "Business Loans", "Auto Loan", "Other"],
     "utility-type": ["Water", "Energy", "Gas", "Internet", "Phone", "Cable TV", "Trash", "Other"],
+    "subscription-type": [
+        "AI", "Cloud Storage", "Dating", "Education", "Entertainment", "Food Delivery", "Gaming", "Gym",
+        "Health", "Music", "News", "Productivity", "Security", "Shopping", "Software", "Streaming", "Tech", "Other",
+    ],
     "income-type": ["Full-time Job", "Part-time Job", "Contract", "Freelancing", "Gig Work", "Other"],
     "payment-type": ["Direct Deposit", "Check", "Cash", "Other"],
     "expense-category": [
@@ -70,6 +74,7 @@ function placeholders(type) {
 // "investment-type": Dropdown of the investment account types (Brokerage, Roth IRA, 401K).
 // "loan-type": Dropdown of the loan types (Mortgage, Student Loans, Personal Loans, Business Loans, Auto Loan, Other).
 // "utility-type": Dropdown of the utility types (Water, Energy, Gas, Internet, Phone, Cable TV, Trash, Other).
+// "subscription-type": Dropdown of what a subscription is for (AI, Cloud Storage, Music, ..., Other).
 // "income-type": Dropdown of the income types (Full-time Job, Part-time Job, Contract, Freelancing, Gig Work, Other).
 // "payment-type": Dropdown of how income is paid (Direct Deposit, Check, Cash, Other).
 // "expense-category": Dropdown of what an other expense is for (Self-care, Health, Food, ..., Other).
