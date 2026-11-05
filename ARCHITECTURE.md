@@ -1166,7 +1166,6 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - After "Update password everywhere", only the **current page's** items refresh in place.
 - The `bank-account` and `payment-method` dropdowns fetch independently per instance; a form with several recurring investments makes several requests.
 - Saved logins aren't cleaned up when items change username or platform or are deleted.
-- The Home empty state only suggests credit cards, subscriptions and bank accounts, though loans, insurance and investments also appear there.
 
 ---
 

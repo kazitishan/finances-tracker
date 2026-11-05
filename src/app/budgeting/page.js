@@ -192,7 +192,7 @@ function IncomeStreamList({ streams, bankAccounts, onAdd, onEdit }) {
         </ul>
       ) : (
         <p className="mt-3 rounded-lg border border-dashed border-[var(--border-strong)] px-3 py-4 text-center text-sm text-muted">
-          Add a job or other income to see what&apos;s left each month.
+          Add a job or other income source
         </p>
       )}
 

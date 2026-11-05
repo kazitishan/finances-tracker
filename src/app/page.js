@@ -175,14 +175,7 @@ function Home() {
         filters={filters}
       />
 
-      {loaded && payments.length === 0 && (
-        <EmptyState>
-          Nothing coming up. Add a due date to a{" "}
-          <Link href="/expenses/credit-cards" className="text-[var(--accent)] hover:underline">credit card</Link>,{" "}
-          <Link href="/expenses/subscriptions" className="text-[var(--accent)] hover:underline">subscription</Link>, or an interest
-          date to a <Link href="/accounts/bank-accounts" className="text-[var(--accent)] hover:underline">bank account</Link>.
-        </EmptyState>
-      )}
+      {loaded && payments.length === 0 && <EmptyState>Nothing coming up</EmptyState>}
       {payments.length > 0 && filteredPayments.length === 0 && <NoMatches query={search} />}
 
       <div className="flex flex-col gap-3">
