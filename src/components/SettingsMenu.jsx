@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DownloadIcon, GearIcon, KeyIcon, UploadIcon, UserIcon } from "@/components/ui/icons";
+import { DownloadIcon, GearIcon, KeyIcon, LogOutIcon, UploadIcon, UserIcon } from "@/components/ui/icons";
+import { useProfile } from "@/components/ProfileProvider";
 import { useToast } from "@/components/ToastProvider";
 
 const themes = [
@@ -36,6 +37,7 @@ function SettingsMenu() {
     const containerRef = useRef(null);
     const fileInputRef = useRef(null);
     const showToast = useToast();
+    const { profile, signOut } = useProfile();
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -59,6 +61,15 @@ function SettingsMenu() {
         applyTheme(value);
     }
 
+    async function handleSignOut() {
+        setOpen(false);
+        try {
+            await signOut();
+        } catch {
+            showToast("Couldn't log out");
+        }
+    }
+
     async function handleImportFile(event) {
         const file = event.target.files?.[0];
         event.target.value = "";
@@ -72,7 +83,7 @@ function SettingsMenu() {
             showToast("That file isn't a valid info.json");
             return;
         }
-        if (!window.confirm("This replaces all of your current info. Download a backup first if you're unsure. Continue?")) {
+        if (!window.confirm("This replaces all of this profile's info. Download a backup first if you're unsure. Continue?")) {
             return;
         }
 
@@ -118,33 +129,45 @@ function SettingsMenu() {
 
             {open && (
                 <div className="dropdown-panel right-0 w-56" role="menu">
-                    <Link href="/profile" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
-                        <UserIcon size={15} />
-                        Profile
-                    </Link>
-                    <Link href="/passwords" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
-                        <KeyIcon size={15} />
-                        Password Manager
-                    </Link>
-                    <a
-                        href="/api/download"
-                        download="info.json"
-                        role="menuitem"
-                        onClick={() => {
-                            setOpen(false);
-                            showToast("Downloading info.json…");
-                        }}
-                        className="dropdown-item"
-                    >
-                        <DownloadIcon size={15} />
-                        Download Info
-                    </a>
-                    <button type="button" role="menuitem" onClick={() => fileInputRef.current?.click()} className="dropdown-item">
-                        <UploadIcon size={15} />
-                        Import Info
-                    </button>
+                    {/* Signed out, only the theme applies: everything else belongs to a profile. */}
+                    {profile && (
+                        <>
+                            <div className="truncate px-3 py-2 text-xs text-muted">
+                                Signed in as <span className="font-medium text-foreground">{profile.name || "Unnamed profile"}</span>
+                            </div>
+                            <Link href="/profile" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
+                                <UserIcon size={15} />
+                                Profile
+                            </Link>
+                            <Link href="/passwords" role="menuitem" onClick={() => setOpen(false)} className="dropdown-item">
+                                <KeyIcon size={15} />
+                                Password Manager
+                            </Link>
+                            <a
+                                href="/api/download"
+                                download="info.json"
+                                role="menuitem"
+                                onClick={() => {
+                                    setOpen(false);
+                                    showToast("Downloading info.json…");
+                                }}
+                                className="dropdown-item"
+                            >
+                                <DownloadIcon size={15} />
+                                Download Info
+                            </a>
+                            <button type="button" role="menuitem" onClick={() => fileInputRef.current?.click()} className="dropdown-item">
+                                <UploadIcon size={15} />
+                                Import Info
+                            </button>
+                            <button type="button" role="menuitem" onClick={handleSignOut} className="dropdown-item">
+                                <LogOutIcon size={15} />
+                                Log Out
+                            </button>
+                        </>
+                    )}
 
-                    <div className="border-t border-[var(--border)] px-3 py-2.5">
+                    <div className={`${profile ? "border-t border-[var(--border)] " : ""}px-3 py-2.5`}>
                         <div className="field-label mb-1.5">Theme</div>
                         <div className="flex rounded-lg bg-[var(--surface-hover)] p-0.5" role="radiogroup" aria-label="Theme">
                             {themes.map((option) => (

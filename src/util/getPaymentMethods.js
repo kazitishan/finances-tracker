@@ -35,7 +35,7 @@ async function getCreditCards() {
     return res.json();
 }
 
-// The user's payment methods, built from the credit cards and bank accounts saved in private/info.json.
+// The user's payment methods, built from the credit cards and bank accounts saved in the signed-in profile's info.json.
 export async function getPaymentMethods() {
     const [creditCards, bankAccounts] = await Promise.all([getCreditCards(), getBankAccounts()]);
     return buildPaymentMethods({ creditCards, bankAccounts });

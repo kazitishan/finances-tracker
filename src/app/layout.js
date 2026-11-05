@@ -3,7 +3,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import KeepAlive from "@/components/KeepAlive";
 import ToastProvider from "@/components/ToastProvider";
-import ProfileProvider from "@/components/ProfileProvider";
+import ProfileProvider, { ProfileGate } from "@/components/ProfileProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +41,7 @@ export default function RootLayout({ children }) {
           <ProfileProvider>
             <NavBar />
             <main className="w-full max-w-4xl mx-auto px-6 md:px-10 py-6">
-              {children}
+              <ProfileGate>{children}</ProfileGate>
             </main>
           </ProfileProvider>
         </ToastProvider>

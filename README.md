@@ -1,6 +1,8 @@
 # Finances Tracker
 
-Store all of your financial information in one place, locally. Your data is saved to a local `private/info.json` file and never leaves your machine.
+Store all of your financial information in one place, locally. Your data is saved to local files in the `private` folder and never leaves your machine.
+
+You can keep several profiles in one app, for example one for each person in your household. Each profile has its own info, and you can log out from the Settings menu to switch to another profile or create a new one. Profiles don't have passwords.
 
 ## Setup
 
@@ -50,7 +52,7 @@ npm install
 
 #### 6. Run the setup script
 
-This creates the `private/info.json` file used to store your information:
+This creates the `private/router.json` file that keeps track of your profiles:
 
 ```
 npm run setup

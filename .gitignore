@@ -36,12 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-# private data
-/private/info.json
-
-# images uploaded through "Other" (the README keeps the uploads folder in the repo)
-/private/uploads/*
-!/private/uploads/README.md
+# private data: the profile list, and each profile's info.json and uploaded images
+/private/router.json
+/private/profiles/
 
 # typescript
 *.tsbuildinfo

@@ -11,7 +11,7 @@ This document explains how Finances Tracker works: what runs where, how data is 
 3. [Running it and the process lifecycle](#3-running-it-and-the-process-lifecycle)
 4. [Directory map](#4-directory-map)
 5. [The big picture](#5-the-big-picture)
-6. [Data storage: `private/info.json`](#6-data-storage-privateinfojson)
+6. [Data storage: profiles and `info.json`](#6-data-storage-profiles-and-infojson)
 7. [The server layer](#7-the-server-layer)
 8. [API reference](#8-api-reference)
 9. [Saved logins (the password system)](#9-saved-logins-the-password-system)
@@ -32,7 +32,7 @@ This document explains how Finances Tracker works: what runs where, how data is 
 
 ## 1. What the app is
 
-A **single-user, local-only** personal finance organizer. You run it on your own machine with `npm run dev` and open it at `http://localhost:3000`. It stores:
+A **local-only** personal finance organizer with **multiple profiles** (no passwords: anyone at the machine can switch between them). You run it on your own machine with `npm run dev` and open it at `http://localhost:3000`. It stores:
 
 - **Accounts:** bank accounts (with debit cards) and investment accounts (with recurring investments).
 - **Expenses:** credit cards, subscriptions, loans, insurance policies, utilities and other expenses.
@@ -41,7 +41,7 @@ A **single-user, local-only** personal finance organizer. You run it on your own
 
 From that it derives an **upcoming payments** timeline (Home), per-category **totals**, and a monthly **budget breakdown** (Budgeting).
 
-Everything lives in one JSON file, `private/info.json`, which is git-ignored. There is no database, no cloud service, no account and no authentication.
+`private/router.json` lists the profiles and which one is signed in, and each profile's data lives in one JSON file, `private/profiles/<id>/info.json`. All of `private/` except its README is git-ignored. There is no database, no cloud service and no authentication.
 
 ---
 
@@ -66,7 +66,7 @@ npm scripts ([package.json](package.json)):
 | `npm run dev` | `next dev`, the normal way to use the app |
 | `npm run build` / `npm start` | production build / server |
 | `npm run lint` | `eslint` |
-| `npm run setup` | `node scripts/setup.js`, which creates `private/info.json` |
+| `npm run setup` | `node scripts/setup.js`, which creates `private/router.json` |
 
 ---
 
@@ -76,11 +76,11 @@ npm scripts ([package.json](package.json)):
 
 [scripts/setup.js](scripts/setup.js) (plain CommonJS, run by Node directly):
 
-- If `private/info.json` **doesn't exist**, it creates `private/` and writes the empty default document (see [§6](#6-data-storage-privateinfojson)).
-- If it **exists but has no `"user-info"` key** (a file from before budgeting existed), it adds an empty `"user-info"` at the top and keeps everything else.
-- Otherwise it prints `Setup already completed`.
+- If `private/router.json` **exists**, it prints `Setup already completed`.
+- If there's a **legacy `private/info.json`** (from before profiles existed), it leaves it alone and says it'll be moved into a profile when the app starts. The server does that move ([§6](#migrations-automatic-on-read)), so the logic lives in one place.
+- Otherwise it creates `private/` and writes `router.json` as `[]`: no profiles, so the app opens on the profile picker.
 
-Running setup is optional. The server's `readInfo()` also creates the file with defaults on first access ([§7](#7-the-server-layer)).
+Running setup is optional. The server's `readRouter()` also creates `router.json` on first access, and `readInfo()` creates a profile's `info.json` with defaults ([§7](#7-the-server-layer)).
 
 ### Auto-shutdown when the last tab closes
 
@@ -118,12 +118,13 @@ Consequences:
 ├── next.config.mjs             Legacy URL redirects
 ├── jsconfig.json               @/* path alias
 ├── eslint.config.mjs, postcss.config.mjs
-├── scripts/setup.js            Creates / migrates private/info.json
+├── scripts/setup.js            Creates private/router.json
 ├── private/
-│   ├── README.md               (tracked)
-│   ├── info.json               ALL USER DATA (git-ignored)
-│   └── uploads/                Images uploaded through "Other", served at /uploads/<file>
-│                               (only its README.md is in git; uploads are git-ignored)
+│   ├── README.md               (tracked; everything else here is git-ignored)
+│   ├── router.json             Every profile: [{ name, id, current }]
+│   └── profiles/<id>/          One folder per profile
+│       ├── info.json           ALL OF THAT PROFILE'S DATA
+│       └── uploads/            Its images uploaded through "Other", served at /uploads/<file>
 ├── public/                     Built-in logos, served from "/"
 │   ├── banks/*.png
 │   ├── investment/*.png
@@ -143,20 +144,23 @@ Consequences:
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
     │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
-    │   ├── uploads/[file]/route.js   GET an uploaded image from private/uploads
+    │   ├── uploads/[file]/route.js   GET an uploaded image from the signed-in profile's uploads/
     │   └── api/
     │       ├── [category]/route.js        GET list, POST add, PUT reorder
     │       ├── [category]/[id]/route.js   PUT update, DELETE
     │       ├── passwords/route.js         GET saved logins
     │       ├── passwords/[id]/route.js    PUT, DELETE a saved login
     │       ├── user-info/route.js         GET/PUT budgeting info
-    │       ├── profile/route.js           GET/PUT the profile name
-    │       ├── download/route.js          GET info.json as attachment
-    │       ├── import/route.js            POST replace info.json
+    │       ├── profile/route.js           GET the signed-in profile, PUT its name
+    │       ├── profiles/route.js          GET every profile, POST create one (and sign in)
+    │       ├── profiles/current/route.js  PUT sign in, DELETE sign out
+    │       ├── download/route.js          GET the profile's info.json as attachment
+    │       ├── import/route.js            POST replace the profile's info.json
     │       └── keep-alive/route.js        SSE connection counter / auto-exit
     ├── components/
     │   ├── NavBar.jsx, SettingsMenu.jsx, ToastProvider.jsx, KeepAlive.jsx
-    │   ├── ProfileProvider.jsx           Loads the profile for every page; asks for a name until one is saved
+    │   ├── ProfileProvider.jsx           Loads the signed-in profile; ProfileGate shows pages or the picker
+    │   ├── ProfilePicker.jsx             Sign in to a profile or create one (shown at "/" while signed out)
     │   ├── LoginFields.jsx               Username/password inputs + saved-login picker
     │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
@@ -167,9 +171,10 @@ Consequences:
     │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload, NamePrompt
     │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, FormActions, AffixInput, icons, ...
     ├── data/platforms.json     Built-in platform names → logo paths
-    ├── lib/                    Server store (infoStore, uploads) + pure helpers
-    │   ├── infoStore.js        THE data layer (server-only, uses fs)
-    │   ├── uploads.js          Uploaded image writes/reads/deletes in private/uploads (server-only, uses fs)
+    ├── lib/                    Server store (profiles, infoStore, uploads) + pure helpers
+    │   ├── profiles.js         router.json: the profiles and who's signed in (server-only, uses fs)
+    │   ├── infoStore.js        THE data layer for the signed-in profile (server-only, uses fs)
+    │   ├── uploads.js          Uploaded image writes/reads/deletes in the profile's uploads/ (server-only, uses fs)
     │   ├── formUtils.js        Formatting, masking, input sanitizing, date helpers
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
@@ -196,12 +201,12 @@ Consequences:
  │     │                      ────────┼── /import ────▶│        ┌────────────────────┐    │
  │     └ <page>                       │                │        │ lib/infoStore.js   │    │
  │        useEffect → fetch ──────────┼── /api/<cat> ─▶│───────▶│  readInfo()        │    │
- │        modals → useSaveItem ───────┼── POST/PUT ───▶│        │  writeInfo()       │──▶ private/info.json
+ │        modals → useSaveItem ───────┼── POST/PUT ───▶│        │  writeInfo()       │──▶ profiles/<id>/info.json
  │        LoginFields ────────────────┼── /passwords ─▶│        │  login dedupe      │    │
  │        Budgeting ──────────────────┼── /user-info ─▶│        └─────────┬──────────┘    │
  │        Profile ────────────────────┼── /profile ───▶│                  │               │
  └────────────────────────────────────┘                │                  ▼               │
-                                                       │        lib/uploads.js ──────────▶ private/uploads/*.png|jpg
+                                                       │        lib/uploads.js ──────────▶ profiles/<id>/uploads/*
  next/image ◀──── public/ files, /uploads/<file> ──────┤                                  │
                                                        └──────────────────────────────────┘
 ```
@@ -209,20 +214,35 @@ Consequences:
 Key properties:
 
 - **No server components do data work.** Pages render empty and fetch JSON from the API in `useEffect`. The root layout is the only server component, and it only renders the shell.
+- **Every data request is for the signed-in profile.** Which one that is lives on the server, in `private/router.json` ([§6](#profiles-privaterouterjson)), not in the request. infoStore and uploads ask [profiles.js](src/lib/profiles.js) for its folder each time.
 - **The API is a thin shell over [infoStore.js](src/lib/infoStore.js).** All rules (login dedupe, logo saving, migrations, validation) live in the store.
 - **Every request reads the whole file, and every write rewrites the whole file**, synchronously (`fs.readFileSync` / `fs.writeFileSync`). There's no cache and no lock (see [§19](#19-quirks-inconsistencies-and-gotchas)).
 - **Derived data is computed on the client**: upcoming payments, totals, budget, and payment-method lists.
 
 ---
 
-## 6. Data storage: `private/info.json`
+## 6. Data storage: profiles and `info.json`
 
-### Top-level shape
+### Profiles: `private/router.json`
+
+```json
+[
+  { "name": "Alex", "id": "0b6c…", "current": true },
+  { "name": "Sam", "id": "9f21…", "current": false }
+]
+```
+
+- Each profile's data is in `private/profiles/<id>/`: an `info.json` (shaped as below) and an `uploads/` folder. `createProfile` makes the folder and `uploads/`; `info.json` is written the first time it's read.
+- `id` is a `crypto.randomUUID()`. It's a folder name, so `readRouter()` keeps ids as strings (a hand-written `123` becomes `"123"`) and **skips entries whose id isn't `[A-Za-z0-9_-]+`**; they're dropped from the file at the next write.
+- **At most one profile is `current`**: the signed-in one, whose folder every data request uses. If the file has several, only the first counts (and the rest are written back as `false`). When none is, no one is signed in: the client sends every URL to `/` and shows the profile picker ([§12](#profileproviderjsx)), and data routes throw.
+- `name` is a string, trimmed on save, and never blank once set (`createProfile` and `renameCurrentProfile` refuse a blank name). It's `""` only for a profile migrated from an info.json that never had a name, and then the first-run popup asks for one. **The name lives only here**, not in `info.json`.
+- There's no password and no delete: signing in is just making a profile `current`.
+
+### Top-level shape of `info.json`
 
 ```json
 {
   "user-info": { "income-streams": [], "additional-expenses": [] },
-  "profile": { "name": "" },
   "bank accounts": [],
   "credit cards": [],
   "subscriptions": [],
@@ -252,7 +272,7 @@ Key properties:
 
 Files created before utilities or other expenses existed have no key for them. That's fine: every store function reads a category with `info[key] || []`, and the key is written the first time a utility is added.
 
-`passwords`, `user-info` and `profile` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
+`passwords` and `user-info` are **not** categories. They have their own routes and aren't reachable through `/api/[category]`.
 
 ### Value conventions
 
@@ -471,33 +491,43 @@ Each additional expense is a **one-key object** `{ "<name>": <monthly amount> }`
 
 The form can't be saved without a name and an amount above 0 (or with the same day picked twice for `twice-monthly`). The frequency and paydays are optional.
 
-### Profile (`profile`)
-
-```json
-{ "name": "Alex" }
-```
-
-`name` is a string, trimmed on save. It's `""` only until the user first enters one: a blank name means "ask for it" (see [ProfileProvider](#profileproviderjsx)), and `updateProfile` refuses to save a blank name, so once set it can be changed but never cleared. Files from before profiles existed have no `profile` key; `getProfile()` returns `{ "name": "" }` for them, and the key is written the first time the profile is saved.
-
 ### Migrations (automatic, on read)
 
 | Situation | Handled by | Effect |
 |---|---|---|
-| File doesn't exist | `readInfo()` | Creates it with `DEFAULT_INFO` |
+| No `private/router.json` but a legacy `private/info.json` (from before profiles) | `migrateLegacyInfo()` in profiles.js | Creates a profile with a new id, **signed in**, named after the file's old `"profile"` name (`""` if it had none). Writes the file to `profiles/<id>/info.json` without its `"profile"` key, moves everything in `private/uploads/` except its README into `profiles/<id>/uploads/`, then deletes the legacy file and folder |
+| No `private/router.json` and no legacy file | `readRouter()` | Creates it as `[]` |
+| The profile's `info.json` doesn't exist | `readInfo()` | Creates it with `DEFAULT_INFO` |
 | No `"user-info"` | `withUserInfoFirst()` (and `setup.js`) | Adds an empty one, placed first |
 | No `"passwords"` key | `addPasswordsKey()` | Builds `passwords` from every item's login, then writes the file |
 | An income stream shaped `{ "<name>": <monthly amount> }` | `migrateIncomeStreams()` | Replaces it with a full stream with `frequency: "monthly"` and that amount as `paycheckAmount`, then writes the file. It has no `dayOfMonth` until it's next edited, so it counts in the budget but isn't on Home |
-| An item in a `PLATFORM_FIELDS` category with no `img` | `migrateImages()` | Adds `img` right after its platform field (after `type` for utilities): the built-in logo, the type icon, or for an Other platform its old `customLogo` upload, moved from `public/<folder>/uploads/` to `private/uploads/` (`""` if there was none). Drops `customLogo`, then writes the file |
+| An item in a `PLATFORM_FIELDS` category with no `img` | `migrateImages()` | Adds `img` right after its platform field (after `type` for utilities): the built-in logo, the type icon, or for an Other platform its old `customLogo` upload, moved from `public/<folder>/uploads/` to the profile's `uploads/` (`""` if there was none). Drops `customLogo`, then writes the file |
 
 ---
 
 ## 7. The server layer
 
-Only two modules touch the filesystem, and both are imported **only by route handlers**.
+Only three modules touch the filesystem, and they're imported **only by route handlers** (and each other).
+
+### [src/lib/profiles.js](src/lib/profiles.js)
+
+Owns `private/router.json` (see [§6](#profiles-privaterouterjson)). Paths come from `process.cwd()`, so **the server must be started from the project root**. Every function reads the file fresh and rewrites it whole.
+
+| Export | Used by | Behavior |
+|---|---|---|
+| `listProfiles()` | `GET /api/profiles` | Every profile, normalized (see `readRouter` below) |
+| `currentProfile()` | `GET /api/profile` | The signed-in profile, or `null` |
+| `currentProfileDir()` | infoStore, uploads | `private/profiles/<current id>`. **Throws `No profile is signed in`** when no one is, so nothing is ever read or written for no one |
+| `createProfile(name)` | `POST /api/profiles` | Trims the name, makes the folder and its `uploads/`, appends `{ name, id, current: true }` and un-currents every other profile. `null` if the name is blank |
+| `signIn(id)` | `PUT /api/profiles/current` | Makes that profile the only current one; `null` if there's no such id |
+| `signOut()` | `DELETE /api/profiles/current` | Sets every `current` to `false` |
+| `renameCurrentProfile(name)` | `PUT /api/profile` | Trims and saves the signed-in profile's name; `null` if the name is blank or no one is signed in |
+
+Internally, `readRouter()` creates the file (migrating a legacy `info.json`, see [Migrations](#migrations-automatic-on-read)) and normalizes each entry to `{ name, id, current }`: string ids, unsafe ids skipped, only the first `current` counted.
 
 ### [src/lib/infoStore.js](src/lib/infoStore.js)
 
-Path: `path.join(process.cwd(), "private", "info.json")`, so **the server must be started from the project root**.
+Path: `infoPath()`, which is `<currentProfileDir()>/info.json`, worked out on every read and write, so every function works on the signed-in profile (and throws if there isn't one).
 
 Internal tables:
 
@@ -511,8 +541,9 @@ Internal helpers:
 
 | Function | What it does |
 |---|---|
+| `infoPath()` | The signed-in profile's `info.json` |
 | `readInfo()` | Creates the file if missing; parses it; puts user-info first; adds `passwords` if missing; migrates old income streams and adds missing `img`s |
-| `writeInfo(info)` | `mkdir -p private/`, writes JSON with user-info first |
+| `writeInfo(info)` | `mkdir -p` the profile's folder, writes JSON with user-info first |
 | `imageFor(key, item)` / `withImage(key, item)` | Work out `img` (see [§10](#10-logos-built-in-platforms-and-other-uploads)), saving a `data:` URL via `saveUpload`. `withImage` leaves categories outside `PLATFORM_FIELDS` (other expenses) alone |
 | `insertAfter(object, afterKey, key, value)` | Copy of `object` with `key` placed right after `afterKey`, so migrated items keep a readable key order |
 | `migrateImages(info)` | See [Migrations](#migrations-automatic-on-read) |
@@ -521,7 +552,6 @@ Internal helpers:
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
 | `itemsUsingLogin(info, login, excludeId?)` | Every item across all categories whose login equals `login` |
 | `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape. `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
-| `isProfile` | A plain object whose `name` is a string |
 
 Exports:
 
@@ -534,7 +564,6 @@ Exports:
 | `deleteItem(slug, id)` | `DELETE /api/[category]/[id]` | Deletes its uploaded image, removes the item. **Doesn't** touch saved logins |
 | `reorderItems(slug, ids)` | `PUT /api/[category]` | Rebuilds the array in `ids` order. **Items not listed in `ids` are dropped** |
 | `getUserInfo()` / `updateUserInfo(v)` | `/api/user-info` | Update validates the shape, returns `null` if invalid |
-| `getProfile()` / `updateProfile(v)` | `/api/profile` | Get falls back to `{ name: "" }`; update validates, trims the name, returns `null` if invalid or the name is blank |
 | `importInfo(data)` | `POST /api/import` | Validates, then replaces everything (see [§8](#8-api-reference)) |
 | `exportInfo()` | `GET /api/download` | Pretty JSON string of the whole file |
 | `listLogins()` | `GET /api/passwords` | Saved logins, each with `img` (from the first item using it that has one) and `usedBy` attached |
@@ -545,16 +574,16 @@ Exports:
 
 | Export | Behavior |
 |---|---|
-Uploads live in `private/uploads/`, which Next doesn't serve, so [src/app/uploads/[file]/route.js](src/app/uploads/[file]/route.js) serves them at `/uploads/<file>`: `readUpload`, then the bytes with their content type and `Cache-Control: private, max-age=31536000, immutable` (file names are never reused), or `404`. That URL is what items store in `img`, and `next/image` optimizes it like any local image.
+Uploads live in the signed-in profile's `private/profiles/<id>/uploads/` (`uploadsDir()`, worked out on every call like `infoPath()`), which Next doesn't serve, so [src/app/uploads/[file]/route.js](src/app/uploads/[file]/route.js) serves them at `/uploads/<file>`: `readUpload`, then the bytes with their content type and `Cache-Control: private, max-age=31536000, immutable` (file names are never reused, and they carry a random suffix, so two profiles' uploads never share a URL), or `404`. That URL is what items store in `img`, and `next/image` optimizes it like any local image.
 
 | Export | Behavior |
 |---|---|
 | `isPendingUpload(v)` | `true` if `v` is a string starting with `data:` |
 | `isUpload(v)` | `true` if `v` matches `UPLOAD_PATH`, `^/uploads/[a-z0-9-]+\.(png\|jpg)$` |
-| `saveUpload(name, dataUrl)` | Accepts only `data:image/(png\|jpeg);base64,…`. Decodes it, rejects anything over **5 MB**, checks the **magic bytes** (PNG signature or JPEG `FF D8 FF`, not just the MIME label), writes `private/uploads/<slug(name) or "logo">-<8 hex>.<png\|jpg>` and returns `/uploads/<that file>` |
+| `saveUpload(name, dataUrl)` | Accepts only `data:image/(png\|jpeg);base64,…`. Decodes it, rejects anything over **5 MB**, checks the **magic bytes** (PNG signature or JPEG `FF D8 FF`, not just the MIME label), writes `<profile>/uploads/<slug(name) or "logo">-<8 hex>.<png\|jpg>` and returns `/uploads/<that file>` |
 | `deleteUpload(img)` | Deletes only paths matching `UPLOAD_PATH`, so built-in logos and empty values are never touched |
 | `readUpload(file)` | `{ bytes, contentType }`, or `null` if `file` isn't a bare `[a-z0-9-]+.(png\|jpg)` name (no slashes, so no path traversal) or doesn't exist |
-| `moveLegacyUpload(publicPath)` | For the migration: moves an old `public/<folder>/uploads/<file>` into `private/uploads/` and returns `/uploads/<file>`, or `""` if it isn't one or the file is gone |
+| `moveLegacyUpload(publicPath)` | For the migration: moves an old `public/<folder>/uploads/<file>` into the profile's `uploads/` and returns `/uploads/<file>`, or `""` if it isn't one or the file is gone |
 
 ---
 
@@ -574,18 +603,24 @@ All routes live under `src/app/api`. Bodies are JSON. In Next 16, `params` is a 
 | `DELETE /api/passwords/:id` | | `200 { ok: true }` | |
 | `GET /api/user-info` | | `200` user-info object | |
 | `PUT /api/user-info` | full user-info | `200` saved user-info | `400` invalid JSON or shape |
-| `GET /api/profile` | | `200 { name }` | |
-| `PUT /api/profile` | `{ name }` | `200` saved profile (name trimmed) | `400` invalid JSON, shape, or blank name |
+| `GET /api/profile` | | `200 { name, id, current }` for the signed-in profile, or `200 null` when no one is | |
+| `PUT /api/profile` | `{ name }` | `200` the renamed profile (name trimmed) | `400` invalid JSON, blank name, or no one signed in |
+| `GET /api/profiles` | | `200 [{ name, id, current }]` | |
+| `POST /api/profiles` | `{ name }` | `201` the new profile, now signed in | `400` invalid JSON or blank name |
+| `PUT /api/profiles/current` | `{ id }` | `200` the profile, now the only current one | `400` invalid JSON; `404` no such id |
+| `DELETE /api/profiles/current` | | `200 { ok: true }`, with no one signed in | |
 | `GET /api/download` | | `200` file attachment `info.json`, `Cache-Control: no-store` | |
 | `POST /api/import` | an entire info.json | `200 { ok: true }` | `400 Invalid JSON` / `400 Not an info.json file` |
 | `GET /api/keep-alive` | | `text/event-stream` that never ends | |
 | `GET /uploads/:file` | | `200` the uploaded image (not under `/api`; see [§7](#srclibuploadsjs)) | `404` |
 
-Static routes (`passwords`, `user-info`, `profile`, `download`, `import`, `keep-alive`) take precedence over the dynamic `[category]` segment.
+**With no one signed in**, every route that reads or writes info (`/api/:category…`, `passwords`, `user-info`, `download`, `import`, `/uploads/:file`) throws `No profile is signed in` → **500**. The client never calls them then, since [ProfileGate](#profileproviderjsx) doesn't render pages.
+
+Static routes (`passwords`, `user-info`, `profile`, `profiles`, `download`, `import`, `keep-alive`) take precedence over the dynamic `[category]` segment.
 
 `download`, `import` and `keep-alive` export `dynamic = "force-dynamic"`.
 
-**Import validation** (`importInfo`): the data must be a plain object, contain **at least one category storage key** (e.g. `"bank accounts"`), have an array for every known list key that's present, and have a valid `user-info` and `profile` if they're present. Missing lists become `[]`. If the file has no `passwords`, they're rebuilt from the items. Individual items are **not** validated.
+**Import validation** (`importInfo`): the data must be a plain object, contain **at least one category storage key** (e.g. `"bank accounts"`), have an array for every known list key that's present, and have a valid `user-info` if it's present. Import and download only cover the signed-in profile's `info.json`. A `"profile"` key (downloads from before profiles had one) is ignored, since the name lives in `router.json`. Missing lists become `[]`. If the file has no `passwords`, they're rebuilt from the items. Individual items are **not** validated.
 
 ---
 
@@ -696,7 +731,7 @@ A platform's **name is its key**. Items store the name string (e.g. `"Chase"`), 
 1. [LogoDropdown](src/components/dropdowns/LogoDropdown.jsx) always ends its list with **Other**, unless `allowOther={false}`. If your search found nothing, the search text carries over as the new platform's name, and the dropdown shows *Other · "search text"*.
 2. In Other mode it shows an [ImageUploadButton](src/components/ui/ImageUploadButton.jsx) next to a name input.
 3. The button opens [ImageUploadDialog](src/components/modals/ImageUploadDialog.jsx), which accepts drag-and-drop anywhere on the overlay or a file picker. It allows PNG/JPEG up to 5 MB, checked on the client, and reads the file into a **data URL**, stored in the form's `img` (the modals pass `customLogo={form.img}` to `Dropdown`).
-4. On save, the server validates the data URL and writes it to `private/uploads/`. The item stores `/uploads/<file>`.
+4. On save, the server validates the data URL and writes it to the signed-in profile's `uploads/`. The item stores `/uploads/<file>`.
 5. Picking a listed platform sets the form's `img` to `""` (the server then fills in the built-in logo). Switching from a listed platform to Other also clears it, so the old logo isn't shown as the upload.
 
 Whether a saved item is in Other mode is inferred on open: if `value` is set but isn't one of the options, the dropdown starts in Other mode.
@@ -733,7 +768,9 @@ Items point at each other **by id**, in three different formats:
     <ToastProvider>
       <ProfileProvider>
         <NavBar/>
-        <main max-w-4xl, centered, px-6 md:px-10>{page}</main>
+        <main max-w-4xl, centered, px-6 md:px-10>
+          <ProfileGate>{page}</ProfileGate>   (or <ProfilePicker/> while signed out)
+        </main>
         <NamePromptModal/>   (only while the profile has no name)
       </ProfileProvider>
     </ToastProvider>
@@ -751,15 +788,21 @@ Sticky header with a translucent blurred background. Items:
 - **Budgeting** → `/budgeting`
 - **⚙ Settings** (right side)
 
+**While no one is signed in, only ⚙ Settings shows** (the nav links are hidden; there's nowhere to go but the picker). They're hidden only once the profile is known to be `null`, not while it loads, so they don't flicker on every page load.
+
 Menus close on an outside click or Escape. The active item gets the accent style; a menu is active when the path starts with `/accounts/` or `/expenses/`. `/accounts` and `/expenses` themselves have **no page**; they're only menu groupings.
 
 ### [SettingsMenu.jsx](src/components/SettingsMenu.jsx)
 
+- **Signed in as *name*** (a label, not a link)
 - **Profile** → `/profile`
 - **Password Manager** → `/passwords`
 - **Download Info** → plain `<a href="/api/download" download>` plus a toast
 - **Import Info** → hidden file input. It parses the JSON on the client (an invalid file shows a toast), shows a `confirm()` warning that everything will be replaced, POSTs to `/api/import`, then **reloads the page after 800 ms**, because pages only fetch on mount.
+- **Log Out** → `signOut()` from `useProfile()`, which lands on the profile picker at `/`.
 - **Theme**: System / Light / Dark segmented control.
+
+While no one is signed in, the menu shows only **Theme**: everything else belongs to a profile.
 
 ### Theme mechanics
 
@@ -775,9 +818,11 @@ Menus close on an outside click or Escape. The active item gets the accent style
 
 ### [ProfileProvider.jsx](src/components/ProfileProvider.jsx)
 
-- Fetches `GET /api/profile` once on mount (a failure toasts "Couldn't load your profile") and keeps it in context.
-- `useProfile()` → `{ profile, saveProfile }`. `profile` is `null` until it loads. `saveProfile(profile)` sends `PUT /api/profile`, stores the saved profile and returns it, or throws.
-- **First run:** while the loaded profile's `name` is `""`, it renders [NamePromptModal](src/components/modals/NamePromptModal.jsx) over every page. The popup can't be closed, so nothing else can be used until a name is saved. Nothing shows while the profile is loading or if it failed to load.
+- Fetches `GET /api/profile` on mount (a failure toasts "Couldn't load your profile") and keeps it in context. It fetches again **whenever the window gains focus**, because the signed-in profile is server state: signing in or out in another tab changes it for this one too.
+- `useProfile()` → `{ profile, saveProfile, createProfile, signIn, signOut }`. `profile` is `undefined` while loading, `null` when no one is signed in, else `{ name, id, current }`. `saveProfile({ name })` renames it (`PUT /api/profile`), `createProfile(name)` (`POST /api/profiles`) and `signIn(id)` (`PUT /api/profiles/current`) switch to a profile, and `signOut()` (`DELETE /api/profiles/current`) sets it to `null`. Each stores and returns the result, or throws.
+- **Signed out:** an effect `router.replace("/")`s from any other path, and `ProfileGate` (inside `<main>`) renders [ProfilePicker](src/components/ProfilePicker.jsx) instead of the page.
+- **Signed in:** `ProfileGate` renders the page inside a `Fragment` **keyed by the profile's id**, so switching profiles remounts the page and its `useEffect`s fetch the new profile's data, with no reload. While the profile is loading (or failed to load) it renders nothing, so pages never fetch before there's a profile.
+- **No name yet:** while the signed-in profile's `name` is `""` (only possible for a profile migrated from an info.json that never had a name), it renders [NamePromptModal](src/components/modals/NamePromptModal.jsx) over every page. The popup can't be closed, so nothing else can be used until a name is saved.
 
 ---
 
@@ -906,7 +951,7 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind) 
 - Stats: **Monthly Total** (sum of `monthlyPayment`), **Yearly Total** (× 12), **Total Debt** (sum of amount remaining).
 - Filters: Provider, Type. Search: name, provider, type label.
 - Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other). When expanded, the green box shows how the amount adds up: Amount Loaned, Interest Amount (with a `+` before its number), Amount Paid (with a `−` before its number), a total line, then Amount Remaining. With no `amountLoaned` there's no box, so Interest Amount and Amount Paid are plain detail rows instead. Below that, a **Disbursements** section listing each date and amount, oldest first, skipping rows left blank.
-- An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (see [§6](#6-data-storage-privateinfojson)).
+- An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (see [§6](#6-data-storage-profiles-and-infojson)).
 - The form edits disbursements inline ([LoanDisbursementFields](src/components/LoanDisbursementFields.jsx)), one row per disbursement with a native date picker.
 
 ### Insurance: `/expenses/insurance`
@@ -929,13 +974,17 @@ The nav label is "Other"; the page title is "Other Expenses". It follows the [§
 - Filters: Type (each option shows its type icon), Provider. Search: name, provider, type label.
 - Card: the type icon; subtitle is the provider; type chip (shows `otherType` for Other); key stat "Monthly/Yearly Cost"; "Payments Due" row.
 
+### Profile picker: `/` while signed out
+
+[ProfilePicker.jsx](src/components/ProfilePicker.jsx), rendered by `ProfileGate` in place of the page. It fetches `GET /api/profiles` and shows a `PageHeader` ("Choose a Profile", or "Welcome!" when there are none yet), then one card button per profile (an initial in an accent tile, and the name, or "Unnamed profile") that calls `signIn(id)`, and a **New Profile** card with a name field and **Create Profile** (disabled while blank), which calls `createProfile(name)`. Both disable everything while the request runs and toast "Couldn't sign in" / "Couldn't create profile" on failure. On success the provider's new profile replaces the picker with Home.
+
 ### Password Manager: `/passwords`
 
 Reached from Settings, not the nav bar. Lists saved logins sorted by platform, then username. Each card shows the logo, username, "Used by N items", masked username and password, and a **Used By** list linking to each item's page. Edit and Delete work as described in [§9](#9-saved-logins-the-password-system). Filter: Platform. Search: platform, username, names of the items using it.
 
 ### Profile: `/profile`
 
-Reached from Settings (its top item), not the nav bar. A card with one **Name** field. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
+Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
 
 ### Budgeting: [src/app/budgeting/page.js](src/app/budgeting/page.js)
 
@@ -1083,12 +1132,12 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 
 | Modal | Notes |
 |---|---|
-| `Add*Modal` (6) | One per category; see [§6](#6-data-storage-privateinfojson) for fields. Validation is **soft**: card number ≠ 16 digits, CVC ≠ 3 or PIN ≠ 4 shows an error after blur but **doesn't block saving** |
+| `Add*Modal` (6) | One per category; see [§6](#6-data-storage-profiles-and-infojson) for fields. Validation is **soft**: card number ≠ 16 digits, CVC ≠ 3 or PIN ≠ 4 shows an error after blur but **doesn't block saving** |
 | `AddIncomeStreamModal` | Opened from Budgeting. Unlike the category modals, validation is **hard** (Save stays disabled until there's a name and an amount, because the budget needs them), and saving goes through the page's `onSave` / `onDelete` |
 | `RearrangeModal` | See [§13](#13-anatomy-of-a-category-page) |
 | `EditLoginModal` | Password Manager edit/delete; "Changes also apply to …" |
 | `ImageUploadDialog` | Rendered with `createPortal` into `document.body` so it sits above the form that opened it |
-| `NamePromptModal` | The first-run "Welcome!" popup, rendered by `ProfileProvider` while the profile has no name. It passes no `onClose`, so it can't be dismissed; **Continue** stays disabled until the name isn't blank, and on success the provider's new profile unmounts it |
+| `NamePromptModal` | The "Welcome!" popup, rendered by `ProfileProvider` while the signed-in profile has no name (a profile migrated from an unnamed info.json; new profiles always get a name from the picker). It passes no `onClose`, so it can't be dismissed; **Continue** stays disabled until the name isn't blank, and on success the provider's new profile unmounts it |
 
 ---
 
@@ -1120,12 +1169,13 @@ Animations: `fade-in`, `pop-in`, `toast-in`, `rise-in`.
 
 The data model is "it's my own machine." Be aware of what that means:
 
-- **Everything is plaintext** in `private/info.json`, including passwords, full card numbers, CVCs, PINs, account and routing numbers. There's no encryption at rest.
+- **Everything is plaintext** in each `private/profiles/<id>/info.json`, including passwords, full card numbers, CVCs, PINs, account and routing numbers. There's no encryption at rest.
+- **Profiles aren't a security boundary.** There are no passwords: anyone at the machine can sign in to any profile, and every profile's files sit side by side in `private/profiles/`.
 - **No authentication on the API.** Anything that can reach the server's port can read all data (`GET /api/download`), overwrite it (`POST /api/import`), or stop the server.
 - **Download Info exports everything**, including passwords, as a plain file.
 - **Masking is cosmetic.** Values are masked in the UI, but the full values are in the API responses and in browser memory.
-- `private/info.json` and `private/uploads/*` are **git-ignored**. Keep it that way, and never commit a real `info.json`.
-- Uploads are restricted: PNG/JPEG only, verified by magic bytes, ≤ 5 MB, and written only to `private/uploads/` with server-generated filenames. `/uploads/:file` only serves bare `[a-z0-9-]+.(png|jpg)` names from that folder, so there's no path traversal from user input.
+- `private/router.json` and `private/profiles/` are **git-ignored** (and so are the legacy `private/info.json` and `private/uploads/`, in case someone pulls this version before the app has migrated them). Keep it that way, and never commit a real `info.json`.
+- Uploads are restricted: PNG/JPEG only, verified by magic bytes, ≤ 5 MB, and written only to the signed-in profile's `uploads/` with server-generated filenames. `/uploads/:file` only serves bare `[a-z0-9-]+.(png|jpg)` names from that folder, so there's no path traversal from user input. Profile ids from requests are only used after they're found in `router.json`, whose ids must be `[A-Za-z0-9_-]+`.
 - External links open with `rel="noopener noreferrer"`.
 - `next/font/google` self-hosts the fonts, so the browser makes no third-party requests at runtime.
 
@@ -1143,6 +1193,9 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - Imported items aren't validated. The upload files themselves aren't part of Download/Import, so an import on another machine can reference uploads that don't exist there.
 - `img` is stored, not derived, so edits to `platforms.json` only reach an item when it's next saved (see [§10](#10-logos-built-in-platforms-and-other-uploads)).
 - `process.cwd()` decides where data lives, so the server must start from the project root.
+- **The signed-in profile is server-wide**, not per tab. Signing in to another profile in one tab switches every tab; the others catch up the next time their window gains focus (ProfileProvider refetches then). Until then, a background tab that saves would be saving into the newly signed-in profile.
+- Data routes called while signed out **500** rather than 401 (`currentProfileDir()` throws and route handlers don't catch it).
+- There's no way to delete a profile from the app; remove its entry from `router.json` and its folder by hand.
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.
@@ -1162,7 +1215,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - Recurring investments ignore market holidays.
 
 **UI behavior**
-- Pages fetch once on mount. After Import, the app reloads the page to pick up the new data.
+- Pages fetch once on mount. After Import, the app reloads the page to pick up the new data. Switching profiles doesn't need a reload: `ProfileGate` remounts the page.
 - After "Update password everywhere", only the **current page's** items refresh in place.
 - The `bank-account` and `payment-method` dropdowns fetch independently per instance; a form with several recurring investments makes several requests.
 - Saved logins aren't cleaned up when items change username or platform or are deleted.
@@ -1196,7 +1249,7 @@ Add it to `typesByType["loan-type"]` in Dropdown.jsx.
 ### Add a whole new category
 
 1. **Store** ([infoStore.js](src/lib/infoStore.js)): add it to `DEFAULT_INFO` and `CATEGORY_KEYS`, plus `PLATFORM_FIELDS` if it has a platform (that also gives its items an `img`; Other Expenses has none). Add its name rule to [itemNames.js](src/lib/itemNames.js), keyed by the API slug.
-2. **Logos**: put its built-in logos in a new `public/<folder>/`, and add its storage key to `PLATFORM_OPTIONS` in [logos.js](src/lib/logos.js). Uploads need nothing: they all go to `private/uploads/`.
+2. **Logos**: put its built-in logos in a new `public/<folder>/`, and add its storage key to `PLATFORM_OPTIONS` in [logos.js](src/lib/logos.js). Uploads need nothing: they all go to the profile's `uploads/`.
 3. **Setup**: add it to `defaultInfo` in [scripts/setup.js](scripts/setup.js).
 4. **Platforms**: add a group to `platforms.json`, export it from `Dropdown.jsx`, and add an `optionsByType` entry.
 5. **UI**: create `AddXModal` (copy one; use `useSaveItem`, `LoginFields`, `Dropdown`, `AffixInput`, `NotesField`, `FormActions`), `XInfo` (use `InfoCard`, with `itemName()` as the title), and `src/app/<group>/<slug>/page.js` (copy one; follow [§13](#13-anatomy-of-a-category-page)).
@@ -1213,7 +1266,7 @@ Add it to `optionsByType` for platform lists, to `typesByType` for simple type l
 
 ## 21. Conventions
 
-- **Client components by default.** Pages are `"use client"` and fetch from `/api` in `useEffect`. Server-only code (anything that imports `fs`) stays in `src/lib/infoStore.js` and `src/lib/uploads.js`, and is imported only by route handlers.
+- **Client components by default.** Pages are `"use client"` and fetch from `/api` in `useEffect`. Server-only code (anything that imports `fs`) stays in `src/lib/profiles.js`, `src/lib/infoStore.js` and `src/lib/uploads.js`, and is imported only by route handlers.
 - **`src/lib`** holds the store plus pure helpers usable anywhere. **`src/util`** holds small client fetch wrappers and lookups.
 - **Platforms are referenced by name; items are referenced by id.** Show an item's name with `itemName(category, item)`, never a hand-written `name || "Unnamed …"`, so it's called the same on every screen.
 - **Store strings from forms**; convert with `Number()` where needed.

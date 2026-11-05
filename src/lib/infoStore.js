@@ -3,9 +3,14 @@ import path from "path";
 import { emptyIncomeStream } from "@/lib/incomeStreams";
 import { itemName } from "@/lib/itemNames";
 import { builtInLogo, utilityIcon } from "@/lib/logos";
+import { currentProfileDir } from "@/lib/profiles";
 import { deleteUpload, isPendingUpload, isUpload, moveLegacyUpload, saveUpload } from "@/lib/uploads";
 
-const INFO_PATH = path.join(process.cwd(), "private", "info.json");
+// The signed-in profile's info.json, private/profiles/<id>/info.json (see lib/profiles.js). Throws if no one is
+// signed in.
+function infoPath() {
+    return path.join(currentProfileDir(), "info.json");
+}
 
 // Budgeting info. Income streams are described in lib/incomeStreams.js. Each additional expense is a
 // one-key object, { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }.
@@ -14,15 +19,8 @@ const DEFAULT_USER_INFO = {
     "additional-expenses": [],
 };
 
-// The name shown on the Profile page. It's "" until the user first enters one, and ProfileProvider asks for it
-// on every page until they do.
-const DEFAULT_PROFILE = {
-    name: "",
-};
-
 const DEFAULT_INFO = {
     "user-info": DEFAULT_USER_INFO,
-    profile: DEFAULT_PROFILE,
     "bank accounts": [],
     "credit cards": [],
     subscriptions: [],
@@ -62,7 +60,7 @@ const PLATFORM_FIELDS = {
 // Every category with a platform also stores a picture in `img`: the platform's built-in logo, or the image
 // uploaded for a platform added through "Other" ("" if none was). Utilities are pictured by their type instead.
 // Other expenses have no picture. The server always works it out, so whatever `img` the form sent is only used
-// as the upload: a data URL picked in the form, written to private/uploads, or the item's existing upload.
+// as the upload: a data URL picked in the form, written to the profile's uploads folder, or the item's existing upload.
 function imageFor(key, item) {
     if (key === "utilities") return utilityIcon(item.type);
     const platform = item[PLATFORM_FIELDS[key]];
@@ -166,7 +164,7 @@ function migrateIncomeStreams(info) {
 }
 
 // Items saved before `img` existed get one, right after the field it comes from. A platform added through "Other"
-// had its upload's path in `customLogo`, under public/<folder>/uploads; that file moves to private/uploads.
+// had its upload's path in `customLogo`, under public/<folder>/uploads; that file moves to the profile's uploads folder.
 function migrateImages(info) {
     let changed = false;
     for (const key of Object.keys(PLATFORM_FIELDS)) {
@@ -184,12 +182,13 @@ function migrateImages(info) {
 }
 
 function readInfo() {
-    if (!fs.existsSync(INFO_PATH)) {
-        fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
-        fs.writeFileSync(INFO_PATH, JSON.stringify(DEFAULT_INFO, null, 2) + "\n");
+    const file = infoPath();
+    if (!fs.existsSync(file)) {
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, JSON.stringify(DEFAULT_INFO, null, 2) + "\n");
         return structuredClone(DEFAULT_INFO);
     }
-    const info = withUserInfoFirst(JSON.parse(fs.readFileSync(INFO_PATH, "utf-8")));
+    const info = withUserInfoFirst(JSON.parse(fs.readFileSync(file, "utf-8")));
     if (!info.passwords) addPasswordsKey(info);
     migrateIncomeStreams(info);
     migrateImages(info);
@@ -197,8 +196,9 @@ function readInfo() {
 }
 
 function writeInfo(info) {
-    fs.mkdirSync(path.dirname(INFO_PATH), { recursive: true });
-    fs.writeFileSync(INFO_PATH, JSON.stringify(withUserInfoFirst(info), null, 2) + "\n");
+    const file = infoPath();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(withUserInfoFirst(info), null, 2) + "\n");
 }
 
 function isIncomeStream(entry) {
@@ -231,25 +231,6 @@ export function updateUserInfo(userInfo) {
     };
     writeInfo(info);
     return info["user-info"];
-}
-
-function isProfile(value) {
-    return Boolean(value) && typeof value === "object" && !Array.isArray(value) && typeof value.name === "string";
-}
-
-// Files from before profiles existed have no "profile"; it's written the first time it's saved.
-export function getProfile() {
-    return readInfo().profile ?? DEFAULT_PROFILE;
-}
-
-// Replaces the profile. Returns null, writing nothing, if `profile` isn't shaped like DEFAULT_PROFILE or its
-// name is blank: once set, a name can be changed but not cleared.
-export function updateProfile(profile) {
-    if (!isProfile(profile) || profile.name.trim() === "") return null;
-    const info = readInfo();
-    info.profile = { name: profile.name.trim() };
-    writeInfo(info);
-    return info.profile;
 }
 
 export function listItems(category) {
@@ -322,20 +303,19 @@ export function reorderItems(category, orderedIds) {
     return info[key];
 }
 
-// Replaces all info with an uploaded info.json. Returns false if `data` doesn't look like one:
-// it needs at least one category, every known list key it has must be a list, and its budgeting info and
-// profile (both optional, for files from before they existed) must be well-formed.
+// Replaces all of the signed-in profile's info with an uploaded info.json. Returns false if `data` doesn't look
+// like one: it needs at least one category, every known list key it has must be a list, and its budgeting info
+// (optional, for files from before it existed) must be well-formed. The profile's name lives in router.json, so a
+// "profile" key, which downloads from before profiles had, is ignored.
 export function importInfo(data) {
     if (!data || typeof data !== "object" || Array.isArray(data)) return false;
-    const listKeys = Object.keys(DEFAULT_INFO).filter((key) => key !== "user-info" && key !== "profile");
+    const listKeys = Object.keys(DEFAULT_INFO).filter((key) => key !== "user-info");
     if (!Object.values(CATEGORY_KEYS).some((key) => key in data)) return false;
     if (listKeys.some((key) => key in data && !Array.isArray(data[key]))) return false;
     if ("user-info" in data && !isUserInfo(data["user-info"])) return false;
-    if ("profile" in data && !isProfile(data.profile)) return false;
 
     const info = {
         "user-info": { ...DEFAULT_USER_INFO, ...data["user-info"] },
-        profile: { name: data.profile?.name.trim() ?? "" },
         ...Object.fromEntries(listKeys.map((key) => [key, data[key] || []])),
     };
     if ("passwords" in data) writeInfo(info);

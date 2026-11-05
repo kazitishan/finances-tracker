@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getProfile, updateProfile } from "@/lib/infoStore";
+import { currentProfile, renameCurrentProfile } from "@/lib/profiles";
 
+// The signed-in profile, or null if no one is signed in.
 export async function GET() {
-    return NextResponse.json(getProfile());
+    return NextResponse.json(currentProfile());
 }
 
 export async function PUT(request) {
@@ -12,7 +13,7 @@ export async function PUT(request) {
     } catch {
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
-    const profile = updateProfile(body);
+    const profile = renameCurrentProfile(body?.name);
     if (!profile) {
         return NextResponse.json({ error: "Not a valid profile" }, { status: 400 });
     }

@@ -1,6 +1,6 @@
 import { readUpload } from "@/lib/uploads";
 
-// Serves an image uploaded through "Other" from private/uploads. File names are never reused, so it can be cached for good.
+// Serves an image uploaded through "Other" from the signed-in profile's uploads folder. File names are never reused, so it can be cached for good.
 export async function GET(request, { params }) {
     const { file } = await params;
     const upload = readUpload(file);

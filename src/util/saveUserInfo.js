@@ -1,4 +1,4 @@
-// Saves the user's budgeting info to private/info.json, replacing what's there.
+// Saves the user's budgeting info to the signed-in profile's info.json, replacing what's there.
 export async function saveUserInfo(userInfo) {
     const res = await fetch("/api/user-info", {
         method: "PUT",

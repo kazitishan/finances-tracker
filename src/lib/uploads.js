@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { currentProfileDir } from "@/lib/profiles";
 
-const UPLOADS_DIR = path.join(process.cwd(), "private", "uploads");
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
-// Uploaded images live in private/uploads and are served by src/app/uploads/[file]/route.js, so an item's `img`
-// is "/uploads/<file>". These are the only files uploads are allowed to touch: a PNG or JPEG directly inside it.
+// Uploaded images live in the signed-in profile's private/profiles/<id>/uploads and are served by
+// src/app/uploads/[file]/route.js, so an item's `img` is "/uploads/<file>". These are the only files uploads are
+// allowed to touch: a PNG or JPEG directly inside it.
 const UPLOAD_FILE = /^[a-z0-9-]+\.(png|jpg)$/;
 const UPLOAD_PATH = /^\/uploads\/([a-z0-9-]+\.(png|jpg))$/;
 
@@ -15,6 +16,11 @@ const LEGACY_UPLOAD_PATH = /^\/(banks|investment|loans|subscriptions|insurance|i
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
 const CONTENT_TYPES = { png: "image/png", jpg: "image/jpeg" };
+
+// Throws if no one is signed in.
+function uploadsDir() {
+    return path.join(currentProfileDir(), "uploads");
+}
 
 function slugify(name) {
     return (name || "")
@@ -33,7 +39,7 @@ export function isUpload(value) {
     return UPLOAD_PATH.test(value || "");
 }
 
-// Writes a PNG or JPEG data URL to private/uploads and returns its "/uploads/<file>" path.
+// Writes a PNG or JPEG data URL to the profile's uploads folder and returns its "/uploads/<file>" path.
 // The file type is checked from its contents, not just the data URL's label.
 export function saveUpload(name, dataUrl) {
     const match = /^data:image\/(png|jpeg);base64,(.+)$/.exec(dataUrl);
@@ -47,8 +53,8 @@ export function saveUpload(name, dataUrl) {
     if (!extension) throw new Error("Only PNG and JPEG images can be uploaded");
 
     const file = `${slugify(name) || "logo"}-${crypto.randomUUID().slice(0, 8)}.${extension}`;
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    fs.writeFileSync(path.join(UPLOADS_DIR, file), bytes);
+    fs.mkdirSync(uploadsDir(), { recursive: true });
+    fs.writeFileSync(path.join(uploadsDir(), file), bytes);
     return `/uploads/${file}`;
 }
 
@@ -56,24 +62,24 @@ export function saveUpload(name, dataUrl) {
 export function deleteUpload(img) {
     const match = UPLOAD_PATH.exec(img || "");
     if (!match) return;
-    fs.rmSync(path.join(UPLOADS_DIR, match[1]), { force: true });
+    fs.rmSync(path.join(uploadsDir(), match[1]), { force: true });
 }
 
 // The bytes and content type of the uploaded `file`, or null if there's no such upload.
 export function readUpload(file) {
     if (!UPLOAD_FILE.test(file)) return null;
-    const filePath = path.join(UPLOADS_DIR, file);
+    const filePath = path.join(uploadsDir(), file);
     if (!fs.existsSync(filePath)) return null;
     return { bytes: fs.readFileSync(filePath), contentType: CONTENT_TYPES[path.extname(file).slice(1)] };
 }
 
-// Moves an image uploaded before uploads moved to private/ into private/uploads and returns its new path,
+// Moves an image uploaded before uploads moved to private/ into the profile's uploads folder and returns its new path,
 // or "" if `publicPath` isn't one or its file is gone.
 export function moveLegacyUpload(publicPath) {
     const match = LEGACY_UPLOAD_PATH.exec(publicPath || "");
     const from = match && path.join(process.cwd(), "public", publicPath);
     if (!match || !fs.existsSync(from)) return "";
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    fs.renameSync(from, path.join(UPLOADS_DIR, match[2]));
+    fs.mkdirSync(uploadsDir(), { recursive: true });
+    fs.renameSync(from, path.join(uploadsDir(), match[2]));
     return `/uploads/${match[2]}`;
 }
