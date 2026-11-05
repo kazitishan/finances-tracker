@@ -52,7 +52,7 @@ npm install
 
 #### 6. Run the setup script
 
-This creates the `private/router.json` file that keeps track of your profiles:
+This creates the `private/router.json` file that keeps track of your profiles, and the `private/profiles` folder where each profile's information is stored:
 
 ```
 npm run setup

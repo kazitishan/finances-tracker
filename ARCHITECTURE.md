@@ -66,7 +66,7 @@ npm scripts ([package.json](package.json)):
 | `npm run dev` | `next dev`, the normal way to use the app |
 | `npm run build` / `npm start` | production build / server |
 | `npm run lint` | `eslint` |
-| `npm run setup` | `node scripts/setup.js`, which creates `private/router.json` |
+| `npm run setup` | `node scripts/setup.js`, which creates `private/router.json` and every profile's folder |
 
 ---
 
@@ -76,9 +76,12 @@ npm scripts ([package.json](package.json)):
 
 [scripts/setup.js](scripts/setup.js) (plain CommonJS, run by Node directly):
 
-- If `private/router.json` **exists**, it prints `Setup already completed`.
-- If there's a **legacy `private/info.json`** (from before profiles existed), it leaves it alone and says it'll be moved into a profile when the app starts. The server does that move ([§6](#migrations-automatic-on-read)), so the logic lives in one place.
-- Otherwise it creates `private/` and writes `router.json` as `[]`: no profiles, so the app opens on the profile picker.
+- Creates `private/profiles/`.
+- If `private/router.json` **doesn't exist**, it creates it: from a **legacy `private/info.json`** (from before profiles existed) it moves that file and its uploads into a new signed-in profile, exactly like `migrateLegacyInfo()` ([§6](#migrations-automatic-on-read)); otherwise it writes `[]`, so the app opens on the profile picker.
+- For **every profile in `router.json`**, it makes `profiles/<id>/` and its `uploads/`, and writes a default `info.json` if there isn't one (an existing one with no `"user-info"` gets an empty one at the top). Ids that aren't safe folder names are skipped.
+- It's safe to rerun: it only creates what's missing.
+
+It duplicates `DEFAULT_INFO`, the id pattern and the legacy migration because it's plain CommonJS and can't import `src/lib`; **keep them in sync** when changing those.
 
 Running setup is optional. The server's `readRouter()` also creates `router.json` on first access, and `readInfo()` creates a profile's `info.json` with defaults ([§7](#7-the-server-layer)).
 
@@ -118,7 +121,7 @@ Consequences:
 ├── next.config.mjs             Legacy URL redirects
 ├── jsconfig.json               @/* path alias
 ├── eslint.config.mjs, postcss.config.mjs
-├── scripts/setup.js            Creates private/router.json
+├── scripts/setup.js            Creates private/router.json and each profile's folder
 ├── private/
 │   ├── README.md               (tracked; everything else here is git-ignored)
 │   ├── router.json             Every profile: [{ name, id, current }]
@@ -495,7 +498,7 @@ The form can't be saved without a name and an amount above 0 (or with the same d
 
 | Situation | Handled by | Effect |
 |---|---|---|
-| No `private/router.json` but a legacy `private/info.json` (from before profiles) | `migrateLegacyInfo()` in profiles.js | Creates a profile with a new id, **signed in**, named after the file's old `"profile"` name (`""` if it had none). Writes the file to `profiles/<id>/info.json` without its `"profile"` key, moves everything in `private/uploads/` except its README into `profiles/<id>/uploads/`, then deletes the legacy file and folder |
+| No `private/router.json` but a legacy `private/info.json` (from before profiles) | `migrateLegacyInfo()` in profiles.js (and `setup.js`) | Creates a profile with a new id, **signed in**, named after the file's old `"profile"` name (`""` if it had none). Writes the file to `profiles/<id>/info.json` without its `"profile"` key, moves everything in `private/uploads/` except its README into `profiles/<id>/uploads/`, then deletes the legacy file and folder |
 | No `private/router.json` and no legacy file | `readRouter()` | Creates it as `[]` |
 | The profile's `info.json` doesn't exist | `readInfo()` | Creates it with `DEFAULT_INFO` |
 | No `"user-info"` | `withUserInfoFirst()` (and `setup.js`) | Adds an empty one, placed first |
