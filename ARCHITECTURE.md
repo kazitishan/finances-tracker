@@ -154,7 +154,7 @@ Consequences:
     │       ├── passwords/route.js         GET saved logins
     │       ├── passwords/[id]/route.js    PUT, DELETE a saved login
     │       ├── user-info/route.js         GET/PUT budgeting info
-    │       ├── profile/route.js           GET the signed-in profile, PUT its name
+    │       ├── profile/route.js           GET the signed-in profile, PUT its name, DELETE it
     │       ├── profiles/route.js          GET every profile, POST create one (and sign in)
     │       ├── profiles/current/route.js  PUT sign in, DELETE sign out
     │       ├── download/route.js          GET the profile's info.json as attachment
@@ -171,7 +171,7 @@ Consequences:
     │   ├── useUrlFilters.jsx             URL-backed filter state
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
     │   ├── info/                         Read-only cards for each category + detail rows
-    │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload, NamePrompt
+    │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload, NamePrompt, DeleteProfile
     │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, FormActions, AffixInput, icons, ...
     ├── data/platforms.json     Built-in platform names → logo paths
     ├── lib/                    Server store (profiles, infoStore, uploads) + pure helpers
@@ -239,7 +239,7 @@ Key properties:
 - `id` is a `crypto.randomUUID()`. It's a folder name, so `readRouter()` keeps ids as strings (a hand-written `123` becomes `"123"`) and **skips entries whose id isn't `[A-Za-z0-9_-]+`**; they're dropped from the file at the next write.
 - **At most one profile is `current`**: the signed-in one, whose folder every data request uses. If the file has several, only the first counts (and the rest are written back as `false`). When none is, no one is signed in: the client sends every URL to `/` and shows the profile picker ([§12](#profileproviderjsx)), and data routes throw.
 - `name` is a string, trimmed on save, and never blank once set (`createProfile` and `renameCurrentProfile` refuse a blank name). It's `""` only for a profile migrated from an info.json that never had a name, and then the first-run popup asks for one. **The name lives only here**, not in `info.json`.
-- There's no password and no delete: signing in is just making a profile `current`.
+- There's no password: signing in is just making a profile `current`. Deleting a profile (only the signed-in one, from its Profile page) removes its entry and its whole folder, and leaves no one signed in.
 
 ### Top-level shape of `info.json`
 
@@ -525,6 +525,7 @@ Owns `private/router.json` (see [§6](#profiles-privaterouterjson)). Paths come 
 | `signIn(id)` | `PUT /api/profiles/current` | Makes that profile the only current one; `null` if there's no such id |
 | `signOut()` | `DELETE /api/profiles/current` | Sets every `current` to `false` |
 | `renameCurrentProfile(name)` | `PUT /api/profile` | Trims and saves the signed-in profile's name; `null` if the name is blank or no one is signed in |
+| `deleteCurrentProfile(name)` | `DELETE /api/profile` | Removes the signed-in profile from the file and `rm -rf`s its folder (info.json and uploads), leaving no one signed in. `name`, trimmed, must equal the profile's name (what the user typed to confirm); returns `false`, deleting nothing, if it doesn't or no one is signed in |
 
 Internally, `readRouter()` creates the file (migrating a legacy `info.json`, see [Migrations](#migrations-automatic-on-read)) and normalizes each entry to `{ name, id, current }`: string ids, unsafe ids skipped, only the first `current` counted.
 
@@ -608,6 +609,7 @@ All routes live under `src/app/api`. Bodies are JSON. In Next 16, `params` is a 
 | `PUT /api/user-info` | full user-info | `200` saved user-info | `400` invalid JSON or shape |
 | `GET /api/profile` | | `200 { name, id, current }` for the signed-in profile, or `200 null` when no one is | |
 | `PUT /api/profile` | `{ name }` | `200` the renamed profile (name trimmed) | `400` invalid JSON, blank name, or no one signed in |
+| `DELETE /api/profile` | `{ name }`, the profile's name as typed to confirm | `200 { ok: true }`, with the profile and its data gone and no one signed in | `400` invalid JSON, a name that doesn't match, or no one signed in |
 | `GET /api/profiles` | | `200 [{ name, id, current }]` | |
 | `POST /api/profiles` | `{ name }` | `201` the new profile, now signed in | `400` invalid JSON or blank name |
 | `PUT /api/profiles/current` | `{ id }` | `200` the profile, now the only current one | `400` invalid JSON; `404` no such id |
@@ -822,7 +824,7 @@ While no one is signed in, the menu shows only **Theme**: everything else belong
 ### [ProfileProvider.jsx](src/components/ProfileProvider.jsx)
 
 - Fetches `GET /api/profile` on mount (a failure toasts "Couldn't load your profile") and keeps it in context. It fetches again **whenever the window gains focus**, because the signed-in profile is server state: signing in or out in another tab changes it for this one too.
-- `useProfile()` → `{ profile, saveProfile, createProfile, signIn, signOut }`. `profile` is `undefined` while loading, `null` when no one is signed in, else `{ name, id, current }`. `saveProfile({ name })` renames it (`PUT /api/profile`), `createProfile(name)` (`POST /api/profiles`) and `signIn(id)` (`PUT /api/profiles/current`) switch to a profile, and `signOut()` (`DELETE /api/profiles/current`) sets it to `null`. Each stores and returns the result, or throws.
+- `useProfile()` → `{ profile, saveProfile, createProfile, signIn, signOut, deleteProfile }`. `profile` is `undefined` while loading, `null` when no one is signed in, else `{ name, id, current }`. `saveProfile({ name })` renames it (`PUT /api/profile`), `createProfile(name)` (`POST /api/profiles`) and `signIn(id)` (`PUT /api/profiles/current`) switch to a profile, and `signOut()` (`DELETE /api/profiles/current`) and `deleteProfile(name)` (`DELETE /api/profile`) set it to `null`. Each stores and returns the result, or throws.
 - **Signed out:** an effect `router.replace("/")`s from any other path, and `ProfileGate` (inside `<main>`) renders [ProfilePicker](src/components/ProfilePicker.jsx) instead of the page.
 - **Signed in:** `ProfileGate` renders the page inside a `Fragment` **keyed by the profile's id**, so switching profiles remounts the page and its `useEffect`s fetch the new profile's data, with no reload. While the profile is loading (or failed to load) it renders nothing, so pages never fetch before there's a profile.
 - **No name yet:** while the signed-in profile's `name` is `""` (only possible for a profile migrated from an info.json that never had a name), it renders [NamePromptModal](src/components/modals/NamePromptModal.jsx) over every page. The popup can't be closed, so nothing else can be used until a name is saved.
@@ -989,6 +991,14 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 
 Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
 
+Below it, a **Delete Profile** card. Deleting takes three confirmations:
+
+1. The card's **Delete Profile** button opens [DeleteProfileModal](src/components/modals/DeleteProfileModal.jsx).
+2. A warning that all the data will be lost, with a **Press here to download the data** button (the same `/api/download` link as Settings → Download Info), and Cancel / **Continue**.
+3. A field to type the profile's name. **Delete Profile** stays disabled until the trimmed text equals the name exactly (case-sensitive), and the server checks it again.
+
+On success it toasts "Profile deleted" and `deleteProfile` signs out, so the app goes to the profile picker at `/`.
+
 ### Budgeting: [src/app/budgeting/page.js](src/app/budgeting/page.js)
 
 The title is "*<Current month>* Budgeting". It loads `user-info` and `getMonthlyExpenses()` (this month), and renders only its `PageHeader` title until both arrive. It also loads bank accounts, to name where direct deposits go.
@@ -1140,6 +1150,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `RearrangeModal` | See [§13](#13-anatomy-of-a-category-page) |
 | `EditLoginModal` | Password Manager edit/delete; "Changes also apply to …" |
 | `ImageUploadDialog` | Rendered with `createPortal` into `document.body` so it sits above the form that opened it |
+| `DeleteProfileModal` | Steps 2 and 3 of deleting a profile (see [Profile](#profile-profile)): a `step` of `"warning"` then `"name"`. It can be closed (Cancel, X, Escape, backdrop) at either step, except while the delete request is running |
 | `NamePromptModal` | The "Welcome!" popup, rendered by `ProfileProvider` while the signed-in profile has no name (a profile migrated from an unnamed info.json; new profiles always get a name from the picker). It passes no `onClose`, so it can't be dismissed; **Continue** stays disabled until the name isn't blank, and on success the provider's new profile unmounts it |
 
 ---
@@ -1198,7 +1209,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - `process.cwd()` decides where data lives, so the server must start from the project root.
 - **The signed-in profile is server-wide**, not per tab. Signing in to another profile in one tab switches every tab; the others catch up the next time their window gains focus (ProfileProvider refetches then). Until then, a background tab that saves would be saving into the newly signed-in profile.
 - Data routes called while signed out **500** rather than 401 (`currentProfileDir()` throws and route handlers don't catch it).
-- There's no way to delete a profile from the app; remove its entry from `router.json` and its folder by hand.
+- Only the signed-in profile can be deleted. To delete another, sign in to it first.
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.

@@ -106,3 +106,15 @@ export function renameCurrentProfile(name) {
     writeRouter(updated);
     return updated.find((profile) => profile.current);
 }
+
+// Deletes the signed-in profile: its entry in router.json and its whole folder, info.json and uploads included,
+// leaving no one signed in. `name` has to match the profile's name, as the user typed it to confirm. Returns
+// false, deleting nothing, if no one is signed in or it doesn't match.
+export function deleteCurrentProfile(name) {
+    const profiles = readRouter();
+    const profile = profiles.find((saved) => saved.current);
+    if (!profile || typeof name !== "string" || name.trim() !== profile.name) return false;
+    writeRouter(profiles.filter((saved) => saved !== profile));
+    fs.rmSync(path.join(PROFILES_DIR, profile.id), { recursive: true, force: true });
+    return true;
+}

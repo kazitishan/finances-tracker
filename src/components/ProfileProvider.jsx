@@ -12,6 +12,7 @@ const ProfileContext = createContext({
     createProfile: async () => {},
     signIn: async () => {},
     signOut: async () => {},
+    deleteProfile: async () => {},
 });
 
 async function fetchProfile() {
@@ -32,7 +33,8 @@ async function sendProfileRequest(url, method, body) {
 
 // `profile` is the signed-in { name, id, current }: undefined until it loads, null when no one is signed in.
 // `saveProfile({ name })` renames it, `createProfile(name)` adds a profile and signs in to it, `signIn(id)` switches
-// to another and `signOut()` signs out. Each returns the new profile (or nothing, for signOut), or throws.
+// to another, `signOut()` signs out and `deleteProfile(name)` deletes the signed-in profile (`name` must match its
+// name) and signs out. Each returns the new profile (or nothing, for signOut and deleteProfile), or throws.
 export function useProfile() {
     return useContext(ProfileContext);
 }
@@ -92,9 +94,14 @@ function ProfileProvider({ children }) {
         setProfile(null);
     }, []);
 
+    const deleteProfile = useCallback(async (name) => {
+        await sendProfileRequest("/api/profile", "DELETE", { name });
+        setProfile(null);
+    }, []);
+
     const value = useMemo(
-        () => ({ profile, saveProfile, createProfile, signIn, signOut }),
-        [profile, saveProfile, createProfile, signIn, signOut]
+        () => ({ profile, saveProfile, createProfile, signIn, signOut, deleteProfile }),
+        [profile, saveProfile, createProfile, signIn, signOut, deleteProfile]
     );
 
     return (

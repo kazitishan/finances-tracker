@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useProfile } from "@/components/ProfileProvider";
 import { useToast } from "@/components/ToastProvider";
+import DeleteProfileModal from "@/components/modals/DeleteProfileModal";
+import { TrashIcon } from "@/components/ui/icons";
 import PageHeader from "@/components/ui/PageHeader";
 import { inputClasses } from "@/lib/formUtils";
 
@@ -11,6 +13,7 @@ export default function ProfilePage() {
   // What's typed in the field, or null to show the saved name.
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const showToast = useToast();
 
   const name = draft ?? profile?.name ?? "";
@@ -58,6 +61,21 @@ export default function ProfilePage() {
           </div>
         </form>
       )}
+
+      {profile && (
+        <div className="card mt-6 flex items-center justify-between gap-4 p-5">
+          <div>
+            <div className="font-medium">Delete Profile</div>
+            <div className="text-sm text-muted">Permanently deletes this profile and all of its data.</div>
+          </div>
+          <button type="button" onClick={() => setDeleting(true)} className="btn btn-danger shrink-0">
+            <TrashIcon size={14} />
+            Delete Profile
+          </button>
+        </div>
+      )}
+
+      {deleting && <DeleteProfileModal onClose={() => setDeleting(false)} />}
     </div>
   );
 }
