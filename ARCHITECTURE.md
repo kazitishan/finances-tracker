@@ -331,7 +331,8 @@ Other expenses have no platform field, picture or login, so they aren't in `PLAT
 | `cardholder`, `cardNumber` (16), `cvc` (3), `expMonth`, `expYear` | |
 | `creditLine` | digits only, whole dollars |
 | `paymentMethod` | **bank account `id`** (plain id, *not* `debit:<id>`; see [§11](#11-cross-item-references)) |
-| `dueDate` | `"1"`–`"28"`, day of the month |
+| `dueDate` | `"1"`–`"28"`, day of the month ("Payment Due Day" in the form, with options shown as "1st of every month" … "28th of every month") |
+| `statementClosingDays` | `"1"`–`"9"`, a single digit: the statement closes this many **business days** (Mon–Fri) after `dueDate` ("Statement Closing Day" in the form, typed into "_ business days after payment due day") |
 | `annualFee` | decimal string (dollars); empty or `0` means no fee |
 | `renewalMonth`, `renewalDay` | `"01"`–`"12"` and `"1"`–`"28"`, when the annual fee is charged each year. The form only shows them when `annualFee` is above 0 |
 | `rewards` | multi-line text; **each line becomes a bullet** |
@@ -911,6 +912,7 @@ Everything coming up, soonest first. It fetches every category with dates, plus 
 | Source | Kind label | Date rule | Amount shown |
 |---|---|---|---|
 | Credit card | Credit card payment | next `dueDate` day | — |
+| Credit card with a `dueDate` and `statementClosingDays` | Statement closing | `nextBusinessDaysAfter(dueDate, statementClosingDays)`, always a weekday | — |
 | Credit card with an `annualFee` above 0 and a `renewalMonth` | Annual fee | next `renewalMonth`/`renewalDay` | `annualFee` |
 | Subscription | Subscription payment | monthly: next `billingDay`; yearly: next `billingMonth`/`billingDay` | `cost` |
 | Bank account | Interest payment | next first or last day of the month (`interestPaymentDate`) | — |
@@ -942,7 +944,7 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind) 
 - Also loads bank accounts (for the payment method).
 - Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; **Total Credit Line**, the sum of `creditLine`; and **Total Annual Fees**, the sum of `annualFee`.
 - Filters: Bank, Payment Method (bank account name). Search: name, bank, usage.
-- Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", Annual Fee, "Annual Fee Renews: March 15th, every year" (both hidden when there's no fee), the Payment Method box, Rewards & Benefits bullets, notes.
+- Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", "Statement Closes: 3 business days after the payment due day", Annual Fee, "Annual Fee Renews: March 15th, every year" (both hidden when there's no fee), the Payment Method box, Rewards & Benefits bullets, notes.
 
 ### Subscriptions: `/expenses/subscriptions`
 
@@ -1031,6 +1033,8 @@ All date math uses **local time at midnight** (`startOfToday()`), so time zones 
 | Helper | Behavior |
 |---|---|
 | `nextOccurrence(day, month?)` | Next date, today included, on `day` this month or next month; with `month`, on that month and day this year or next year |
+| `addBusinessDays(date, n)` | `date` moved forward `n` Mon–Fri days, so the result is always a weekday. Holidays aren't skipped |
+| `nextBusinessDaysAfter(day, n)` | Next date, today included, that is `n` business days after a monthly `day`; checks last month's `day` too, since counting from it can still land on today or later |
 | `nextInterestDate("first"\|"last")` | Next 1st of the month, or next last day of the month |
 | `daysUntil(date)` / `formatDaysUntil(n)` | Whole days from today / "today", "tomorrow", "in N days" |
 | `expiryStatus(m, y)` | `"expired"`, `"soon"` (≤ 60 days left) or `null`. A card is valid **through the end of** its expiry month |

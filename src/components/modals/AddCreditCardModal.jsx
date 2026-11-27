@@ -27,6 +27,7 @@ const initialFormState = {
     creditLine: "",
     paymentMethod: "",
     dueDate: "",
+    statementClosingDays: "",
     annualFee: "",
     renewalMonth: "",
     renewalDay: "",
@@ -236,7 +237,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
                     </div>
 
                     <label className="flex flex-col gap-1">
-                        <span className="field-label">Payment Day</span>
+                        <span className="field-label">Payment Due Day</span>
                         <select
                             className={inputClasses}
                             value={form.dueDate}
@@ -245,10 +246,25 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
                             <option value="">--</option>
                             {dueDates.map((dueDate) => (
                                 <option key={dueDate.value} value={dueDate.value}>
-                                    {dueDate.label.replace(" of every month", "")}
+                                    {dueDate.label}
                                 </option>
                             ))}
                         </select>
+                    </label>
+
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Statement Closing Day</span>
+                        <span className="flex items-center gap-2 text-sm">
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                className={`${inputClasses} w-12 text-center`}
+                                value={form.statementClosingDays}
+                                onChange={(e) => updateField("statementClosingDays", e.target.value.replace(/[^1-9]/g, "").slice(-1))}
+                            />
+                            business days after payment due day
+                        </span>
                     </label>
 
                     <label className="flex flex-col gap-1">
@@ -289,7 +305,7 @@ function AddCreditCardModal({ isOpen, onClose, itemId, initialData, onSaved, onD
                                     <option value="">--</option>
                                     {dueDates.map((dueDate) => (
                                         <option key={dueDate.value} value={dueDate.value}>
-                                            {dueDate.label.replace(" of every month", "")}
+                                            {dueDate.label}
                                         </option>
                                     ))}
                                 </select>

@@ -7,7 +7,7 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { NoMatches } from "@/components/ui/SearchInput";
-import { daysUntil, formatCurrency, formatDaysUntil, matchesSearch, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
+import { daysUntil, formatCurrency, formatDaysUntil, matchesSearch, nextBusinessDaysAfter, nextInterestDate, nextOccurrence } from "@/lib/formUtils";
 import { isEstimated, nextPayday } from "@/lib/incomeStreams";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
 import { getUserInfo } from "@/util/getUserInfo";
@@ -38,6 +38,16 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
       image: card.img,
       date: nextOccurrence(card.dueDate),
     }));
+
+  const statementClosings = cards.map((card) => ({
+    id: `statement-${card.id}`,
+    kind: "Statement closing",
+    type: "Credit Cards",
+    href: "/expenses/credit-cards",
+    name: itemName("credit-cards", card),
+    image: card.img,
+    date: nextBusinessDaysAfter(card.dueDate, card.statementClosingDays),
+  }));
 
   const annualFeePayments = cards
     .filter((card) => Number(card.annualFee) > 0 && card.renewalMonth)
@@ -124,7 +134,7 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextInvestmentDate(investment),
   }));
 
-  return [...paychecks, ...cardPayments, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
+  return [...paychecks, ...cardPayments, ...statementClosings, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);

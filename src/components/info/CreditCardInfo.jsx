@@ -61,6 +61,14 @@ function CreditCardInfo({ card, bankAccounts = [], onEdit }) {
                 label="Payments Due"
                 value={card.dueDate ? `${ordinal(Number(card.dueDate))} of every month` : ""}
             />
+            <DetailRow
+                label="Statement Closes"
+                value={
+                    card.dueDate && card.statementClosingDays
+                        ? `${card.statementClosingDays} business day${card.statementClosingDays === "1" ? "" : "s"} after the payment due day`
+                        : ""
+                }
+            />
             <DetailRow label="Annual Fee" value={hasAnnualFee ? formatCurrency(card.annualFee) : ""} />
             <DetailRow
                 label="Annual Fee Renews"

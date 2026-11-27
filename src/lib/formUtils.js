@@ -159,6 +159,33 @@ export function nextOccurrence(day, month) {
     return thisMonth >= today ? thisMonth : new Date(today.getFullYear(), today.getMonth() + 1, dayNumber);
 }
 
+// `date` moved forward `count` business days (Monday-Friday), so the result is always a weekday. Holidays aren't accounted for.
+export function addBusinessDays(date, count) {
+    const result = new Date(date);
+    let added = 0;
+    while (added < count) {
+        result.setDate(result.getDate() + 1);
+        const weekday = result.getDay();
+        if (weekday !== 0 && weekday !== 6) added++;
+    }
+    return result;
+}
+
+// Next date (today included) that's `businessDays` business days after a monthly `day`. Last month's `day` is checked
+// too, since counting forward from it can still land on today or later.
+export function nextBusinessDaysAfter(day, businessDays) {
+    const dayNumber = Number(day);
+    const count = Number(businessDays);
+    if (!dayNumber || !count) return null;
+
+    const today = startOfToday();
+    for (let monthOffset = -1; monthOffset <= 1; monthOffset++) {
+        const date = addBusinessDays(new Date(today.getFullYear(), today.getMonth() + monthOffset, dayNumber), count);
+        if (date >= today) return date;
+    }
+    return null;
+}
+
 export function daysUntil(date) {
     return Math.round((date - startOfToday()) / 86400000);
 }
