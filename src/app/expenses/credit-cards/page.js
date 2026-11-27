@@ -2,6 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import AddCreditCardModal from "@/components/modals/AddCreditCardModal";
+import CreditScoreCard from "@/components/CreditScoreCard";
+import { useToast } from "@/components/ToastProvider";
 import CreditCardInfo from "@/components/info/CreditCardInfo";
 import RearrangeModal from "@/components/modals/RearrangeModal";
 import PageHeader from "@/components/ui/PageHeader";
@@ -11,9 +13,15 @@ import { useUrlFilters } from "@/components/useUrlFilters";
 import { accountAgeInMonths, formatCurrency, formatMonthsAge, matchesSearch } from "@/lib/formUtils";
 import { imageOf } from "@/lib/logos";
 import { itemName } from "@/lib/itemNames";
+import { sortScores, withScore } from "@/lib/creditScores";
+import { getUserInfo } from "@/util/getUserInfo";
+import { saveUserInfo } from "@/util/saveUserInfo";
 
 function CreditCards() {
+  const showToast = useToast();
   const [cards, setCards] = useState([]);
+  // FICO scores live in user-info, so the whole object is kept to save it back.
+  const [userInfo, setUserInfo] = useState(null);
   const [search, setSearch] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [bankAccounts, setBankAccounts] = useState([]);
@@ -33,7 +41,44 @@ function CreditCards() {
     fetch("/api/bank-accounts")
       .then((res) => res.json())
       .then(setBankAccounts);
-  }, []);
+    getUserInfo()
+      .then((info) => setUserInfo({ ...info, "credit-scores": sortScores(info["credit-scores"] ?? []) }))
+      .catch(() => showToast("Couldn't load your credit scores"));
+  }, [showToast]);
+
+  const scores = userInfo?.["credit-scores"] ?? [];
+
+  // Saves one user-info key right away, putting it back if the save fails. Resolves to whether it saved.
+  async function saveUserInfoKey(key, value) {
+    const previous = userInfo;
+    const updated = { ...userInfo, [key]: value };
+    setUserInfo(updated);
+    try {
+      await saveUserInfo(updated);
+      return true;
+    } catch {
+      setUserInfo(previous);
+      showToast("Couldn't save");
+      return false;
+    }
+  }
+
+  function saveScores(next) {
+    return saveUserInfoKey("credit-scores", next);
+  }
+
+  function handleSaveScore(entry) {
+    return saveScores(withScore(scores, { id: crypto.randomUUID(), ...entry }));
+  }
+
+  // An edit can move a score to another month; one already saved there is replaced.
+  function handleEditScore(edited) {
+    return saveScores(withScore(scores.filter((entry) => entry.id !== edited.id), edited));
+  }
+
+  function handleRemoveScore(id) {
+    return saveScores(scores.filter((entry) => entry.id !== id));
+  }
 
   function handleSaved(item) {
     setCards((prev) => {
@@ -98,6 +143,20 @@ function CreditCards() {
 
   return (
     <div>
+      {/* FICO score history comes first; the credit cards and their header sit under it */}
+      {userInfo && (
+        <div className="mb-8">
+          <CreditScoreCard
+            scores={scores}
+            reminder={userInfo["credit-score-reminder"] ?? ""}
+            onSave={handleSaveScore}
+            onEdit={handleEditScore}
+            onRemove={handleRemoveScore}
+            onReminderChange={(reminder) => saveUserInfoKey("credit-score-reminder", reminder)}
+          />
+        </div>
+      )}
+
       <PageHeader
         title="Credit Cards"
         count={loaded ? cards.length : null}

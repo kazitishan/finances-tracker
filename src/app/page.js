@@ -12,12 +12,20 @@ import { isEstimated, nextPayday } from "@/lib/incomeStreams";
 import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/lib/recurringInvestments";
 import { getUserInfo } from "@/util/getUserInfo";
 import { itemName } from "@/lib/itemNames";
+import { nextScoreReminder } from "@/lib/creditScores";
+import { GaugeIcon } from "@/components/ui/icons";
 
-// Money coming in. Every other type is money going out, which the filter calls Expenses.
+// Money coming in. Reminders aren't money at all. Every other type is money going out, which the filter calls Expenses.
 const INCOMING_TYPES = ["Income Streams", "Interest Payments"];
+const REMINDER_TYPES = ["Credit Score"];
 
-function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, incomeStreams) {
-  const paychecks = incomeStreams.map((stream) => ({
+function showGroup(payment) {
+  if (REMINDER_TYPES.includes(payment.type)) return "Reminders";
+  return INCOMING_TYPES.includes(payment.type) ? "Payments" : "Expenses";
+}
+
+function buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo) {
+  const paychecks = userInfo["income-streams"].map((stream) => ({
     id: `paycheck-${stream.id}`,
     kind: "Paycheck",
     type: "Income Streams",
@@ -134,7 +142,18 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextInvestmentDate(investment),
   }));
 
-  return [...paychecks, ...cardPayments, ...statementClosings, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
+  // At most one: the next first or last of a month whose FICO score hasn't been entered yet.
+  const creditScoreReminders = [{
+    id: "credit-score-reminder",
+    kind: "Reminder",
+    type: "Credit Score",
+    href: "/expenses/credit-cards",
+    name: "Enter your FICO score",
+    icon: GaugeIcon,
+    date: nextScoreReminder(userInfo["credit-score-reminder"], userInfo["credit-scores"] ?? []),
+  }];
+
+  return [...paychecks, ...creditScoreReminders, ...cardPayments, ...statementClosings, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);
@@ -156,7 +175,7 @@ function Home() {
       fetch("/api/utilities").then((res) => res.json()),
       getUserInfo(),
     ]).then(([cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo]) => {
-      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo["income-streams"]));
+      setPayments(buildPayments(cards, subscriptions, bankAccounts, loans, policies, investmentAccounts, utilities, userInfo));
       setLoaded(true);
     });
   }, []);
@@ -165,7 +184,7 @@ function Home() {
     {
       key: "show",
       label: "Show",
-      getValue: (payment) => (INCOMING_TYPES.includes(payment.type) ? "Payments" : "Expenses"),
+      getValue: showGroup,
       sub: { key: "type", getValue: (payment) => payment.type },
     },
   ]);
@@ -181,7 +200,7 @@ function Home() {
         count={loaded ? payments.length : null}
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search upcoming payments..."
+        searchPlaceholder="Search..."
         filters={filters}
       />
 
@@ -191,7 +210,8 @@ function Home() {
       <div className="flex flex-col gap-3">
         {filteredPayments.map((payment) => (
           <Link key={payment.id} href={payment.href} className="card flex items-center gap-3 p-4">
-            <div className="logo-tile">
+            <div className={`logo-tile${payment.icon ? " bg-[var(--surface-hover)] text-muted" : ""}`}>
+              {payment.icon && <payment.icon size={20} />}
               {payment.image && (
                 <Image src={payment.image} alt="" width={40} height={40} className="h-full w-full object-cover" />
               )}

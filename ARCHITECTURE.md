@@ -38,6 +38,7 @@ A **local-only** personal finance organizer with **multiple profiles** (no passw
 - **Expenses:** credit cards, subscriptions, loans, insurance policies, utilities and other expenses.
 - **Logins:** usernames and passwords for each platform, deduplicated into a password manager.
 - **Budget:** income streams and extra monthly expenses.
+- **Credit score:** the user's FICO score, one entry per month, charted on the Credit Cards page.
 
 From that it derives an **upcoming payments** timeline (Home), per-category **totals**, and a monthly **budget breakdown** (Budgeting).
 
@@ -153,7 +154,7 @@ Consequences:
     │       ├── [category]/[id]/route.js   PUT update, DELETE
     │       ├── passwords/route.js         GET saved logins
     │       ├── passwords/[id]/route.js    PUT, DELETE a saved login
-    │       ├── user-info/route.js         GET/PUT budgeting info
+    │       ├── user-info/route.js         GET/PUT budgeting info and credit scores
     │       ├── profile/route.js           GET the signed-in profile, PUT its name, DELETE it
     │       ├── profiles/route.js          GET every profile, POST create one (and sign in)
     │       ├── profiles/current/route.js  PUT sign in, DELETE sign out
@@ -167,6 +168,7 @@ Consequences:
     │   ├── LoginFields.jsx               Username/password inputs + saved-login picker
     │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
+    │   ├── CreditScoreCard.jsx           FICO score chart, add form and history (Credit Cards page)
     │   ├── useSaveItem.jsx               Save/delete/close logic shared by all item modals
     │   ├── useUrlFilters.jsx             URL-backed filter state
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
@@ -181,6 +183,7 @@ Consequences:
     │   ├── formUtils.js        Formatting, masking, input sanitizing, date helpers
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
+    │   ├── creditScores.js     Credit score shape, validation, FICO rating bands, month sorting
     │   ├── itemNames.js        itemName(): what an item is called on every screen
     │   └── logos.js            builtInLogo(), utilityIcon(), imageOf()
     └── util/                   Client-side fetch helpers + pure lookups
@@ -245,7 +248,7 @@ Key properties:
 
 ```json
 {
-  "user-info": { "income-streams": [], "additional-expenses": [] },
+  "user-info": { "income-streams": [], "additional-expenses": [], "credit-scores": [], "credit-score-reminder": "" },
   "bank accounts": [],
   "credit cards": [],
   "subscriptions": [],
@@ -462,12 +465,14 @@ The icons are full-tile SVGs: a colored 48×48 square with a white line glyph, s
 
 See [§9](#9-saved-logins-the-password-system).
 
-### Budgeting info (`user-info`)
+### Budgeting info and credit scores (`user-info`)
 
 ```json
 {
   "income-streams":      [ { "id": "uuid", "name": "Day job", "...": "see below" } ],
-  "additional-expenses": [ { "Rent": 3500 }, { "Groceries": 600 } ]
+  "additional-expenses": [ { "Rent": 3500 }, { "Groceries": 600 } ],
+  "credit-scores":       [ { "id": "uuid", "month": "10", "year": "2026", "score": "742" } ],
+  "credit-score-reminder": "first"
 }
 ```
 
@@ -494,6 +499,20 @@ Each additional expense is a **one-key object** `{ "<name>": <monthly amount> }`
 | `bankAccount` | **bank account `id`** the deposit goes to; only shown for Direct Deposit |
 
 The form can't be saved without a name and an amount above 0 (or with the same day picked twice for `twice-monthly`). The frequency and paydays are optional.
+
+**Credit score** ([CreditScoreCard.jsx](src/components/CreditScoreCard.jsx), documented in [creditScores.js](src/lib/creditScores.js)). Like income streams, these live in `user-info` and are saved with `PUT /api/user-info`.
+
+| Field | Values |
+|---|---|
+| `id` | UUID, created in the browser |
+| `month` | `"01"`–`"12"` |
+| `year` | four-digit string; the form offers the current year back 50 years (`pastYears`) |
+| `score` | whole number `"300"`–`"850"` (FICO's range) |
+
+- **At most one score per month.** Adding a month that already has one replaces it (`withScore`); the form's button reads **Update** then, with a hint under it.
+- The list is kept **oldest first** (`sortScores`). The page sorts it again on load, so a hand-edited file still charts correctly.
+- **`credit-score-reminder`** is `"first"`, `"last"` or `""` (no reminder; also what a missing key means). It's set with the Reminder picker on the FICO Score card and shows up on Home (see [Home](#home-srcapppagejs)).
+- `isUserInfo` rejects the whole PUT (400) if the reminder isn't one of those three values, or if any entry has a bad month, a year that isn't four digits, or a score outside 300–850. Files from before credit scores existed have no `"credit-scores"`, which reads as `[]`; it's written the next time user-info is saved.
 
 ### Migrations (automatic, on read)
 
@@ -556,7 +575,7 @@ Internal helpers:
 | `sameLogin(a, b)` | All three of platform, username and password are equal |
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
 | `itemsUsingLogin(info, login, excludeId?)` | Every item across all categories whose login equals `login` |
-| `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape. `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
+| `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape (credit scores via `isCreditScore` from creditScores.js). `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
 
 Exports:
 
@@ -921,10 +940,13 @@ Everything coming up, soonest first. It fetches every category with dates, plus 
 | Utility | Utility payment | same as subscription | `cost` |
 | Recurring investment | Recurring investment | `nextInvestmentDate()` | `amount` |
 | Income stream with a payday | Paycheck (suitcase picture, links to Budgeting) | `nextPayday()` | `paycheckAmount`; — for estimated income, since a monthly estimate says nothing about one payout |
+| `credit-score-reminder` set | Reminder: "Enter your FICO score" (gauge icon, links to Credit Cards) | `nextScoreReminder()`: the next first or last day of a month (today included) **whose score hasn't been entered yet**, so entering this month's score early moves it to next month | — |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
 
-It uses the standard `PageHeader` (title, "N total", search over name and kind) and `EmptyState`. The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
+A row with an `icon` (a component, used by the reminder) draws it in a neutral logo tile instead of an `image`.
+
+It uses the standard `PageHeader` (title, "N total", search over name and kind, placeholder "Search...") and `EmptyState`. The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` (`showGroup`) picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`), **Reminders** (Credit Score, listed in `REMINDER_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
 
 ### Bank Accounts: `/accounts/bank-accounts`
 
@@ -942,9 +964,18 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind) 
 ### Credit Cards: `/expenses/credit-cards`
 
 - Also loads bank accounts (for the payment method).
+- Also loads `user-info`, for the FICO scores.
 - Header stats: **Average Age**, the mean of the cards' ages in months, formatted as "N years, M months old"; **Total Credit Line**, the sum of `creditLine`; and **Total Annual Fees**, the sum of `annualFee`.
 - Filters: Bank, Payment Method (bank account name). Search: name, bank, usage.
 - Card: an expiry danger chip, then one chip per `usage` line. Details: login, open date with age, cardholder, card number and CVC (revealable), expiration, credit line, "Payments Due: 15th of every month", "Statement Closes: 3 business days after the payment due day", Annual Fee, "Annual Fee Renews: March 15th, every year" (both hidden when there's no fee), the Payment Method box, Rewards & Benefits bullets, notes.
+- **FICO Score card** ([CreditScoreCard](src/components/CreditScoreCard.jsx)), **at the very top of the page, above the "Credit Cards" header**, with the header, search, filters and cards beneath it. It shows once user-info loads, even with no cards. Like an `InfoCard`, it's **collapsed by default** and clicking the header row (or its chevron) expands it, with the same `.expand` animation and `inert` collapsed body:
+  - Header row (always shown): a gauge icon tile, "FICO Score", a subtitle of the rating and month ("Very Good · Nov 2026", from `scoreRating`: Poor < 580 ≤ Fair < 670 ≤ Good < 740 ≤ Very Good < 800 ≤ Exceptional) or "Track your score month by month" when there are none, a sparkline of the last 12 scores (hidden on phones, and faded out while expanded), and the latest score as the card's key stat with the change since the previous entry under it (green up, red down; just "+12" on phones, "+12 since Oct 2026" otherwise).
+  - Expanded body: the chart, the form and History, below.
+  - Chart: a hand-rolled SVG line (`--series-1`, 2px, with a 14% → 0 gradient wash under it) sized to its container with a `ResizeObserver`. X is **time-scaled by month**, so a skipped month leaves a wider gap. Y is the scores ±20, rounded out to 50s and clamped to 300–850, with hairline gridlines every 50 (100 when the range is over 300). Month labels are placed right to left from the latest, skipping any closer than 64px. Each score gets a dot with a surface ring (only the latest and hovered past 24 scores). Hovering anywhere snaps a crosshair and tooltip (month, score, rating, change) to the nearest month; when the chart has focus, ←/→ step through months.
+  - Form: Month, Year, Score (digits only, 3 max; "FICO scores go from 300 to 850" for a 3-digit number outside that), and Add/Update. It defaults to this month. On phones it wraps to two rows.
+  - **Reminder** picker (right of History): No reminder / First day of the month / Last day of the month, saved to `credit-score-reminder` right away (optimistic, like the scores), with "Next: Tue, Dec 1" beside it from `nextScoreReminder`.
+  - **History (N)** toggles a newest-first list (month, score, change, rating, edit pencil, remove ✕), which is also the chart's table view. The pencil turns a row into Month, Year and Score inputs, like an additional expense on Budgeting: Enter or the check saves, Escape or the X cancels, and the check is disabled until the score is 300–850. An edit can move a score to another month; if that month already has one, a hint says it will be replaced (`handleEditScore` removes the edited entry, then `withScore` puts it back, keeping its id).
+  - Saves are **optimistic** like Budgeting's lists: the page updates at once and rolls back with "Couldn't save" on failure. Removing a score has no confirm, the same as removing an additional expense.
 
 ### Subscriptions: `/expenses/subscriptions`
 
@@ -1143,7 +1174,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
 | `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
-| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item). Every dropdown trigger uses ChevronDown |
+| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item), LogOut, Gauge (the FICO Score card). Every dropdown trigger uses ChevronDown |
 
 ### Other modals: [src/components/modals/](src/components/modals/)
 
@@ -1214,6 +1245,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - **The signed-in profile is server-wide**, not per tab. Signing in to another profile in one tab switches every tab; the others catch up the next time their window gains focus (ProfileProvider refetches then). Until then, a background tab that saves would be saving into the newly signed-in profile.
 - Data routes called while signed out **500** rather than 401 (`currentProfileDir()` throws and route handlers don't catch it).
 - Only the signed-in profile can be deleted. To delete another, sign in to it first.
+- **Budgeting and the Credit Cards page both save the whole `user-info`.** Each sends its own copy with its list changed, so with both open in two tabs, saving in one can undo a change made in the other since it loaded.
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.

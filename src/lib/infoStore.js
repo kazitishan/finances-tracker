@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { isCreditScore, isReminder } from "@/lib/creditScores";
 import { emptyIncomeStream } from "@/lib/incomeStreams";
 import { itemName } from "@/lib/itemNames";
 import { builtInLogo, utilityIcon } from "@/lib/logos";
@@ -13,10 +14,13 @@ function infoPath() {
 }
 
 // Budgeting info. Income streams are described in lib/incomeStreams.js. Each additional expense is a
-// one-key object, { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }.
+// one-key object, { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }. Credit scores are described in
+// lib/creditScores.js.
 const DEFAULT_USER_INFO = {
     "income-streams": [],
     "additional-expenses": [],
+    "credit-scores": [],
+    "credit-score-reminder": "",
 };
 
 const DEFAULT_INFO = {
@@ -212,9 +216,12 @@ function isIncomeStream(entry) {
 function isUserInfo(value) {
     const incomeStreams = value?.["income-streams"] ?? [];
     const additionalExpenses = value?.["additional-expenses"] ?? [];
+    const creditScores = value?.["credit-scores"] ?? [];
     return Boolean(value) && typeof value === "object" && !Array.isArray(value)
         && Array.isArray(incomeStreams) && incomeStreams.every((entry) => isIncomeStream(entry) || isAmountEntry(entry))
-        && Array.isArray(additionalExpenses) && additionalExpenses.every(isAmountEntry);
+        && Array.isArray(additionalExpenses) && additionalExpenses.every(isAmountEntry)
+        && Array.isArray(creditScores) && creditScores.every(isCreditScore)
+        && isReminder(value?.["credit-score-reminder"] ?? "");
 }
 
 export function getUserInfo() {
@@ -228,6 +235,8 @@ export function updateUserInfo(userInfo) {
     info["user-info"] = {
         "income-streams": userInfo["income-streams"] ?? [],
         "additional-expenses": userInfo["additional-expenses"] ?? [],
+        "credit-scores": userInfo["credit-scores"] ?? [],
+        "credit-score-reminder": userInfo["credit-score-reminder"] ?? "",
     };
     writeInfo(info);
     return info["user-info"];

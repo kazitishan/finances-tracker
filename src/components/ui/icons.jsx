@@ -128,3 +128,9 @@ export const LogOutIcon = (props) => (
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" />
     </Icon>
 );
+
+export const GaugeIcon = (props) => (
+    <Icon {...props}>
+        <path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" />
+    </Icon>
+);
