@@ -9,6 +9,15 @@ import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { parseDateString } from "@/lib/recurringInvestments";
 import { itemName } from "@/lib/itemNames";
 
+export const FEDERAL_STUDENT_AID = "Federal Student Aid";
+
+// The subsidized/unsubsidized field only exists for federal student loans.
+export function isFederalStudentLoan(loan) {
+    return loan.type === "Student Loans" && loan.provider === FEDERAL_STUDENT_AID;
+}
+
+const SUBSIDY_LABELS = { subsidized: "Subsidized", unsubsidized: "Unsubsidized" };
+
 export function amountRemaining(loan) {
     if (!loan.amountLoaned) return null;
     return Number(loan.amountLoaned) + Number(loan.interestAmount || 0) - Number(loan.amountPaid || 0);
@@ -67,6 +76,7 @@ function DisbursementsSection({ disbursements }) {
 
 function LoanInfo({ loan, onEdit }) {
     const typeName = typeLabel(loan.type, loan.otherType);
+    const subsidyName = isFederalStudentLoan(loan) ? SUBSIDY_LABELS[loan.subsidy] : null;
     const formatAmount = (amount) => (amount ? formatCurrency(amount) : null);
     const remaining = amountRemaining(loan);
     const interest = estimatedInterest(loan);
@@ -87,7 +97,7 @@ function LoanInfo({ loan, onEdit }) {
             imageAlt={loan.provider}
             title={itemName("loans", loan)}
             subtitle={loan.provider}
-            tags={[typeName].filter(Boolean)}
+            tags={[typeName, subsidyName].filter(Boolean)}
             stat={remainingStat}
             link={loan.link}
             onEdit={onEdit}

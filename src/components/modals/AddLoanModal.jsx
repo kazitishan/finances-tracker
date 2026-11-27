@@ -10,12 +10,14 @@ import { useSaveItem } from "@/components/useSaveItem";
 import FormActions from "@/components/ui/FormActions";
 import NotesField from "@/components/ui/NotesField";
 import AffixInput from "@/components/ui/AffixInput";
+import { isFederalStudentLoan } from "@/components/info/LoanInfo";
 
 const initialFormState = {
     name: "",
     type: "",
     otherType: "",
     provider: "",
+    subsidy: "",
     img: "",
     link: "",
     loginUsername: "",
@@ -40,7 +42,12 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
     if (!isOpen) return null;
 
     function updateField(field, value) {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => {
+            const next = { ...prev, [field]: value };
+            // Subsidized/unsubsidized only applies to federal student loans, so drop it once the loan isn't one.
+            if (!isFederalStudentLoan(next)) next.subsidy = "";
+            return next;
+        });
     }
 
     return (
@@ -77,6 +84,21 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
                         onCustomLogoChange={(img) => updateField("img", img)}
                     />
                 </div>
+
+                {isFederalStudentLoan(form) && (
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Subsidized or Unsubsidized</span>
+                        <select
+                            className={inputClasses}
+                            value={form.subsidy}
+                            onChange={(e) => updateField("subsidy", e.target.value)}
+                        >
+                            <option value="">--</option>
+                            <option value="subsidized">Subsidized</option>
+                            <option value="unsubsidized">Unsubsidized</option>
+                        </select>
+                    </label>
+                )}
 
                 <label className="flex flex-col gap-1">
                     <span className="field-label">Link</span>

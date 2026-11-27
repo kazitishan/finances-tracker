@@ -359,6 +359,7 @@ Other expenses have no platform field, picture or login, so they aren't in `PLAT
 |---|---|
 | `type` | `Mortgage`, `Student Loans`, `Personal Loans`, `Business Loans`, `Auto Loan`, `Other` |
 | `otherType` | free text, used when `type === "Other"` |
+| `subsidy` | `"subsidized"` \| `"unsubsidized"` \| `""`. Only for federal student loans (`type === "Student Loans"` and `provider === "Federal Student Aid"`, `isFederalStudentLoan()` in [LoanInfo.jsx](src/components/info/LoanInfo.jsx)). The form clears it as soon as the loan stops being one. Loans saved before this field existed have none |
 | `amountLoaned`, `interestAmount`, `amountPaid`, `monthlyPayment` | decimal strings (dollars) |
 | `interestRate` | decimal string (percent) |
 | `paymentDay` | `"1"`–`"28"` |
@@ -988,8 +989,9 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind, 
 
 - Stats: **Monthly Total** (sum of `monthlyPayment`), **Yearly Total** (× 12), **Total Debt** (sum of amount remaining).
 - Filters: Provider, Type. Search: name, provider, type label.
-- Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other). When expanded, the green box shows how the amount adds up: Amount Loaned, Interest Amount (with a `+` before its number), Amount Paid (with a `−` before its number), a total line, then Amount Remaining. With no `amountLoaned` there's no box, so Interest Amount and Amount Paid are plain detail rows instead. Below that, a **Disbursements** section listing each date and amount, oldest first, skipping rows left blank.
+- Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other), plus a Subsidized/Unsubsidized chip for federal student loans that have one set. When expanded, the green box shows how the amount adds up: Amount Loaned, Interest Amount (with a `+` before its number), Amount Paid (with a `−` before its number), a total line, then Amount Remaining. With no `amountLoaned` there's no box, so Interest Amount and Amount Paid are plain detail rows instead. Below that, a **Disbursements** section listing each date and amount, oldest first, skipping rows left blank.
 - An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (see [§6](#6-data-storage-profiles-and-infojson)).
+- The form shows a **Subsidized or Unsubsidized** select under Provider only when the type is Student Loans and the provider is Federal Student Aid. Changing either away clears it.
 - The form edits disbursements inline ([LoanDisbursementFields](src/components/LoanDisbursementFields.jsx)), one row per disbursement with a native date picker.
 
 ### Insurance: `/expenses/insurance`
