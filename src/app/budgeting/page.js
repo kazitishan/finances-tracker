@@ -5,7 +5,7 @@ import Link from "next/link";
 import { typeLabel } from "@/components/dropdowns/TypeDropdown";
 import AddIncomeStreamModal from "@/components/modals/AddIncomeStreamModal";
 import { useToast } from "@/components/ToastProvider";
-import { ArrowUpRightIcon, CheckIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import { ArrowLeftIcon, ArrowUpRightIcon, CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import AffixInput from "@/components/ui/AffixInput";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatCurrency, inputClasses, months, onlyDecimal } from "@/lib/formUtils";
@@ -36,6 +36,9 @@ const ADDITIONAL_COLORS = [
   ...TINT_ORDER.map((series, index) => tint(series, index % 2 === 0 ? 45 : 90)),
   ...TINT_ORDER.map((series, index) => tint(series, index % 2 === 0 ? 90 : 45)),
 ];
+// A category's own items, when it's opened on the chart. They take the same colors in the same order as the full
+// chart does (the account categories', then the additional expenses'), which keeps neighbors easy to tell apart.
+const ITEM_COLORS = [...CATEGORIES.map((category) => category.color), ...ADDITIONAL_COLORS];
 // With more rows than this, the legend moves under the chart, where it has room for two columns.
 const MAX_LEGEND_ROWS_BESIDE_CHART = 8;
 const LEFT_OVER = { key: "left-over", label: "Net Cash Flow", color: "var(--border-strong)", group: "left-over" };
@@ -66,8 +69,9 @@ const GROUP_GAP = 8;
 // The least a slice is drawn at, so a tiny expense stays visible and can still be hovered.
 const MIN_SLICE = 2.5;
 
-// A donut of `slices` ({ key, label, color, amount, group }) as shares of `total`, with `children` in the middle.
-function Donut({ slices, total, hovered, onHover, children }) {
+// A donut of `slices` ({ key, label, color, amount, group, drillable }) as shares of `total`, with `children` in the
+// middle. Clicking a `drillable` slice calls `onSelect` with its key.
+function Donut({ slices, total, hovered, onHover, onSelect, children }) {
   const visible = slices.filter((slice) => slice.amount > 0);
   const sized = visible.map((slice, index) => {
     const next = visible[index + 1];
@@ -110,9 +114,10 @@ function Donut({ slices, total, hovered, onHover, children }) {
             strokeDasharray={`${arc.length - arc.gap} ${CIRCUMFERENCE}`}
             strokeDashoffset={-arc.start}
             opacity={hovered && hovered !== arc.key ? 0.35 : 1}
-            className="cursor-pointer transition-[opacity,stroke-width] duration-150"
+            className={`transition-[opacity,stroke-width] duration-150 ${arc.drillable ? "cursor-pointer" : ""}`}
             onMouseEnter={() => onHover(arc.key)}
             onMouseLeave={() => onHover(null)}
+            onClick={() => arc.drillable && onSelect?.(arc.key)}
           />
         ))}
       </svg>
@@ -125,6 +130,46 @@ function Donut({ slices, total, hovered, onHover, children }) {
 
 function Swatch({ color }) {
   return <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: color }} />;
+}
+
+// One legend row. A `drillable` row is a button that opens its category; `withChevronSlot` keeps a column for the
+// chevron so amounts line up whether or not a row has one.
+function LegendRow({ row, share, hovered, onHover, onSelect, withChevronSlot }) {
+  const className = `flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors duration-100 ${
+    hovered === row.key ? "bg-[var(--surface-hover)]" : ""
+  }`;
+  const content = (
+    <>
+      <Swatch color={row.color} />
+      <span className="min-w-0 flex-1 truncate">{row.label}</span>
+      <span className="tabular-nums">{formatCurrency(row.amount)}</span>
+      <span className="w-10 text-right tabular-nums text-muted">{share}</span>
+      {withChevronSlot && (
+        <span className="flex w-3.5 shrink-0 justify-end text-muted">{row.drillable && <ChevronRightIcon size={14} />}</span>
+      )}
+    </>
+  );
+  const hoverProps = { onMouseEnter: () => onHover(row.key), onMouseLeave: () => onHover(null) };
+
+  return (
+    <li>
+      {row.drillable ? (
+        <button
+          type="button"
+          onClick={() => onSelect(row.key)}
+          onFocus={() => onHover(row.key)}
+          onBlur={() => onHover(null)}
+          aria-label={`Show what's in ${row.label}`}
+          className={`${className} cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]`}
+          {...hoverProps}
+        >
+          {content}
+        </button>
+      ) : (
+        <div className={className} {...hoverProps}>{content}</div>
+      )}
+    </li>
+  );
 }
 
 function StatTile({ label, value, tone }) {
@@ -339,6 +384,8 @@ export default function BudgetingPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [expenses, setExpenses] = useState(null);
   const [hovered, setHovered] = useState(null);
+  // The account category opened on the chart, showing its own items, or null for the whole budget.
+  const [openCategory, setOpenCategory] = useState(null);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [editingStream, setEditingStream] = useState(null);
@@ -393,6 +440,7 @@ export default function BudgetingPage() {
   const accountSlices = CATEGORIES.map((category) => ({
     ...category,
     amount: sum(expenses[category.key].map((item) => item.amount)),
+    drillable: true,
   }));
   const spending = sum(accountSlices.map((slice) => slice.amount))
     + sum(additionalExpenses.map((entry) => entryOf(entry)[1]));
@@ -409,48 +457,88 @@ export default function BudgetingPage() {
   // Shares are of income, or of spending when it's more than income.
   const chartTotal = Math.max(income, spending);
   const shareBase = income > 0 ? income : spending;
-  const hoveredSlice = slices.find((slice) => slice.key === hovered);
   // Green when income is more than spending, red and negative when it's less.
   const netCashFlow = {
     value: `${leftOver < 0 ? "-" : ""}${formatCurrency(Math.abs(leftOver), { cents: false })}`,
     tone: leftOver < 0 ? "danger" : leftOver > 0 ? "positive" : undefined,
   };
+  const shareOf = income > 0 ? "income" : "spending";
 
-  let center;
-  if (hoveredSlice) {
-    center = {
-      label: hoveredSlice.label,
-      value: formatCurrency(hoveredSlice.amount),
-      note: `${percentOf(hoveredSlice.amount, shareBase)} of ${income > 0 ? "income" : "spending"}`,
-      tone: hoveredSlice.key === LEFT_OVER.key ? netCashFlow.tone : undefined,
-    };
-  } else if (income === 0) {
-    center = { label: "Spending", value: formatCurrency(spending, { cents: false }) };
-  } else {
-    center = { label: "Net Cash Flow", ...netCashFlow };
+  function openChartCategory(key) {
+    setOpenCategory(key);
+    setHovered(null);
   }
 
-  const legendBelowChart = slices.length > MAX_LEGEND_ROWS_BESIDE_CHART;
+  // What the chart shows: the whole budget, or one account category's items as shares of that category.
+  const opened = accountSlices.find((slice) => slice.key === openCategory && slice.amount > 0);
+  let chart;
+  if (opened) {
+    const itemSlices = expenses[opened.key]
+      .map((item, index) => ({
+        key: item.id,
+        label: item.name,
+        color: ITEM_COLORS[index % ITEM_COLORS.length],
+        amount: item.amount,
+        group: "items",
+      }))
+      .filter((slice) => slice.amount > 0);
+    const hoveredItem = itemSlices.find((slice) => slice.key === hovered);
+    chart = {
+      slices: itemSlices,
+      total: opened.amount,
+      shareBase: opened.amount,
+      center: hoveredItem
+        ? { label: hoveredItem.label, value: formatCurrency(hoveredItem.amount), note: `${percentOf(hoveredItem.amount, opened.amount)} of ${opened.label}` }
+        : { label: opened.label, value: formatCurrency(opened.amount), note: `${percentOf(opened.amount, shareBase)} of ${shareOf}` },
+      tiles: [
+        { label: "Total", value: formatCurrency(opened.amount) },
+        { label: itemSlices.length === 1 ? "Item" : "Items", value: String(itemSlices.length) },
+        { label: `Share of ${income > 0 ? "Income" : "Spending"}`, value: percentOf(opened.amount, shareBase) },
+      ],
+    };
+  } else {
+    const hoveredSlice = slices.find((slice) => slice.key === hovered);
+    let center;
+    if (hoveredSlice) {
+      center = {
+        label: hoveredSlice.label,
+        value: formatCurrency(hoveredSlice.amount),
+        note: `${percentOf(hoveredSlice.amount, shareBase)} of ${shareOf}`,
+        tone: hoveredSlice.key === LEFT_OVER.key ? netCashFlow.tone : undefined,
+      };
+    } else if (income === 0) {
+      center = { label: "Spending", value: formatCurrency(spending, { cents: false }) };
+    } else {
+      center = { label: "Net Cash Flow", ...netCashFlow };
+    }
+    chart = {
+      slices,
+      total: chartTotal,
+      shareBase,
+      center,
+      tiles: [
+        { label: "Income", value: formatCurrency(income, { cents: false }) },
+        { label: "Spending", value: formatCurrency(spending, { cents: false }) },
+        { label: "Net Cash Flow", ...netCashFlow },
+      ],
+    };
+  }
+  const { center } = chart;
+
+  const legendBelowChart = chart.slices.length > MAX_LEGEND_ROWS_BESIDE_CHART;
   const legend = (
     <ul className={legendBelowChart ? "mt-6 grid gap-x-6 sm:grid-cols-2" : "mt-4"}>
-      {slices.map((row) => {
-        const amount = row.amount;
-        return (
-          <li
-            key={row.key}
-            onMouseEnter={() => setHovered(row.key)}
-            onMouseLeave={() => setHovered(null)}
-            className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors duration-100 ${
-              hovered === row.key ? "bg-[var(--surface-hover)]" : ""
-            }`}
-          >
-            <Swatch color={row.color} />
-            <span className="min-w-0 flex-1 truncate">{row.label}</span>
-            <span className="tabular-nums">{formatCurrency(amount)}</span>
-            <span className="w-10 text-right tabular-nums text-muted">{percentOf(amount, shareBase)}</span>
-          </li>
-        );
-      })}
+      {chart.slices.map((row) => (
+        <LegendRow
+          key={row.key}
+          row={row}
+          share={percentOf(row.amount, chart.shareBase)}
+          hovered={hovered}
+          onHover={setHovered}
+          onSelect={openChartCategory}
+          withChevronSlot={!opened}
+        />
+      ))}
     </ul>
   );
 
@@ -459,27 +547,45 @@ export default function BudgetingPage() {
       {header}
 
       <section className="card mb-4 p-6">
-        <div className="flex flex-col items-center gap-8 md:flex-row md:items-center">
-          <Donut slices={slices} total={chartTotal} hovered={hovered} onHover={setHovered}>
-            <div className="text-xs text-muted">{center.label}</div>
-            <div className={`text-2xl font-semibold tracking-tight ${TONE_CLASSES[center.tone] ?? ""}`}>
-              {center.value}
+        {opened && (
+          <div className="mb-5 flex items-center gap-3">
+            <button type="button" onClick={() => openChartCategory(null)} className="btn btn-secondary px-2.5 py-1.5">
+              <ArrowLeftIcon size={14} />
+              All spending
+            </button>
+            <div className="flex min-w-0 flex-1 items-center gap-2 font-medium">
+              <Swatch color={opened.color} />
+              <span className="truncate">{opened.label}</span>
             </div>
-            {center.note && <div className="text-xs text-muted">{center.note}</div>}
-          </Donut>
-
-          <div className="w-full min-w-0 flex-1">
-            <div className="grid grid-cols-3 gap-2">
-              <StatTile label="Income" value={formatCurrency(income, { cents: false })} />
-              <StatTile label="Spending" value={formatCurrency(spending, { cents: false })} />
-              <StatTile label="Net Cash Flow" {...netCashFlow} />
-            </div>
-
-            {!legendBelowChart && legend}
+            <Link href={opened.href} className="icon-btn" aria-label={`Go to ${opened.label}`}>
+              <ArrowUpRightIcon size={14} />
+            </Link>
           </div>
-        </div>
+        )}
 
-        {legendBelowChart && legend}
+        <div key={opened?.key ?? "all"} className="animate-[fade-in_0.2s_ease-out]">
+          <div className="flex flex-col items-center gap-8 md:flex-row md:items-center">
+            <Donut slices={chart.slices} total={chart.total} hovered={hovered} onHover={setHovered} onSelect={openChartCategory}>
+              <div className="max-w-full truncate text-xs text-muted">{center.label}</div>
+              <div className={`text-2xl font-semibold tracking-tight ${TONE_CLASSES[center.tone] ?? ""}`}>
+                {center.value}
+              </div>
+              {center.note && <div className="text-xs text-muted">{center.note}</div>}
+            </Donut>
+
+            <div className="w-full min-w-0 flex-1">
+              <div className="grid grid-cols-3 gap-2">
+                {chart.tiles.map((tile) => (
+                  <StatTile key={tile.label} {...tile} />
+                ))}
+              </div>
+
+              {!legendBelowChart && legend}
+            </div>
+          </div>
+
+          {legendBelowChart && legend}
+        </div>
       </section>
 
       <div className="mb-4 flex flex-col gap-4">
