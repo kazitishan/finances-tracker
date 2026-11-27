@@ -10,7 +10,7 @@ import { useSaveItem } from "@/components/useSaveItem";
 import FormActions from "@/components/ui/FormActions";
 import NotesField from "@/components/ui/NotesField";
 import AffixInput from "@/components/ui/AffixInput";
-import { isFederalStudentLoan } from "@/components/info/LoanInfo";
+import { isFederalStudentLoan, isSubsidized } from "@/components/info/LoanInfo";
 
 const initialFormState = {
     name: "",
@@ -18,6 +18,7 @@ const initialFormState = {
     otherType: "",
     provider: "",
     subsidy: "",
+    repaymentStart: "",
     img: "",
     link: "",
     loginUsername: "",
@@ -46,6 +47,7 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
             const next = { ...prev, [field]: value };
             // Subsidized/unsubsidized only applies to federal student loans, so drop it once the loan isn't one.
             if (!isFederalStudentLoan(next)) next.subsidy = "";
+            if (!isSubsidized(next)) next.repaymentStart = "";
             return next;
         });
     }
@@ -97,6 +99,19 @@ function AddLoanModal({ isOpen, onClose, itemId, initialData, onSaved, onDelete 
                             <option value="subsidized">Subsidized</option>
                             <option value="unsubsidized">Unsubsidized</option>
                         </select>
+                    </label>
+                )}
+
+                {isSubsidized(form) && (
+                    <label className="flex flex-col gap-1">
+                        <span className="field-label">Repayment Start Date</span>
+                        <input
+                            type="date"
+                            className={inputClasses}
+                            value={form.repaymentStart}
+                            onChange={(e) => updateField("repaymentStart", e.target.value)}
+                        />
+                        <span className="text-xs text-[var(--muted)]">No interest builds up before this date.</span>
                     </label>
                 )}
 

@@ -18,6 +18,11 @@ export function isFederalStudentLoan(loan) {
 
 const SUBSIDY_LABELS = { subsidized: "Subsidized", unsubsidized: "Unsubsidized" };
 
+// On a subsidized federal loan the government pays the interest until repayment starts.
+export function isSubsidized(loan) {
+    return isFederalStudentLoan(loan) && loan.subsidy === "subsidized";
+}
+
 export function amountRemaining(loan) {
     if (!loan.amountLoaned) return null;
     return Number(loan.amountLoaned) + Number(loan.interestAmount || 0) - Number(loan.amountPaid || 0);
@@ -26,7 +31,8 @@ export function amountRemaining(loan) {
 const daysSince = (date) => Math.max(0, -daysUntil(date));
 
 // Simple interest so far: each disbursement accrues daily from its date to today. Payments have no dates, so
-// the amount paid is treated as coming off the balance evenly since the first disbursement.
+// the amount paid is treated as coming off the balance evenly since interest started. Subsidized loans accrue
+// nothing before repayment starts, and without that date there's no estimate.
 export function estimatedInterest(loan) {
     const rate = Number(loan.interestRate) / 100;
     const disbursed = (loan.disbursements || [])
@@ -35,15 +41,19 @@ export function estimatedInterest(loan) {
         .sort((a, b) => a.date - b.date);
     if (!rate || disbursed.length === 0) return null;
 
+    const repaymentStart = isSubsidized(loan) ? parseDateString(loan.repaymentStart) : null;
+    if (isSubsidized(loan) && !repaymentStart) return null;
+    const accruesFrom = (date) => (repaymentStart && repaymentStart > date ? repaymentStart : date);
+
     // Oldest first; anything disbursed past the amount loaned isn't counted.
     let uncounted = Number(loan.amountLoaned) || Infinity;
     let dollarDays = 0;
     for (const { date, amount } of disbursed) {
         const counted = Math.min(amount, uncounted);
         uncounted -= counted;
-        dollarDays += counted * daysSince(date);
+        dollarDays += counted * daysSince(accruesFrom(date));
     }
-    dollarDays -= (Number(loan.amountPaid || 0) * daysSince(disbursed[0].date)) / 2;
+    dollarDays -= (Number(loan.amountPaid || 0) * daysSince(accruesFrom(disbursed[0].date))) / 2;
 
     return (Math.max(0, dollarDays) * rate) / 365;
 }
@@ -104,6 +114,12 @@ function LoanInfo({ loan, onEdit }) {
         >
             <LoginDetailRow username={loan.loginUsername} password={loan.loginPassword} />
             <DetailRow label="Interest Rate" value={loan.interestRate ? `${loan.interestRate}%` : null} />
+            {isSubsidized(loan) && (
+                <DetailRow
+                    label="Repayment Starts"
+                    value={parseDateString(loan.repaymentStart)?.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
+                />
+            )}
             <DetailRow label="Estimated Interest" value={interest !== null ? `${formatCurrency(interest)} so far` : null} />
             {/* With no amount loaned there's no key stat to show these in. */}
             {!remainingStat && <DetailRow label="Interest Amount" value={formatAmount(loan.interestAmount)} />}

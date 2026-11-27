@@ -360,6 +360,7 @@ Other expenses have no platform field, picture or login, so they aren't in `PLAT
 | `type` | `Mortgage`, `Student Loans`, `Personal Loans`, `Business Loans`, `Auto Loan`, `Other` |
 | `otherType` | free text, used when `type === "Other"` |
 | `subsidy` | `"subsidized"` \| `"unsubsidized"` \| `""`. Only for federal student loans (`type === "Student Loans"` and `provider === "Federal Student Aid"`, `isFederalStudentLoan()` in [LoanInfo.jsx](src/components/info/LoanInfo.jsx)). The form clears it as soon as the loan stops being one. Loans saved before this field existed have none |
+| `repaymentStart` | `"YYYY-MM-DD"` \| `""`. Only for subsidized federal student loans (`isSubsidized()`): the date the government stops paying the interest (end of school, grace period or deferment). Cleared by the form when the loan stops being subsidized |
 | `amountLoaned`, `interestAmount`, `amountPaid`, `monthlyPayment` | decimal strings (dollars) |
 | `interestRate` | decimal string (percent) |
 | `paymentDay` | `"1"`–`"28"` |
@@ -371,12 +372,13 @@ Estimated interest (`estimatedInterest()` in the same file) is simple interest s
 
 ```
 rate         = interestRate / 100
+accrues from = the disbursement's date, or repaymentStart if the loan is subsidized and that's later
 counted      = each disbursement's amount, oldest first, stopping once they reach amountLoaned (no ceiling if it's empty)
-dollar-days  = Σ counted × days since that disbursement  −  amountPaid × days since the first disbursement / 2
+dollar-days  = Σ counted × days since it accrues from  −  amountPaid × days since the first disbursement accrues from / 2
 interest     = max(0, dollar-days) × rate / 365
 ```
 
-Payments have no dates, so the `/ 2` treats `amountPaid` as coming off the balance evenly since the first disbursement. It's `null` without an interest rate or at least one disbursement with both a date and an amount. Disbursements dated in the future accrue nothing.
+Payments have no dates, so the `/ 2` treats `amountPaid` as coming off the balance evenly since interest started. It's `null` without an interest rate or at least one disbursement with both a date and an amount, and also for a subsidized loan with no `repaymentStart`. Disbursements dated in the future accrue nothing, and neither does a subsidized loan whose repayment starts in the future. Unsubsidized and every other loan accrue from the disbursement date. Capitalized interest isn't modeled.
 
 **Investment account** ([AddInvestmentAccountModal.jsx](src/components/modals/AddInvestmentAccountModal.jsx))
 
@@ -990,8 +992,8 @@ It uses the standard `PageHeader` (title, "N total", search over name and kind, 
 - Stats: **Monthly Total** (sum of `monthlyPayment`), **Yearly Total** (× 12), **Total Debt** (sum of amount remaining).
 - Filters: Provider, Type. Search: name, provider, type label.
 - Card: key stat "Amount Remaining"; type chip (shows `otherType` for Other), plus a Subsidized/Unsubsidized chip for federal student loans that have one set. When expanded, the green box shows how the amount adds up: Amount Loaned, Interest Amount (with a `+` before its number), Amount Paid (with a `−` before its number), a total line, then Amount Remaining. With no `amountLoaned` there's no box, so Interest Amount and Amount Paid are plain detail rows instead. Below that, a **Disbursements** section listing each date and amount, oldest first, skipping rows left blank.
-- An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (see [§6](#6-data-storage-profiles-and-infojson)).
-- The form shows a **Subsidized or Unsubsidized** select under Provider only when the type is Student Loans and the provider is Federal Student Aid. Changing either away clears it.
+- An **Estimated Interest** row sits under Interest Rate ("$1,234.56 so far"), hidden when it can't be worked out (including a subsidized loan with no repayment start date) (see [§6](#6-data-storage-profiles-and-infojson)).
+- The form shows a **Subsidized or Unsubsidized** select under Provider only when the type is Student Loans and the provider is Federal Student Aid. Changing either away clears it. Choosing Subsidized adds a **Repayment Start Date** picker beneath it, and the card shows it as a "Repayment Starts" row.
 - The form edits disbursements inline ([LoanDisbursementFields](src/components/LoanDisbursementFields.jsx)), one row per disbursement with a native date picker.
 
 ### Insurance: `/expenses/insurance`
