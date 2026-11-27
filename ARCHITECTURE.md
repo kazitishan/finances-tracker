@@ -144,7 +144,7 @@ Consequences:
     │   ├── page.js             Home: upcoming payments
     │   ├── budgeting/page.js
     │   ├── passwords/page.js   Password Manager
-    │   ├── profile/page.js     Profile (name)
+    │   ├── profile/page.js     Profile (name, tax info)
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
     │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
@@ -154,7 +154,7 @@ Consequences:
     │       ├── [category]/[id]/route.js   PUT update, DELETE
     │       ├── passwords/route.js         GET saved logins
     │       ├── passwords/[id]/route.js    PUT, DELETE a saved login
-    │       ├── user-info/route.js         GET/PUT budgeting info and credit scores
+    │       ├── user-info/route.js         GET/PUT budgeting info, credit scores and tax info
     │       ├── profile/route.js           GET the signed-in profile, PUT its name, DELETE it
     │       ├── profiles/route.js          GET every profile, POST create one (and sign in)
     │       ├── profiles/current/route.js  PUT sign in, DELETE sign out
@@ -169,6 +169,7 @@ Consequences:
     │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
     │   ├── CreditScoreCard.jsx           FICO score chart, add form and history (Credit Cards page)
+    │   ├── TaxInfoCard.jsx               Tax info form (Profile page)
     │   ├── useSaveItem.jsx               Save/delete/close logic shared by all item modals
     │   ├── useUrlFilters.jsx             URL-backed filter state
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
@@ -184,6 +185,7 @@ Consequences:
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
     │   ├── creditScores.js     Credit score shape, validation, FICO rating bands, month sorting
+    │   ├── taxInfo.js          Tax info shape, options, validation
     │   ├── itemNames.js        itemName(): what an item is called on every screen
     │   └── logos.js            builtInLogo(), utilityIcon(), imageOf()
     └── util/                   Client-side fetch helpers + pure lookups
@@ -248,7 +250,7 @@ Key properties:
 
 ```json
 {
-  "user-info": { "income-streams": [], "additional-expenses": [], "credit-scores": [], "credit-score-reminder": "" },
+  "user-info": { "income-streams": [], "additional-expenses": [], "credit-scores": [], "credit-score-reminder": "", "tax-info": { … } },
   "bank accounts": [],
   "credit cards": [],
   "subscriptions": [],
@@ -468,14 +470,15 @@ The icons are full-tile SVGs: a colored 48×48 square with a white line glyph, s
 
 See [§9](#9-saved-logins-the-password-system).
 
-### Budgeting info and credit scores (`user-info`)
+### Budgeting info, credit scores and tax info (`user-info`)
 
 ```json
 {
   "income-streams":      [ { "id": "uuid", "name": "Day job", "...": "see below" } ],
   "additional-expenses": [ { "Rent": 3500 }, { "Groceries": 600 } ],
   "credit-scores":       [ { "id": "uuid", "month": "10", "year": "2026", "score": "742" } ],
-  "credit-score-reminder": "first"
+  "credit-score-reminder": "first",
+  "tax-info":            { "filingStatus": "single", "birthDate": "2005-03-01", "residency": "citizen", "state": "NY", "...": "see below" }
 }
 ```
 
@@ -516,6 +519,23 @@ The form can't be saved without a name and an amount above 0 (or with the same d
 - The list is kept **oldest first** (`sortScores`). The page sorts it again on load, so a hand-edited file still charts correctly.
 - **`credit-score-reminder`** is `"first"`, `"last"` or `""` (no reminder; also what a missing key means). It's set with the Reminder picker on the FICO Score card and shows up on Home (see [Home](#home-srcapppagejs)).
 - `isUserInfo` rejects the whole PUT (400) if the reminder isn't one of those three values, or if any entry has a bad month, a year that isn't four digits, or a score outside 300–850. Files from before credit scores existed have no `"credit-scores"`, which reads as `[]`; it's written the next time user-info is saved.
+
+**Tax info** ([TaxInfoCard.jsx](src/components/TaxInfoCard.jsx), documented in [taxInfo.js](src/lib/taxInfo.js)). One object of facts that will later decide which U.S. tax forms the user needs. Every value is a string, `""` when not answered.
+
+| Field | Values | What it's for |
+|---|---|---|
+| `filingStatus` | `single`, `married-joint`, `married-separate`, `head-of-household`, `surviving-spouse` | The 1040 filing status, and whether a spouse's info is needed |
+| `birthDate` | `"YYYY-MM-DD"` | 65+ raises the standard deduction; under 24 matters for dependency and education credits |
+| `residency` | `citizen`, `resident-alien`, `nonresident-alien` | A nonresident alien files 1040-NR instead of 1040 |
+| `state` | two-letter code (50 states + `DC`) | Which state return, if any. `noWageTaxStates` lists the nine with no tax on wages |
+| `claimedAsDependent` | `yes`, `no` | Limits the standard deduction and education credits, and rules out claiming dependents |
+| `studentStatus` | `none`, `less-than-half-time`, `half-time`, `full-time` | Education credits (Form 8863) and 1098-T |
+| `childrenUnder17` | whole number | Child Tax Credit (Schedule 8812). Always `""` when `claimedAsDependent` is `yes` |
+| `otherDependents` | whole number | Credit for Other Dependents. Same rule |
+
+- Self-employment isn't asked: it comes from income streams whose `type` is Freelancing, Contract or Gig Work.
+- Files from before tax info existed have no `"tax-info"`, which reads as every field `""` (`normalizeTaxInfo`). `updateUserInfo` writes only the known keys, and **a PUT without `"tax-info"` keeps the saved one**, so a Budgeting or Credit Cards tab opened before it existed can't wipe it.
+- `isUserInfo` rejects the whole PUT (400) if a choice isn't one of its values, the date isn't `YYYY-MM-DD`, or a count isn't digits (`isTaxInfo`).
 
 ### Migrations (automatic, on read)
 
@@ -578,7 +598,7 @@ Internal helpers:
 | `sameLogin(a, b)` | All three of platform, username and password are equal |
 | `saveLogin(info, login, replacing?)` | Adds or replaces a saved login (see [§9](#9-saved-logins-the-password-system)) |
 | `itemsUsingLogin(info, login, excludeId?)` | Every item across all categories whose login equals `login` |
-| `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape (credit scores via `isCreditScore` from creditScores.js). `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
+| `isAmountEntry`, `isIncomeStream`, `isUserInfo` | Validate the user-info shape (credit scores via `isCreditScore` from creditScores.js, tax info via `isTaxInfo` from taxInfo.js). `isUserInfo` also accepts old-style income streams, so older downloads can be imported |
 
 Exports:
 
@@ -1026,9 +1046,11 @@ Reached from Settings, not the nav bar. Lists saved logins sorted by platform, t
 
 ### Profile: `/profile`
 
-Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
+Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. That card doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
 
-Below it, a **Delete Profile** card. Deleting takes three confirmations:
+Below it, a **Tax Info** card ([TaxInfoCard](src/components/TaxInfoCard.jsx)), with the fields in [§6](#budgeting-info-credit-scores-and-tax-info-user-info) laid out two to a row: Filing Status, Date of Birth, Residency Status, State of Residence (with a "No state income tax on wages" hint for those states), Can Someone Claim You as a Dependent?, Student Status, and Children Under 17 / Other Dependents (whole numbers). Those last two are hidden, and cleared, when the answer to the dependent question is Yes. It loads `user-info` on mount and renders once that arrives. **Save Changes** is disabled until something changes; saving fetches the latest user-info again and PUTs it with only `"tax-info"` replaced, so budgeting changes from another tab aren't undone. It toasts "Tax info saved" or "Couldn't save".
+
+Below that, a **Delete Profile** card. Deleting takes three confirmations:
 
 1. The card's **Delete Profile** button opens [DeleteProfileModal](src/components/modals/DeleteProfileModal.jsx).
 2. A warning that all the data will be lost, with a **Press here to download the data** button (the same `/api/download` link as Settings → Download Info), and Cancel / **Continue**.
@@ -1250,7 +1272,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - **The signed-in profile is server-wide**, not per tab. Signing in to another profile in one tab switches every tab; the others catch up the next time their window gains focus (ProfileProvider refetches then). Until then, a background tab that saves would be saving into the newly signed-in profile.
 - Data routes called while signed out **500** rather than 401 (`currentProfileDir()` throws and route handlers don't catch it).
 - Only the signed-in profile can be deleted. To delete another, sign in to it first.
-- **Budgeting and the Credit Cards page both save the whole `user-info`.** Each sends its own copy with its list changed, so with both open in two tabs, saving in one can undo a change made in the other since it loaded.
+- **Budgeting and the Credit Cards page both save the whole `user-info`.** Each sends its own copy with its list changed, so with both open in two tabs, saving in one can undo a change made in the other since it loaded. Tax info on the Profile page is safer: it re-fetches before saving, but the other two pages can still undo a tax info change made after they loaded.
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.

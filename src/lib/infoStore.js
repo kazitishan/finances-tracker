@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { isCreditScore, isReminder } from "@/lib/creditScores";
 import { emptyIncomeStream } from "@/lib/incomeStreams";
+import { emptyTaxInfo, isTaxInfo, normalizeTaxInfo } from "@/lib/taxInfo";
 import { itemName } from "@/lib/itemNames";
 import { builtInLogo, utilityIcon } from "@/lib/logos";
 import { currentProfileDir } from "@/lib/profiles";
@@ -15,12 +16,13 @@ function infoPath() {
 
 // Budgeting info. Income streams are described in lib/incomeStreams.js. Each additional expense is a
 // one-key object, { "<name>": <monthly amount> }, e.g. { "Rent": 3500 }. Credit scores are described in
-// lib/creditScores.js.
+// lib/creditScores.js, and tax info in lib/taxInfo.js.
 const DEFAULT_USER_INFO = {
     "income-streams": [],
     "additional-expenses": [],
     "credit-scores": [],
     "credit-score-reminder": "",
+    "tax-info": emptyTaxInfo,
 };
 
 const DEFAULT_INFO = {
@@ -221,7 +223,8 @@ function isUserInfo(value) {
         && Array.isArray(incomeStreams) && incomeStreams.every((entry) => isIncomeStream(entry) || isAmountEntry(entry))
         && Array.isArray(additionalExpenses) && additionalExpenses.every(isAmountEntry)
         && Array.isArray(creditScores) && creditScores.every(isCreditScore)
-        && isReminder(value?.["credit-score-reminder"] ?? "");
+        && isReminder(value?.["credit-score-reminder"] ?? "")
+        && isTaxInfo(value?.["tax-info"]);
 }
 
 export function getUserInfo() {
@@ -237,6 +240,8 @@ export function updateUserInfo(userInfo) {
         "additional-expenses": userInfo["additional-expenses"] ?? [],
         "credit-scores": userInfo["credit-scores"] ?? [],
         "credit-score-reminder": userInfo["credit-score-reminder"] ?? "",
+        // A page that doesn't send tax info (one opened before it existed) keeps what's saved.
+        "tax-info": normalizeTaxInfo(userInfo["tax-info"] ?? info["user-info"]["tax-info"]),
     };
     writeInfo(info);
     return info["user-info"];

@@ -11,12 +11,23 @@ const legacyInfoPath = path.join(privateDir, "info.json");
 const legacyUploadsDir = path.join(privateDir, "uploads");
 
 // Budgeting info. Income streams are described in src/lib/incomeStreams.js. Each additional expense is
-// { "<name>": <monthly amount> }. Credit scores are described in src/lib/creditScores.js.
+// { "<name>": <monthly amount> }. Credit scores are described in src/lib/creditScores.js, and tax info in
+// src/lib/taxInfo.js.
 const defaultUserInfo = {
   "income-streams": [],
   "additional-expenses": [],
   "credit-scores": [],
   "credit-score-reminder": "",
+  "tax-info": {
+    filingStatus: "",
+    birthDate: "",
+    residency: "",
+    state: "",
+    claimedAsDependent: "",
+    studentStatus: "",
+    childrenUnder17: "",
+    otherDependents: "",
+  },
 };
 
 // Matches DEFAULT_INFO in src/lib/infoStore.js.
