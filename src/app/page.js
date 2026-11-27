@@ -13,11 +13,12 @@ import { allRecurringInvestments, investmentName, nextInvestmentDate } from "@/l
 import { getUserInfo } from "@/util/getUserInfo";
 import { itemName } from "@/lib/itemNames";
 import { nextScoreReminder } from "@/lib/creditScores";
-import { GaugeIcon } from "@/components/ui/icons";
+import { nextTaxDay } from "@/lib/taxInfo";
+import { FileTextIcon, GaugeIcon } from "@/components/ui/icons";
 
 // Money coming in. Reminders aren't money at all. Every other type is money going out, which the filter calls Expenses.
 const INCOMING_TYPES = ["Income Streams", "Interest Payments"];
-const REMINDER_TYPES = ["Credit Score"];
+const REMINDER_TYPES = ["Credit Score", "Taxes"];
 
 function showGroup(payment) {
   if (REMINDER_TYPES.includes(payment.type)) return "Reminders";
@@ -153,7 +154,19 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextScoreReminder(userInfo["credit-score-reminder"], userInfo["credit-scores"] ?? []),
   }];
 
-  return [...paychecks, ...creditScoreReminders, ...cardPayments, ...statementClosings, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
+  // Always shown: the next Tax Day, for the year before it. It links to the tax info on the Profile page.
+  const taxDay = nextTaxDay();
+  const taxReminders = [{
+    id: "tax-day",
+    kind: "Tax Day",
+    type: "Taxes",
+    href: "/profile",
+    name: `File your ${taxDay.getFullYear() - 1} taxes`,
+    icon: FileTextIcon,
+    date: taxDay,
+  }];
+
+  return [...paychecks, ...creditScoreReminders, ...taxReminders, ...cardPayments, ...statementClosings, ...annualFeePayments, ...subscriptionPayments, ...interestPayments, ...loanPayments, ...insurancePayments, ...utilityPayments, ...investmentPayments]
     .filter((payment) => payment.date)
     .map((payment) => ({ ...payment, days: daysUntil(payment.date) }))
     .sort((a, b) => a.days - b.days);

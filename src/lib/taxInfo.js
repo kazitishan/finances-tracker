@@ -92,3 +92,17 @@ export function isTaxInfo(value) {
 export function normalizeTaxInfo(value) {
     return Object.fromEntries(Object.keys(emptyTaxInfo).map((key) => [key, value?.[key] ?? ""]));
 }
+
+// Tax Day: April 15, or the next weekday when that falls on a weekend. Returns the next one, today included.
+export function taxDay(year) {
+    const date = new Date(year, 3, 15);
+    while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
+    return date;
+}
+
+export function nextTaxDay() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisYear = taxDay(today.getFullYear());
+    return thisYear >= today ? thisYear : taxDay(today.getFullYear() + 1);
+}

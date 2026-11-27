@@ -185,7 +185,7 @@ Consequences:
     │   ├── recurringInvestments.js  Investment schedule math
     │   ├── incomeStreams.js    Income stream shape and payday math
     │   ├── creditScores.js     Credit score shape, validation, FICO rating bands, month sorting
-    │   ├── taxInfo.js          Tax info shape, options, validation
+    │   ├── taxInfo.js          Tax info shape, options, validation, Tax Day
     │   ├── itemNames.js        itemName(): what an item is called on every screen
     │   └── logos.js            builtInLogo(), utilityIcon(), imageOf()
     └── util/                   Client-side fetch helpers + pure lookups
@@ -964,12 +964,13 @@ Everything coming up, soonest first. It fetches every category with dates, plus 
 | Recurring investment | Recurring investment | `nextInvestmentDate()` | `amount` |
 | Income stream with a payday | Paycheck (suitcase picture, links to Budgeting) | `nextPayday()` | `paycheckAmount`; — for estimated income, since a monthly estimate says nothing about one payout |
 | `credit-score-reminder` set | Reminder: "Enter your FICO score" (gauge icon, links to Credit Cards) | `nextScoreReminder()`: the next first or last day of a month (today included) **whose score hasn't been entered yet**, so entering this month's score early moves it to next month | — |
+| Always | Tax Day: "File your *<year before>* taxes" (file icon, links to Profile, where the tax info is) | `nextTaxDay()` in [taxInfo.js](src/lib/taxInfo.js): April 15, moved to the next weekday when it falls on a weekend (`taxDay(year)`), this year's until it passes (today included), then next year's. Federal holidays such as D.C.'s Emancipation Day aren't accounted for | — |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
 
-A row with an `icon` (a component, used by the reminder) draws it in a neutral logo tile instead of an `image`.
+A row with an `icon` (a component, used by the reminders) draws it in a neutral logo tile instead of an `image`.
 
-It uses the standard `PageHeader` (title, "N total", search over name and kind, placeholder "Search...") and `EmptyState`. The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` (`showGroup`) picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`), **Reminders** (Credit Score, listed in `REMINDER_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
+It uses the standard `PageHeader` (title, "N total", search over name and kind, placeholder "Search...") and `EmptyState`. The **Filter** button (shown once there's something in the list) uses `useUrlFilters` with a `sub` filter. `show` (`showGroup`) picks **Payments** (money coming in: Income Streams and Interest Payments, listed in `INCOMING_TYPES`), **Reminders** (Credit Score and Taxes, listed in `REMINDER_TYPES`) or **Expenses** (every other row: Annual Fees, Credit Cards, Insurance, Investments, Loans, Subscriptions, Utilities). Selecting one offers those types underneath, stored as `type`. Each row's `type` comes from `buildPayments`, and only types with rows are offered.
 
 ### Bank Accounts: `/accounts/bank-accounts`
 
@@ -1201,7 +1202,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
 | `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
-| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item), LogOut, Gauge (the FICO Score card), ArrowLeft and ChevronRight (Budgeting's chart). Every dropdown trigger uses ChevronDown |
+| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item), LogOut, Gauge (the FICO Score card), FileText (Home's Tax Day reminder), ArrowLeft and ChevronRight (Budgeting's chart). Every dropdown trigger uses ChevronDown |
 
 ### Other modals: [src/components/modals/](src/components/modals/)
 
