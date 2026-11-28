@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useProfile } from "@/components/ProfileProvider";
 import { useToast } from "@/components/ToastProvider";
 import DeleteProfileModal from "@/components/modals/DeleteProfileModal";
-import TaxInfoCard from "@/components/TaxInfoCard";
 import { TrashIcon } from "@/components/ui/icons";
 import PageHeader from "@/components/ui/PageHeader";
 import { inputClasses } from "@/lib/formUtils";
@@ -62,8 +61,6 @@ export default function ProfilePage() {
           </div>
         </form>
       )}
-
-      {profile && <TaxInfoCard />}
 
       {profile && (
         <div className="card mt-6 flex items-center justify-between gap-4 p-5">

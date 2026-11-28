@@ -1,5 +1,5 @@
 // Facts about the user that decide which U.S. tax forms they'll need, saved in user-info's "tax-info". Every value
-// is a string, "" when not answered. Edited on the Profile page (TaxInfoCard).
+// is a string, "" when not answered. Edited on the Taxes page (TaxInfoCard).
 //   filingStatus       one of filingStatusOptions: which 1040 status, and whether a spouse's info is needed
 //   birthDate          "YYYY-MM-DD": 65+ raises the standard deduction; under 24 matters for dependency and education credits
 //   residency          one of residencyOptions: a nonresident alien files 1040-NR instead of 1040

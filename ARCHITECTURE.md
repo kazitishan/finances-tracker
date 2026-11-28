@@ -144,7 +144,8 @@ Consequences:
     │   ├── page.js             Home: upcoming payments
     │   ├── budgeting/page.js
     │   ├── passwords/page.js   Password Manager
-    │   ├── profile/page.js     Profile (name, tax info)
+    │   ├── taxes/page.js       Taxes: predicted tax forms (linked from Home's Tax Day reminder)
+    │   ├── profile/page.js     Profile (name)
     │   ├── accounts/bank-accounts/page.js
     │   ├── accounts/investing/page.js
     │   ├── expenses/{credit-cards,subscriptions,loans,insurance,utilities,other}/page.js
@@ -169,7 +170,7 @@ Consequences:
     │   ├── LoanDisbursementFields.jsx    Editor for a loan's disbursements
     │   ├── RecurringInvestmentFields.jsx Editor for an account's recurring investments
     │   ├── CreditScoreCard.jsx           FICO score chart, add form and history (Credit Cards page)
-    │   ├── TaxInfoCard.jsx               Tax info form (Profile page)
+    │   ├── TaxInfoCard.jsx               Tax info form (Taxes page)
     │   ├── useSaveItem.jsx               Save/delete/close logic shared by all item modals
     │   ├── useUrlFilters.jsx             URL-backed filter state
     │   ├── dropdowns/                    Dropdown (dispatcher), LogoDropdown, TypeDropdown
@@ -177,6 +178,7 @@ Consequences:
     │   ├── modals/                       Add/Edit forms, Rearrange, EditLogin, ImageUpload, NamePrompt, DeleteProfile
     │   └── ui/                           InfoCard, Modal, PageHeader, FilterMenu, FormActions, AffixInput, icons, ...
     ├── data/platforms.json     Built-in platform names → logo paths
+    ├── data/taxes.json         Every tax form the Taxes page knows: names, senders, deadlines, thresholds, reasons
     ├── lib/                    Server store (profiles, infoStore, uploads) + pure helpers
     │   ├── profiles.js         router.json: the profiles and who's signed in (server-only, uses fs)
     │   ├── infoStore.js        THE data layer for the signed-in profile (server-only, uses fs)
@@ -186,6 +188,8 @@ Consequences:
     │   ├── incomeStreams.js    Income stream shape and payday math
     │   ├── creditScores.js     Credit score shape, validation, FICO rating bands, month sorting
     │   ├── taxInfo.js          Tax info shape, options, validation, Tax Day
+    │   ├── taxForms.js         predictTaxForms(): which forms in data/taxes.json the user will need
+    │   ├── loans.js            isFederalStudentLoan(), isSubsidized()
     │   ├── itemNames.js        itemName(): what an item is called on every screen
     │   └── logos.js            builtInLogo(), utilityIcon(), imageOf()
     └── util/                   Client-side fetch helpers + pure lookups
@@ -361,8 +365,8 @@ Other expenses have no platform field, picture or login, so they aren't in `PLAT
 |---|---|
 | `type` | `Mortgage`, `Student Loans`, `Personal Loans`, `Business Loans`, `Auto Loan`, `Other` |
 | `otherType` | free text, used when `type === "Other"` |
-| `subsidy` | `"subsidized"` \| `"unsubsidized"` \| `""`. Only for federal student loans (`type === "Student Loans"` and `provider === "Federal Student Aid"`, `isFederalStudentLoan()` in [LoanInfo.jsx](src/components/info/LoanInfo.jsx)). The form clears it as soon as the loan stops being one. Loans saved before this field existed have none |
-| `repaymentStart` | `"YYYY-MM-DD"` \| `""`. Only for subsidized federal student loans (`isSubsidized()`): the date the government stops paying the interest (end of school, grace period or deferment). Cleared by the form when the loan stops being subsidized |
+| `subsidy` | `"subsidized"` \| `"unsubsidized"` \| `""`. Only for federal student loans (`type === "Student Loans"` and `provider === "Federal Student Aid"`, `isFederalStudentLoan()` in [loans.js](src/lib/loans.js)). The form clears it as soon as the loan stops being one. Loans saved before this field existed have none |
+| `repaymentStart` | `"YYYY-MM-DD"` \| `""`. Only for subsidized federal student loans (`isSubsidized()`, same file): the date the government stops paying the interest (end of school, grace period or deferment). Cleared by the form when the loan stops being subsidized |
 | `amountLoaned`, `interestAmount`, `amountPaid`, `monthlyPayment` | decimal strings (dollars) |
 | `interestRate` | decimal string (percent) |
 | `paymentDay` | `"1"`–`"28"` |
@@ -964,7 +968,7 @@ Everything coming up, soonest first. It fetches every category with dates, plus 
 | Recurring investment | Recurring investment | `nextInvestmentDate()` | `amount` |
 | Income stream with a payday | Paycheck (suitcase picture, links to Budgeting) | `nextPayday()` | `paycheckAmount`; — for estimated income, since a monthly estimate says nothing about one payout |
 | `credit-score-reminder` set | Reminder: "Enter your FICO score" (gauge icon, links to Credit Cards) | `nextScoreReminder()`: the next first or last day of a month (today included) **whose score hasn't been entered yet**, so entering this month's score early moves it to next month | — |
-| Always | Tax Day: "File your *<year before>* taxes" (file icon, links to Profile, where the tax info is) | `nextTaxDay()` in [taxInfo.js](src/lib/taxInfo.js): April 15, moved to the next weekday when it falls on a weekend (`taxDay(year)`), this year's until it passes (today included), then next year's. Federal holidays such as D.C.'s Emancipation Day aren't accounted for | — |
+| Always | Tax Day: "File your *<year before>* taxes" (file icon, links to [Taxes](#taxes-taxes)) | `nextTaxDay()` in [taxInfo.js](src/lib/taxInfo.js): April 15, moved to the next weekday when it falls on a weekend (`taxDay(year)`), this year's until it passes (today included), then next year's. Federal holidays such as D.C.'s Emancipation Day aren't accounted for | — |
 
 Items with no computable date are dropped. The list is sorted by days until the payment, and each row links to its category page. The pill reads "today", "tomorrow" or "in N days", and is **accent-colored when ≤ 3 days away**. "Today" counts as upcoming.
 
@@ -1045,13 +1049,57 @@ The nav label is "Other"; the page title is "Other Expenses". It follows the [§
 
 Reached from Settings, not the nav bar. Lists saved logins sorted by platform, then username. Each card shows the logo, username, "Used by N items", masked username and password, and a **Used By** list linking to each item's page. Edit and Delete work as described in [§9](#9-saved-logins-the-password-system). Filter: Platform. Search: platform, username, names of the items using it.
 
+### Taxes: `/taxes`
+
+[src/app/taxes/page.js](src/app/taxes/page.js). Not in the nav bar: it's reached from Home's Tax Day reminder. It predicts which tax forms the user will get or file for the **tax year before the next Tax Day** (`nextTaxDay().getFullYear() − 1`), so it switches to the next year once Tax Day passes.
+
+- Header: "Taxes", described as "*<year>* tax year · due *<Tax Day>*".
+- First, the **Tax Info** card ([TaxInfoCard](src/components/TaxInfoCard.jsx), `id="tax-info"`), with the fields in [§6](#budgeting-info-credit-scores-and-tax-info-user-info) laid out two to a row: Filing Status, Date of Birth, Residency Status, State of Residence (with a "No state income tax on wages" hint for those states), Can Someone Claim You as a Dependent?, Student Status, and Children Under 17 / Other Dependents (whole numbers). Those last two are hidden, and cleared, when the answer to the dependent question is Yes. **Save Changes** is disabled until something changes; saving fetches the latest user-info again and PUTs it with only `"tax-info"` replaced, so budgeting changes from another tab aren't undone. It toasts "Tax info saved" or "Couldn't save". The page passes it the saved tax info and gets the new value back through `onSaved`, so the predictions below update as soon as it saves (not while typing).
+- One card per group in `TAX_GROUPS` (taxes.json's `groups`: **Employment**, **Student Loans**, **Bank Interest**, **Investments**). Each lists its forms needed first, then maybe, then not needed (dimmed). Each row has the form's short name, its title, "From *<who sends it>*", one sentence on why, a status pill (**Needed** in accent, **Maybe**, **Not needed**), and under them its **conditions** (`ConditionList`): a green check for met, a neutral dash for unknown, a red X for unmet, each with a screen-reader label. A not-needed row dims everything but its conditions, since they say why. The row links to the page its data came from. A group with no forms shows its `empty` text and link from taxes.json.
+- Loads bank accounts, loans, investment accounts and `user-info` on mount; everything else is worked out by `predictTaxForms()` in [taxForms.js](src/lib/taxForms.js). A footer says it's a prediction, not tax advice.
+
+**Where the tax facts live.** Everything about the forms themselves is in [src/data/taxes.json](src/data/taxes.json), and taxForms.js only decides which apply. Its top-level keys:
+
+| Key | What it holds |
+|---|---|
+| `thresholdsYear` | The tax year the thresholds were last checked for (2026) |
+| `groups` | `[{ name, empty: { text, href, link } }]`, in page order |
+| `incomeTypes` | Which income stream types are `employee`, `selfEmployed` and `gig` |
+| `investmentTypes` | `taxable`: the investment account types that get 1099-B/1099-DIV (just Brokerage) |
+| `forms` | One entry per form, keyed by id (`w2`, `1099-nec`, `1099-k`, `w2-or-1099`, `schedule-c`, `schedule-se`, `1098-e`, `student-loan-deduction`, `1099-int`, `schedule-b`, `1099-b`, `1099-div`, `form-8949`, `schedule-d`) |
+
+Each form entry has `form` (short name), `title`, `group`, `issuer` (who sends it, `null` for one the user files), `sentBy` (deadline for sending it, `null` for filed forms), `attachTo` (what a filed form goes with), `reports` (what's on it), `conditions` (`{ "<id>": "<template>" }`, in display order: what must be true for the form to be needed), `threshold`, `href` (the page its data comes from), `irs` (the IRS's About page) and `reasons`: one template per outcome (`needed`, `maybe`, `notNeeded`, `notAllowed`), filled in by `fill()`. `{threshold}`, `{sentBy}`, `{taxYear}` and `{from}` work in every template, conditions included; the rest are passed by the rule that uses it. A few have extras: `limit` and `notAllowedFor` (keyed `dependent` or a filing status) on the deduction, `federalFrom` on 1098-E, `holdings` on 1099-DIV, `fallbackGroup` on Schedule B.
+
+`threshold` is `null`, a number, `{ "amount": …, "transactions": … }` for one with two conditions (1099-K), or `{ "<year>": amount }` for one that changed over time (1099-NEC: `{ "2025": 600, "2026": 2000 }`), where `thresholdFor()` uses the latest year up to the tax year. Every predicted form carries `issuer`, `sentBy`, `attachTo`, `reports` and `irs` from its entry, though the page doesn't show them yet.
+
+The rules. A form is **listed** when the first column's data exists; its **conditions** (ids from taxes.json) are then checked as ✓ met, – unknown or ✗ unmet, and its status follows from them (`statusOf`): any ✗ makes it **not needed**, all ✓ makes it **needed**, anything else is **maybe**. The reason shown is the template named after the status unless the rule picks one:
+
+| Form | Listed when | Conditions |
+|---|---|---|
+| W-2, one per income stream | `type` is in `incomeTypes.employee` (Full-time Job, Part-time Job) | `employee` ✓ · `paid` ✓ if it pays anything over the year, else – |
+| 1099-NEC, one per stream | `type` is Contract or Freelancing | `contractor` ✓ · `overThreshold` ✗ if the stream's whole year is under $2,000 ($600 through 2025), else – |
+| 1099-K / 1099-NEC, one per stream | `type` is in `incomeTypes.gig` (Gig Work) | `gig` ✓ · `overThreshold` ✗ under the 1099-NEC amount for the year, else – |
+| W-2 or 1099 | Any other type, or none | `typeSet` – (so it stays a maybe: it's still income) |
+| Schedule C | Any self-employed stream | `selfEmployed` ✓ |
+| Schedule SE | Same | `selfEmployed` ✓ · `overThreshold` ✓ if the streams' yearly total is $400+, ✗ if it's under, – if they don't say an amount (expenses aren't tracked, so income stands in for profit) |
+| 1098-E, one per `provider` | Any Student Loans loan | `hasLoans` ✓ · `madePayments` ✓ if one has `amountPaid` above 0, else ✗ · `overThreshold` – if paid, else ✗ |
+| Schedule 1 (student loan interest deduction, up to $2,500; links to the Tax Info card) | Same loans | `paidInterest` – if any payments, else ✗ · `notDependent` from `claimedAsDependent` · `notMarriedSeparate` from `filingStatus` · `underIncomeLimit` – . Unanswered tax info is –, not ✗ |
+| 1099-INT, one per `bank` | Accounts with an `apy` above 0; others (and banks with none) aren't listed | `earnsInterest` ✓ · `overThreshold` ($10) – |
+| 1099-B, one per `broker` | Accounts whose `type` is in `investmentTypes.taxable` (Brokerage) | `taxableAccount` ✓ · `sold` – |
+| 1099-DIV, one per `broker` | Same | `taxableAccount` ✓ · `overThreshold` ($10) –. The reason names the stocks in their recurring investments |
+| Form 8949 | Any taxable investment account | `taxableAccount` ✓ · `sold` – |
+| Schedule D | Same | `taxableAccount` ✓ · `soldOrDistributions` – |
+| Schedule B | Any 1099-INT or taxable investment account; under Bank Interest when there's a 1099-INT, otherwise Investments | `hasIncome` ✓ · `overThreshold` ($1,500) – |
+
+Roth IRA and 401K accounts get none of the investment forms: what happens inside them isn't reported until money is taken out.
+
+The yearly income in the reasons is `yearlyIncome()`: `paidInMonth()` summed over the tax year's twelve months, as if paid all year at the current pay. Bank accounts have no balance and loan payments have no dates, so 1099-INT and 1098-E can't be more than "maybe". Sales and dividends aren't tracked at all, so every investment form is "maybe".
+
 ### Profile: `/profile`
 
-Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. That card doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
+Reached from Settings, not the nav bar. A card with one **Name** field: the signed-in profile's name in `router.json`. It doesn't fetch on its own: it reads and saves through `useProfile()` from [ProfileProvider](#profileproviderjsx), so a name entered in the first-run popup shows up here right away (the card renders once the profile loads). The field holds a `draft` while edited and shows the saved name otherwise. **Save Changes** toasts "Profile saved" or "Couldn't save"; it's disabled while saving, while the name is blank ("A name is required" shows under it), and while the trimmed name matches the saved one.
 
-Below it, a **Tax Info** card ([TaxInfoCard](src/components/TaxInfoCard.jsx)), with the fields in [§6](#budgeting-info-credit-scores-and-tax-info-user-info) laid out two to a row: Filing Status, Date of Birth, Residency Status, State of Residence (with a "No state income tax on wages" hint for those states), Can Someone Claim You as a Dependent?, Student Status, and Children Under 17 / Other Dependents (whole numbers). Those last two are hidden, and cleared, when the answer to the dependent question is Yes. It loads `user-info` on mount and renders once that arrives. **Save Changes** is disabled until something changes; saving fetches the latest user-info again and PUTs it with only `"tax-info"` replaced, so budgeting changes from another tab aren't undone. It toasts "Tax info saved" or "Couldn't save".
-
-Below that, a **Delete Profile** card. Deleting takes three confirmations:
+Below it, a **Delete Profile** card. Deleting takes three confirmations:
 
 1. The card's **Delete Profile** button opens [DeleteProfileModal](src/components/modals/DeleteProfileModal.jsx).
 2. A warning that all the data will be lost, with a **Press here to download the data** button (the same `/api/download` link as Settings → Download Info), and Cancel / **Continue**.
@@ -1202,7 +1250,7 @@ Placeholders are generated from the type: "Select a bank", "Search loan provider
 | `DetailSection` / `NotesSection` | Titled block; notes keep line breaks |
 | `OtherExpensesTable` | The table on the Other Expenses page, the only category not shown as `InfoCard`s. Lives in `components/info/` |
 | `ImageUploadButton` | Square tile showing the current logo, with a hover tooltip |
-| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item), LogOut, Gauge (the FICO Score card), FileText (Home's Tax Day reminder), ArrowLeft and ChevronRight (Budgeting's chart). Every dropdown trigger uses ChevronDown |
+| `icons.jsx` | Inline SVG icons (Lucide-style paths): ChevronDown, Pencil, ArrowUpRight, Plus, X, ArrowUpDown, ArrowUp, ArrowDown, Key, Check, Gear, Download, Search, Filter, Upload, Image, Trash, Eye, EyeOff, User (Settings' Profile item), LogOut, Gauge (the FICO Score card), FileText (Home's Tax Day reminder), Minus (the Taxes page's unknown conditions), ArrowLeft and ChevronRight (Budgeting's chart). Every dropdown trigger uses ChevronDown |
 
 ### Other modals: [src/components/modals/](src/components/modals/)
 
@@ -1273,7 +1321,7 @@ Things that surprise people, collected in one place. Some are deliberate trade-o
 - **The signed-in profile is server-wide**, not per tab. Signing in to another profile in one tab switches every tab; the others catch up the next time their window gains focus (ProfileProvider refetches then). Until then, a background tab that saves would be saving into the newly signed-in profile.
 - Data routes called while signed out **500** rather than 401 (`currentProfileDir()` throws and route handlers don't catch it).
 - Only the signed-in profile can be deleted. To delete another, sign in to it first.
-- **Budgeting and the Credit Cards page both save the whole `user-info`.** Each sends its own copy with its list changed, so with both open in two tabs, saving in one can undo a change made in the other since it loaded. Tax info on the Profile page is safer: it re-fetches before saving, but the other two pages can still undo a tax info change made after they loaded.
+- **Budgeting and the Credit Cards page both save the whole `user-info`.** Each sends its own copy with its list changed, so with both open in two tabs, saving in one can undo a change made in the other since it loaded. Tax info on the Taxes page is safer: it re-fetches before saving, but the other two pages can still undo a tax info change made after they loaded.
 
 **Hidden stale fields**
 - Switching a bank account from Checking to Savings **hides** the debit fields but doesn't clear them. If `cardNumber` stays filled, the account still appears as a **payment method**.
@@ -1323,6 +1371,10 @@ Edit `insuranceTypeFields` in [AddInsuranceModal.jsx](src/components/modals/AddI
 ### Add a loan type
 
 Add it to `typesByType["loan-type"]` in Dropdown.jsx.
+
+### Add or change a tax form
+
+Thresholds, deadlines and wording are all in [taxes.json](src/data/taxes.json): edit the form's entry. When a threshold changes for a new tax year, add that year to its `{ "<year>": amount }` map instead of overwriting the old one. A new form needs an entry in `forms` plus a rule in [taxForms.js](src/lib/taxForms.js) that calls `predicted("<key>", taxYear, { checks, ... })`, with `checks` giving `"met"`, `"unknown"` or `"unmet"` for every one of its conditions (a missing one throws, as does a status with no matching reason). Adding a condition to an existing form means adding its check to that rule too; a new group needs an entry in `groups`, which the page renders in order.
 
 ### Add a whole new category
 

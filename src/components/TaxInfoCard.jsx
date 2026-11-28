@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ToastProvider";
 import { inputClasses, onlyDigits } from "@/lib/formUtils";
 import {
@@ -48,24 +48,12 @@ function CountField({ label, value, onChange, hint }) {
     );
 }
 
-// The Profile page's Tax Info card: facts that decide which tax forms the user will need (see lib/taxInfo.js).
-function TaxInfoCard() {
-    const [saved, setSaved] = useState(null);
-    const [form, setForm] = useState(null);
+// The Taxes page's Tax Info card: facts that decide which tax forms the user will need (see lib/taxInfo.js).
+// `taxInfo` is what's saved, already normalized; `onSaved` gets the new saved value so the page can update.
+function TaxInfoCard({ taxInfo: saved, onSaved }) {
+    const [form, setForm] = useState(saved);
     const [saving, setSaving] = useState(false);
     const showToast = useToast();
-
-    useEffect(() => {
-        getUserInfo()
-            .then((info) => {
-                const taxInfo = normalizeTaxInfo(info["tax-info"]);
-                setSaved(taxInfo);
-                setForm(taxInfo);
-            })
-            .catch(() => showToast("Couldn't load your tax info"));
-    }, [showToast]);
-
-    if (!form) return null;
 
     const changed = Object.keys(form).some((key) => form[key] !== saved[key]);
 
@@ -88,8 +76,8 @@ function TaxInfoCard() {
             const latest = await getUserInfo();
             const updated = await saveUserInfo({ ...latest, "tax-info": form });
             const taxInfo = normalizeTaxInfo(updated["tax-info"]);
-            setSaved(taxInfo);
             setForm(taxInfo);
+            onSaved(taxInfo);
             showToast("Tax info saved");
         } catch {
             showToast("Couldn't save");
@@ -99,10 +87,10 @@ function TaxInfoCard() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4 p-5">
+        <form id="tax-info" onSubmit={handleSubmit} className="card flex scroll-mt-6 flex-col gap-4 p-5">
             <div>
                 <h2 className="font-semibold">Tax Info</h2>
-                <div className="text-sm text-muted">Used to work out which tax forms you&apos;ll need to file.</div>
+                <div className="text-sm text-muted">Used to predict the forms below. Save to update them.</div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

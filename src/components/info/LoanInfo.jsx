@@ -8,20 +8,9 @@ import DetailSection, { NotesSection } from "@/components/ui/DetailSection";
 import LoginDetailRow from "@/components/info/LoginDetailRow";
 import { parseDateString } from "@/lib/recurringInvestments";
 import { itemName } from "@/lib/itemNames";
-
-export const FEDERAL_STUDENT_AID = "Federal Student Aid";
-
-// The subsidized/unsubsidized field only exists for federal student loans.
-export function isFederalStudentLoan(loan) {
-    return loan.type === "Student Loans" && loan.provider === FEDERAL_STUDENT_AID;
-}
+import { isFederalStudentLoan, isSubsidized } from "@/lib/loans";
 
 const SUBSIDY_LABELS = { subsidized: "Subsidized", unsubsidized: "Unsubsidized" };
-
-// On a subsidized federal loan the government pays the interest until repayment starts.
-export function isSubsidized(loan) {
-    return isFederalStudentLoan(loan) && loan.subsidy === "subsidized";
-}
 
 export function amountRemaining(loan) {
     if (!loan.amountLoaned) return null;

@@ -10,7 +10,7 @@ import { useSaveItem } from "@/components/useSaveItem";
 import FormActions from "@/components/ui/FormActions";
 import NotesField from "@/components/ui/NotesField";
 import AffixInput from "@/components/ui/AffixInput";
-import { isFederalStudentLoan, isSubsidized } from "@/components/info/LoanInfo";
+import { isFederalStudentLoan, isSubsidized } from "@/lib/loans";
 
 const initialFormState = {
     name: "",

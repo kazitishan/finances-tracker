@@ -154,13 +154,13 @@ function buildPayments(cards, subscriptions, bankAccounts, loans, policies, inve
     date: nextScoreReminder(userInfo["credit-score-reminder"], userInfo["credit-scores"] ?? []),
   }];
 
-  // Always shown: the next Tax Day, for the year before it. It links to the tax info on the Profile page.
+  // Always shown: the next Tax Day, for the year before it. It links to the Taxes page's predicted forms.
   const taxDay = nextTaxDay();
   const taxReminders = [{
     id: "tax-day",
     kind: "Tax Day",
     type: "Taxes",
-    href: "/profile",
+    href: "/taxes",
     name: `File your ${taxDay.getFullYear() - 1} taxes`,
     icon: FileTextIcon,
     date: taxDay,

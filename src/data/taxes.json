@@ -1,0 +1,343 @@
+{
+  "thresholdsYear": 2026,
+  "groups": [
+    {
+      "name": "Employment",
+      "empty": {
+        "text": "No income streams yet.",
+        "href": "/budgeting",
+        "link": "Add them on Budgeting"
+      }
+    },
+    {
+      "name": "Student Loans",
+      "empty": {
+        "text": "No student loans.",
+        "href": "/expenses/loans",
+        "link": "Go to Loans"
+      }
+    },
+    {
+      "name": "Bank Interest",
+      "empty": {
+        "text": "No bank accounts that earn interest (an APY).",
+        "href": "/accounts/bank-accounts",
+        "link": "Go to Bank Accounts"
+      }
+    },
+    {
+      "name": "Investments",
+      "empty": {
+        "text": "No brokerage accounts. Retirement accounts like a Roth IRA or 401K don't get these forms unless you take money out.",
+        "href": "/accounts/investing",
+        "link": "Go to Investing"
+      }
+    }
+  ],
+  "incomeTypes": {
+    "employee": [
+      "Full-time Job",
+      "Part-time Job"
+    ],
+    "selfEmployed": [
+      "Contract",
+      "Freelancing",
+      "Gig Work"
+    ],
+    "gig": [
+      "Gig Work"
+    ]
+  },
+  "investmentTypes": {
+    "taxable": [
+      "Brokerage"
+    ]
+  },
+  "forms": {
+    "w2": {
+      "form": "W-2",
+      "title": "Wage and Tax Statement",
+      "group": "Employment",
+      "issuer": "Your employer",
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "Wages paid to you and the federal, state, Social Security and Medicare taxes withheld from them.",
+      "conditions": {
+        "employee": "{from} employs you (a full-time or part-time job)",
+        "paid": "{from} paid you wages in {taxYear}"
+      },
+      "threshold": null,
+      "href": "/budgeting",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-w-2",
+      "reasons": {
+        "needed": "{type} income. Your employer sends it by {sentBy}.{earned}"
+      }
+    },
+    "1099-nec": {
+      "form": "1099-NEC",
+      "title": "Nonemployee Compensation",
+      "group": "Employment",
+      "issuer": "Each client or business that paid you",
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "What a business paid you as an independent contractor, with no taxes withheld.",
+      "conditions": {
+        "contractor": "{from} pays you as a contractor or freelancer",
+        "overThreshold": "A single client paid you {threshold} or more in {taxYear}"
+      },
+      "threshold": {
+        "2025": 600,
+        "2026": 2000
+      },
+      "href": "/budgeting",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1099-nec",
+      "reasons": {
+        "maybe": "{type} income. Each client who paid you {threshold} or more sends one. The income is taxable either way.{earned}"
+      }
+    },
+    "1099-k": {
+      "form": "1099-K",
+      "title": "Payment Card and Third Party Network Transactions",
+      "group": "Employment",
+      "issuer": "The payment app or gig platform",
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "The gross amount of payments a platform or payment app processed for you.",
+      "conditions": {
+        "gig": "{from} is gig work paid through a platform or app",
+        "overThreshold": "The platform paid you over {threshold} in {transactions}+ payments, or {necThreshold}+ directly"
+      },
+      "threshold": {
+        "amount": 20000,
+        "transactions": 200
+      },
+      "href": "/budgeting",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1099-k",
+      "reasons": {
+        "maybe": "Gig work. A platform sends a 1099-K over {threshold} and {transactions} payments, or a 1099-NEC if it paid you {necThreshold} or more directly. The income is taxable either way.{earned}"
+      }
+    },
+    "w2-or-1099": {
+      "form": "W-2 or 1099",
+      "title": "Depends on the job",
+      "group": "Employment",
+      "issuer": null,
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "A W-2 if you're an employee, or a 1099 if you're paid as a contractor.",
+      "conditions": {
+        "typeSet": "{from} is set as a job or as contract work"
+      },
+      "threshold": null,
+      "href": "/budgeting",
+      "irs": null,
+      "reasons": {
+        "maybe": "Set this income stream's type on Budgeting to know which form it brings."
+      }
+    },
+    "schedule-c": {
+      "form": "Schedule C",
+      "title": "Profit or Loss From Business",
+      "group": "Employment",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Form 1040",
+      "reports": "Self-employment income minus business expenses. The profit is your taxable self-employment income.",
+      "conditions": {
+        "selfEmployed": "You have self-employment income"
+      },
+      "threshold": null,
+      "href": "/budgeting",
+      "irs": "https://www.irs.gov/forms-pubs/about-schedule-c-form-1040",
+      "reasons": {
+        "needed": "You file it for self-employment income ({names}), whether or not a 1099 arrives."
+      }
+    },
+    "schedule-se": {
+      "form": "Schedule SE",
+      "title": "Self-Employment Tax",
+      "group": "Employment",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Form 1040",
+      "reports": "Social Security and Medicare tax on self-employment profit, which no employer withheld.",
+      "conditions": {
+        "selfEmployed": "You have self-employment income",
+        "overThreshold": "Your self-employment profit is {threshold} or more"
+      },
+      "threshold": 400,
+      "href": "/budgeting",
+      "irs": "https://www.irs.gov/forms-pubs/about-schedule-se-form-1040",
+      "reasons": {
+        "needed": "Needed when self-employment profit is {threshold} or more. You're on track for about {total} before expenses.",
+        "maybe": "Needed when self-employment profit is {threshold} or more. Your income streams don't say how much yet."
+      }
+    },
+    "1098-e": {
+      "form": "1098-E",
+      "title": "Student Loan Interest Statement",
+      "group": "Student Loans",
+      "issuer": "Your loan servicer",
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "The student loan interest you paid during the year.",
+      "conditions": {
+        "hasLoans": "You have student loans with {provider}",
+        "madePayments": "You've made payments on them",
+        "overThreshold": "You paid {threshold} or more in interest in {taxYear}"
+      },
+      "threshold": 600,
+      "href": "/expenses/loans",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1098-e",
+      "federalFrom": "{provider} (sent by your loan servicer)",
+      "reasons": {
+        "maybe": "Sent if you paid {threshold} or more in interest this year. Interest that builds up but isn't paid doesn't count.",
+        "notNeeded": "No payments made on these loans yet, so there's no paid interest to report."
+      }
+    },
+    "student-loan-deduction": {
+      "form": "Schedule 1",
+      "title": "Student Loan Interest Deduction",
+      "group": "Student Loans",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Form 1040",
+      "reports": "Interest you paid on student loans, deducted from your income. It shrinks at higher incomes.",
+      "conditions": {
+        "paidInterest": "You paid student loan interest in {taxYear}",
+        "notDependent": "No one can claim you as a dependent",
+        "notMarriedSeparate": "You're not married filing separately",
+        "underIncomeLimit": "Your income is under the IRS limit for this deduction"
+      },
+      "threshold": null,
+      "limit": 2500,
+      "notAllowedFor": {
+        "dependent": "you can be claimed as a dependent",
+        "married-separate": "you're married filing separately"
+      },
+      "href": "/taxes#tax-info",
+      "irs": "https://www.irs.gov/forms-pubs/about-schedule-1-form-1040",
+      "reasons": {
+        "maybe": "Deducts up to {limit} of interest you paid, even under {formThreshold} without a 1098-E. It shrinks at higher incomes.",
+        "notAllowed": "You can't take this deduction because {notAllowedFor}.",
+        "notNeeded": "Nothing to deduct until you've paid interest."
+      }
+    },
+    "1099-int": {
+      "form": "1099-INT",
+      "title": "Interest Income",
+      "group": "Bank Interest",
+      "issuer": "Your bank",
+      "sentBy": "January 31",
+      "attachTo": null,
+      "reports": "Interest a bank paid you during the year.",
+      "conditions": {
+        "earnsInterest": "You have an account at {from} that earns interest",
+        "overThreshold": "{from} paid you {threshold} or more in interest in {taxYear}"
+      },
+      "threshold": 10,
+      "href": "/accounts/bank-accounts",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1099-int",
+      "reasons": {
+        "maybe": "{accounts} {verb} interest. The bank sends one if it paid you {threshold} or more; less is still taxable."
+      }
+    },
+    "schedule-b": {
+      "form": "Schedule B",
+      "title": "Interest and Ordinary Dividends",
+      "group": "Bank Interest",
+      "fallbackGroup": "Investments",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Form 1040",
+      "reports": "Every payer of your interest and dividends, when either total is over the threshold.",
+      "conditions": {
+        "hasIncome": "You have interest or dividend income",
+        "overThreshold": "Your interest, or your dividends, add up to more than {threshold}"
+      },
+      "threshold": 1500,
+      "href": "/accounts/bank-accounts",
+      "irs": "https://www.irs.gov/forms-pubs/about-schedule-b-form-1040",
+      "reasons": {
+        "maybe": "Only if your interest, or your dividends, add up to more than {threshold} for the year. Otherwise they go straight on your 1040."
+      }
+    },
+    "1099-b": {
+      "form": "1099-B",
+      "title": "Proceeds From Broker and Barter Exchange Transactions",
+      "group": "Investments",
+      "issuer": "Your broker",
+      "sentBy": "February 15",
+      "attachTo": null,
+      "reports": "Each sale of stocks, funds or other investments: what you sold it for, what you paid, and when.",
+      "conditions": {
+        "taxableAccount": "You have a taxable brokerage account at {from}",
+        "sold": "You sold investments in it during {taxYear}"
+      },
+      "threshold": null,
+      "href": "/accounts/investing",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1099-b",
+      "reasons": {
+        "maybe": "Sent if you sold anything in {accounts} during {taxYear}, usually as part of one consolidated 1099. Buying doesn't count."
+      }
+    },
+    "1099-div": {
+      "form": "1099-DIV",
+      "title": "Dividends and Distributions",
+      "group": "Investments",
+      "issuer": "Your broker",
+      "sentBy": "February 15",
+      "attachTo": null,
+      "reports": "Dividends and capital gain distributions your investments paid you.",
+      "conditions": {
+        "taxableAccount": "You have a taxable brokerage account at {from}",
+        "overThreshold": "It paid you {threshold} or more in dividends in {taxYear}"
+      },
+      "threshold": 10,
+      "href": "/accounts/investing",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-1099-div",
+      "reasons": {
+        "maybe": "Sent if {accounts} paid you {threshold} or more in dividends.{holdings} Reinvested dividends still count."
+      },
+      "holdings": " You buy {stocks}, which may pay dividends."
+    },
+    "form-8949": {
+      "form": "Form 8949",
+      "title": "Sales and Other Dispositions of Capital Assets",
+      "group": "Investments",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Schedule D",
+      "reports": "Each investment you sold, from your 1099-B, with its gain or loss.",
+      "conditions": {
+        "taxableAccount": "You have a taxable brokerage account",
+        "sold": "You sold investments in {taxYear}"
+      },
+      "threshold": null,
+      "href": "/accounts/investing",
+      "irs": "https://www.irs.gov/forms-pubs/about-form-8949",
+      "reasons": {
+        "maybe": "Only if you sold investments. Some sales reported to the IRS can go straight on Schedule D instead."
+      }
+    },
+    "schedule-d": {
+      "form": "Schedule D",
+      "title": "Capital Gains and Losses",
+      "group": "Investments",
+      "issuer": null,
+      "sentBy": null,
+      "attachTo": "Form 1040",
+      "reports": "Your total capital gains and losses for the year, short-term and long-term.",
+      "conditions": {
+        "taxableAccount": "You have a taxable brokerage account",
+        "soldOrDistributions": "You sold investments or got capital gain distributions in {taxYear}"
+      },
+      "threshold": null,
+      "href": "/accounts/investing",
+      "irs": "https://www.irs.gov/forms-pubs/about-schedule-d-form-1040",
+      "reasons": {
+        "maybe": "Only if you sold investments or got capital gain distributions you can't report straight on your 1040."
+      }
+    }
+  }
+}
